@@ -1,0 +1,4 @@
+glue-core
+glue-qt
+glue-vispy-viewers
+pyvista
