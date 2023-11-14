@@ -1,6 +1,6 @@
 from glue.core.subset_group import GroupedSubset
 
-from numpy import invert
+from numpy import array, invert
 import pyvista as pv
 from scipy.ndimage import filters
 
@@ -24,6 +24,32 @@ def layer_color(layer_state):
     return layer_color
 
 
+# For the 3D scatter viewer
+def points_info(viewer_state, layer_states=None):
+    info = {}
+    if layer_states is None:
+        layer_states = list(viewer_state.layers)
+
+    for layer_state in layer_states:
+        xs = layer_state.layer[viewer_state.x_att]
+        ys = layer_state.layer[viewer_state.y_att]
+        zs = layer_state.layer[viewer_state.z_att]
+
+        data = array([[x, y, z] for x, y, z in zip(xs, ys, zs)])
+
+        info[layer_state.layer.uuid] = {
+            "data": data,
+            "color": layer_color(layer_state),
+            "opacity": layer_state.alpha,
+            "style": "points_gaussian",
+            "point_size": 5 * layer_state.size,
+            "render_points_as_spheres": True
+        }
+
+    return info
+
+
+# For the 3D volume viewer
 def create_meshes(viewer_state, layer_states=None, gaussian_filter=False, smoothing_iteration_count=0):
 
     meshes = {}
@@ -47,6 +73,7 @@ def create_meshes(viewer_state, layer_states=None, gaussian_filter=False, smooth
             meshes[layer_state.layer.uuid] = {
                 "data": data,
                 "color": layer_color(layer_state),
+                "opacity": layer_state.alpha,
                 "isomin": isomin_for_layer(viewer_state, layer_state),
                 "name": layer_state.layer.label
             }
@@ -67,6 +94,7 @@ def create_meshes(viewer_state, layer_states=None, gaussian_filter=False, smooth
             meshes[layer_state.layer.uuid] = {
                 "data": data,
                 "isomin": isomin_for_layer(viewer_state, layer_state),
+                "opacity": layer_state.alpha,
                 "color": layer_color(layer_state),
                 "name": layer_state.layer.label
             }
