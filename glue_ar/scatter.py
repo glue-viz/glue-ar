@@ -16,7 +16,9 @@ def scatter_layer_as_points(viewer_state, layer_state):
 
 def scatter_layer_as_spheres(viewer_state, layer_state):
     data = xyz_for_layer(viewer_state, layer_state)
-    return [pv.Sphere(center=p) for p in data]
+    return {
+        "data": [pv.Sphere(center=p) for p in data]
+    }
 
 
 def scatter_layer_as_glyphs(viewer_state, layer_state, glyph):
@@ -29,3 +31,13 @@ def scatter_layer_as_glyphs(viewer_state, layer_state, glyph):
         "opacity": layer_state.alpha,
     }
 
+
+def scatter_layer_as_multiblock(viewer_state, layer_state):
+    data = xyz_for_layer(viewer_state, layer_state, scaled=True)
+    spheres = [pv.Sphere(center=p, radius=0.01, phi_resolution=8, theta_resolution=8) for p in data]
+    blocks = pv.MultiBlock(spheres)
+    return {
+        "data": blocks.extract_geometry(),
+        "color": layer_color(layer_state),
+        "opacity": layer_state.alpha
+    }

@@ -1,4 +1,5 @@
 import pyvista as pv
+from gltflib import GLTF
 
 
 def export_meshes(meshes, output_path):
@@ -13,6 +14,20 @@ def export_meshes(meshes, output_path):
         plotter.export_gltf(output_path)
     else:
         raise ValueError("Unsupported extension!")
+
+
+# pyvista (well, VTK) doesn't set alphaMode in the exported GLTF
+# which means that our opacity won't necessarily be respected.
+# Maybe we could fix this upstream? But for now, let's just take
+# matters into our own hands.
+# We want alphaMode as BLEND
+# see https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#alpha-coverage
+def export_gltf_with_alpha(plotter, filepath):
+    plotter.export_gltf(filepath)
+    gltf = GLTF.load(filepath)
+    for material in gltf.model.materials:
+        material.alphaMode = "BLEND"
+    gltf.export(filepath)
 
 
 def export_modelviewer(output_path, gltf_path, alt_text):
