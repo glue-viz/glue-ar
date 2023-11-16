@@ -31,21 +31,21 @@ def export_gltf_with_alpha(plotter, filepath):
 
 
 def export_modelviewer(output_path, gltf_path, alt_text):
-    html = """
+    html = f"""
         <html>
         <body>
             <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
             <style>
-        model-viewer {
+        model-viewer {{
           width: 100%;
           height: 100%;
-        }
+        }}
     
         /* This keeps child nodes hidden while the element loads */
-        :not(:defined) > * {
+        :not(:defined) > * {{
           display: none;
-        }
-        .ar-button {
+        }}
+        .ar-button {{
           background-repeat: no-repeat;
           background-size: 20px 20px;
           background-position: 12px 50%;
@@ -62,17 +62,17 @@ def export_modelviewer(output_path, gltf_path, alt_text):
           line-height: 36px;
           border-radius: 18px;
           border: 1px solid #DADCE0;
-        }
-        .ar-button:active {
+        }}
+        .ar-button:active {{
           background-color: #E8EAED;
-        }
-        .ar-button:focus {
+        }}
+        .ar-button:focus {{
           outline: none;
-        }
-        .ar-button:focus-visible {
+        }}
+        .ar-button:focus-visible {{
           outline: 1px solid #4285f4;
-        }
-        .hotspot {
+        }}
+        .hotspot {{
           position: relative;
           background: #ddd;
           border-radius: 32px;
@@ -84,24 +84,24 @@ def export_modelviewer(output_path, gltf_path, alt_text):
           padding: 8px;
           cursor: pointer;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-        }
-        .hotspot:focus {
+        }}
+        .hotspot:focus {{
           border: 4px solid rgb(0, 128, 200);
           width: 32px;
           height: 32px;
           outline: none;
-        }
-        .hotspot > * {
+        }}
+        .hotspot > * {{
           transform: translateY(-50%);
           opacity: 1;
-        }
-        .hotspot:not([data-visible]) > * {
+        }}
+        .hotspot:not([data-visible]) > * {{
           pointer-events: none;
           opacity: 0;
           transform: translateY(calc(-50% + 4px));
           transition: transform 0.3s, opacity 0.3s;
-        }
-        .info {
+        }}
+        .info {{
           display: block;
           position: absolute;
           font-family: Futura, Helvetica Neue, sans-serif;
@@ -115,22 +115,22 @@ def export_modelviewer(output_path, gltf_path, alt_text):
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
           left: calc(100% + 1em);
           top: 50%;
-        }
+        }}
     </style>
     <model-viewer
-        src="%s"
+        src="{gltf_path}"
         camera-orbit="0.9677rad 1.2427rad auto"
         shadow-intensity="1"
         ar
         ar-modes="webxr scene-viewer quick-look fallback"
         camera-controls
-        alt="%s"
+        alt="{alt_text}"
     >
         <button slot="ar-button" class="ar-button">View in your space</button>
         </model-viewer>
         </body>
     </html>
-    """ % (gltf_path, alt_text)
+    """
     
     with open(output_path, 'w') as f:
         f.write(html)
