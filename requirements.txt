@@ -1,3 +1,4 @@
+gltflib
 glue-core
 glue-qt
 glue-vispy-viewers
