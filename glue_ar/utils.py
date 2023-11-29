@@ -27,8 +27,28 @@ def layer_color(layer_state):
     return layer_color
 
 
+# data should be list of numpy arrays
+# Think about being more format-agnostic later
+def scale(data, bounds, preserve_aspect=True):
+    if preserve_aspect:
+        ranges = [abs(bds[1] - bds[0]) for bds in bounds]
+        max_range = max(ranges)
+        index = ranges.index(max_range)
+        bds = bounds[index]
+        m = 2 / (bds[1] - bds[0])
+        b = (bds[0] + bds[1]) / (bds[1] - bds[0])
+        return [m * d + b for d in data]
+    else:
+        scaled = []
+        for idx, bds in enumerate(bounds):
+            m = 2 / (bds[1] - bds[0])
+            b = (bds[0] + bds[1]) / (bds[1] - bds[0])
+            scaled.append(m * data[idx] + b)
+        return scaled
+
+
 # TODO: Worry about efficiency later
-def xyz_for_layer(viewer_state, layer_state, scaled=False):
+def xyz_for_layer(viewer_state, layer_state, scaled=False, preserve_aspect=True):
     xs = layer_state.layer[viewer_state.x_att]
     ys = layer_state.layer[viewer_state.y_att]
     zs = layer_state.layer[viewer_state.z_att]
@@ -36,9 +56,6 @@ def xyz_for_layer(viewer_state, layer_state, scaled=False):
 
     if scaled:
         bounds = xyz_bounds(viewer_state)
-        for idx, bds in enumerate(bounds):
-            m = 2 / (bds[1] - bds[0])
-            b = (bds[0] + bds[1]) / (bds[1] - bds[0])
-            vals[idx] = m * vals[idx] + b
+        vals = scale(vals, bounds, preserve_aspect=preserve_aspect)
         
     return array(list(zip(*vals)))
