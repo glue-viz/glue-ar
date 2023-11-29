@@ -1,3 +1,5 @@
+from os.path import extsep, splitext
+
 import pyvista as pv
 from gltflib import GLTF
 
@@ -22,12 +24,17 @@ def export_meshes(meshes, output_path):
 # matters into our own hands.
 # We want alphaMode as BLEND
 # see https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#alpha-coverage
-def export_gltf_with_alpha(plotter, filepath):
-    plotter.export_gltf(filepath)
-    gltf = GLTF.load(filepath)
+def export_gl_with_alpha(plotter, filepath):
+    path, ext = splitext(filepath)
+    gltf_path = path + extsep + "gltf"
+    plotter.export_gltf(gltf_path)
+    gltf = GLTF.load(gltf_path)
     for material in gltf.model.materials:
         material.alphaMode = "BLEND"
-    gltf.export(filepath)
+    if ext == "glb":
+        gltf.export_glb(filepath)
+    else:
+        gltf.export_gltf(filepath)
 
 
 def export_modelviewer(output_path, gltf_path, alt_text):
