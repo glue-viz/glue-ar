@@ -31,10 +31,10 @@ class GLScatterExportTool(Tool):
         # output_filename = "test.obj"
         # plotter.export_obj(output_filename)
 
-        output_filename = "test.glb"
+        output_filename = "scatter.glb"
         export_gl(plotter, output_filename, with_alpha=True)
         
-        export_modelviewer("test.html", output_filename, "Testing visualization")
+        export_modelviewer("scatter.html", output_filename, "Testing visualization")
 
 
 @viewer_tool
@@ -46,10 +46,9 @@ class GLVolumeExportTool(Tool):
 
     def activate(self):
         plotter = pv.Plotter()
-        meshes = create_meshes(self.viewer.state, use_gaussian_filter=True, smoothing_iteration_count=5)
+        meshes = create_meshes(self.viewer.state, use_gaussian_filter=True, smoothing_iteration_count=10)
         for data in meshes.values():
             mesh = data.pop("mesh")
             plotter.add_mesh(mesh, color=data["color"], opacity=data["opacity"])
-        plotter.export_obj("volume.obj")
         export_gl(plotter, "volume.gltf", with_alpha=True)  # Do we want alpha for volume renderings?
         export_modelviewer("volume.html", "volume.gltf", "Testing visualization")
