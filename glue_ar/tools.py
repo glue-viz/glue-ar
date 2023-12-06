@@ -7,7 +7,7 @@ from glue.viewers.common.tool import Tool
 
 from glue_ar.common import create_plotter
 from glue_ar.scatter import scatter_layer_as_multiblock
-from glue_ar.export import export_gl_with_alpha, export_modelviewer
+from glue_ar.export import export_gl, export_modelviewer
 from glue_ar.volume import create_meshes
 
 __all__ = ["GLScatterExportTool", "GLVolumeExportTool"]
@@ -32,7 +32,7 @@ class GLScatterExportTool(Tool):
         # plotter.export_obj(output_filename)
 
         output_filename = "test.glb"
-        export_gl_with_alpha(plotter, output_filename)
+        export_gl(plotter, output_filename, with_alpha=True)
         
         export_modelviewer("test.html", output_filename, "Testing visualization")
 
@@ -46,8 +46,10 @@ class GLVolumeExportTool(Tool):
 
     def activate(self):
         plotter = pv.Plotter()
-        meshes = create_meshes(self.viewer.state, use_gaussian_filter=True, smoothing_iteration_count=0)
+        meshes = create_meshes(self.viewer.state, use_gaussian_filter=True, smoothing_iteration_count=5)
         for data in meshes.values():
             mesh = data.pop("mesh")
             plotter.add_mesh(mesh, color=data["color"], opacity=data["opacity"])
-        plotter.export_obj("test.obj")
+        plotter.export_obj("volume.obj")
+        export_gl(plotter, "volume.gltf", with_alpha=True)  # Do we want alpha for volume renderings?
+        export_modelviewer("volume.html", "volume.gltf", "Testing visualization")

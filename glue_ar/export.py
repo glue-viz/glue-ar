@@ -17,6 +17,15 @@ def export_meshes(meshes, output_path):
     else:
         raise ValueError("Unsupported extension!")
 
+def export_gl_by_extension(exporter, filepath):
+    _, ext = splitext(filepath)
+    if ext == ".glb":
+        exporter.export_glb(filepath)
+    elif ext == ".gltf":
+        exporter.export_gltf(filepath)
+    else:
+        raise ValueError("File extension should be either .glb or .gltf")
+
 
 # pyvista (well, VTK) doesn't set alphaMode in the exported GLTF
 # which means that our opacity won't necessarily be respected.
@@ -24,18 +33,15 @@ def export_meshes(meshes, output_path):
 # matters into our own hands.
 # We want alphaMode as BLEND
 # see https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#alpha-coverage
-def export_gl_with_alpha(plotter, filepath):
-    path, ext = splitext(filepath)
-    gltf_path = path + extsep + "gltf"
-    plotter.export_gltf(gltf_path)
-    gltf = GLTF.load(gltf_path)
-    for material in gltf.model.materials:
-        material.alphaMode = "BLEND"
-    if ext == "glb":
-        gltf.export_glb(filepath)
-    else:
-        gltf.export_gltf(filepath)
+def export_gl(plotter, filepath, with_alpha=True):
+    export_gl_by_extension(plotter, filepath)
 
+    if with_alpha:
+        gl = GLTF.load(filepath)
+        for material in gl.model.materials:
+            material.alphaMode = "BLEND"
+        export_gl_by_extension(gl, filepath)
+    
 
 def export_modelviewer(output_path, gltf_path, alt_text):
     html = f"""
