@@ -7,7 +7,7 @@ from glue_ar.utils import isomin_for_layer, layer_color
 
 # For the 3D volume viewer
 # This is largely lifted from Luca's plugin
-def create_meshes(viewer_state, layer_states=None, gaussian_filter=False, smoothing_iteration_count=0):
+def create_meshes(viewer_state, layer_states=None, use_gaussian_filter=False, smoothing_iteration_count=0):
 
     meshes = {}
 
@@ -67,7 +67,7 @@ def create_meshes(viewer_state, layer_states=None, gaussian_filter=False, smooth
         data = item["data"]
         isomin = item["isomin"]
 
-        if gaussian_filter:
+        if use_gaussian_filter:
             data = filters.gaussian_filters(data, 1)
 
         # Conventions between pyvista and glue data storage
