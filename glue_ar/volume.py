@@ -1,9 +1,10 @@
 from numpy import invert
 import pyvista as pv
-from scipy.ndimage import filters
+from scipy.ndimage import gaussian_filter
 
 from glue.core.subset_group import GroupedSubset
 from glue_ar.utils import isomin_for_layer, layer_color 
+
 
 # For the 3D volume viewer
 # This is largely lifted from Luca's plugin
@@ -68,7 +69,7 @@ def create_meshes(viewer_state, layer_states=None, use_gaussian_filter=False, sm
         isomin = item["isomin"]
 
         if use_gaussian_filter:
-            data = filters.gaussian_filters(data, 1)
+            data = gaussian_filter(data, 1)
 
         # Conventions between pyvista and glue data storage
         data = data.transpose(2, 1, 0)
