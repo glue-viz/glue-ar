@@ -49,8 +49,8 @@ def export_gl(plotter, filepath, with_alpha=True):
             for material in gl.model.materials:
                 material.alphaMode = "BLEND"
         export_gl_by_extension(gl, filepath)
-        # if glb:
-        #     remove(gltf_path)
+        if glb:
+            remove(gltf_path)
 
 
 def export_modelviewer(output_path, gltf_path, alt_text):

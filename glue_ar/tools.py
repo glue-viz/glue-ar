@@ -1,11 +1,16 @@
 import os
+from os.path import splitext
 
 import pyvista as pv
+
+from qtpy import compat
+from qtpy.QtWidgets import QDialog
 
 from glue.config import viewer_tool
 from glue.viewers.common.tool import Tool
 
 from glue_ar.common import create_plotter
+from glue_ar.export_scatter import ExportScatterDialog
 from glue_ar.scatter import scatter_layer_as_multiblock
 from glue_ar.export import export_gl, export_modelviewer
 from glue_ar.volume import create_meshes
@@ -26,15 +31,29 @@ class GLScatterExportTool(Tool):
     tool_tip = "Export the current view to a glB file"
 
     def activate(self):
-        plotter = create_plotter(pv.Plotter.add_mesh, scatter_layer_as_multiblock, self.viewer.state)
         
-        # output_filename = "test.obj"
-        # plotter.export_obj(output_filename)
+        dialog = ExportScatterDialog(parent=self.viewer, viewer_state=self.viewer.state)
+        result = dialog.exec_()
+        if result == QDialog.Rejected:
+            return
 
-        output_filename = "scatter.glb"
-        export_gl(plotter, output_filename, with_alpha=True)
+        export_path, _ = compat.getsavefilename(parent=self.viewer, basedir=f"scatter.{dialog.state.filetype}".lower())
+        if not export_path:
+            return
+
+        plotter = pv.Plotter()
+        layer_states = [state for state in self.viewer.state.layers if state.visible]
+        for layer_state in layer_states:
+            layer_info = dialog.info_dictionary[layer_state.layer.label]
+            mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state, **layer_info)
+            data = mesh_info.pop("data")
+            plotter.add_mesh(data, **mesh_info)
+
+        basename, _ = splitext(export_path)
+        html_path = f"{basename}.html"
+        export_gl(plotter, export_path, with_alpha=True)
         
-        export_modelviewer("scatter.html", output_filename, "Testing visualization")
+        export_modelviewer(html_path, export_path, "Testing visualization")
 
 
 @viewer_tool
