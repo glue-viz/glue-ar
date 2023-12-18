@@ -1,5 +1,5 @@
 import os
-from os.path import basename, splitext
+from os.path import join, split, splitext
 
 import pyvista as pv
 
@@ -48,9 +48,9 @@ class GLScatterExportTool(Tool):
             data = mesh_info.pop("data")
             plotter.add_mesh(data, **mesh_info)
 
-        base = basename(export_path)
+        dir, base = split(export_path)
         name, _ = splitext(base)
-        html_path = f"{name}.html"
+        html_path = join(dir, f"{name}.html")
         export_gl(plotter, export_path, with_alpha=True)
         
         export_modelviewer(html_path, base, "Testing visualization")
