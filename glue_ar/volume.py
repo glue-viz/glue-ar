@@ -8,7 +8,7 @@ from glue_ar.utils import isomin_for_layer, layer_color
 
 # For the 3D volume viewer
 # This is largely lifted from Luca's plugin
-def create_meshes(viewer_state, layer_states=None, use_gaussian_filter=False, smoothing_iteration_count=0):
+def create_meshes(viewer_state, layer_states, parameters):
 
     meshes = {}
 
@@ -28,7 +28,7 @@ def create_meshes(viewer_state, layer_states=None, use_gaussian_filter=False, sm
                 target_cid=layer_state.attribute
             )
 
-            meshes[layer_state.layer.uuid] = {
+            meshes[layer_state.layer.label] = {
                 "data": data,
                 "color": layer_color(layer_state),
                 "opacity": layer_state.alpha,
@@ -46,10 +46,10 @@ def create_meshes(viewer_state, layer_states=None, use_gaussian_filter=False, sm
                 subset_state=layer_state.layer.subset_state
             )
 
-            datacube = meshes[parent.uuid]["data"]
+            datacube = meshes[parent.label]["data"]
             data = subcube * datacube
 
-            meshes[layer_state.layer.uuid] = {
+            meshes[layer_state.layer.label] = {
                 "data": data,
                 "isomin": isomin_for_layer(viewer_state, layer_state),
                 "opacity": layer_state.alpha,
@@ -58,17 +58,17 @@ def create_meshes(viewer_state, layer_states=None, use_gaussian_filter=False, sm
             }
 
             # Delete sublayer data from parent data
-            if parent.uuid in meshes:
-                parent_data = meshes[parent.uuid]["data"]
+            if parent.label in meshes:
+                parent_data = meshes[parent.label]["data"]
                 parent_data = invert(subcube) * parent_data
-                meshes[parent.uuid]["data"] = parent_data
+                meshes[parent.label]["data"] = parent_data
 
 
-    for item in meshes.values():
+    for label, item in meshes.items():
         data = item["data"]
         isomin = item["isomin"]
 
-        if use_gaussian_filter:
+        if parameters[label]["gaussian_filter"]:
             data = gaussian_filter(data, 1)
 
         # Conventions between pyvista and glue data storage
@@ -82,8 +82,9 @@ def create_meshes(viewer_state, layer_states=None, use_gaussian_filter=False, sm
         grid.point_data["values"] = data.flatten(order="F")
         isodata = grid.contour([isomin])
 
-        if smoothing_iteration_count > 0:
-            isodata = isodata.smooth(n_iter=smoothing_iteration_count)
+        iterations = parameters[label]["smoothing_iterations"]
+        if iterations > 0:
+            isodata = isodata.smooth(n_iter=iterations)
 
         item["mesh"] = isodata
 

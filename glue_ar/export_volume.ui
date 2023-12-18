@@ -55,7 +55,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="valuetext_smoothing_terations"/>
+          <widget class="QLineEdit" name="valuetext_smoothing_iterations"/>
          </item>
         </layout>
        </widget>
@@ -80,14 +80,14 @@
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="button_cancel">
         <property name="text">
          <string>Cancel</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_2">
+       <widget class="QPushButton" name="button_ok">
         <property name="text">
          <string>Export</string>
         </property>
