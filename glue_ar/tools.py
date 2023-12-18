@@ -1,5 +1,5 @@
 import os
-from os.path import splitext
+from os.path import basename, splitext
 
 import pyvista as pv
 
@@ -9,7 +9,6 @@ from qtpy.QtWidgets import QDialog
 from glue.config import viewer_tool
 from glue.viewers.common.tool import Tool
 
-from glue_ar.common import create_plotter
 from glue_ar.export_scatter import ExportScatterDialog
 from glue_ar.scatter import scatter_layer_as_multiblock
 from glue_ar.export import export_gl, export_modelviewer
@@ -49,11 +48,12 @@ class GLScatterExportTool(Tool):
             data = mesh_info.pop("data")
             plotter.add_mesh(data, **mesh_info)
 
-        basename, _ = splitext(export_path)
-        html_path = f"{basename}.html"
+        base = basename(export_path)
+        name, _ = splitext(base)
+        html_path = f"{name}.html"
         export_gl(plotter, export_path, with_alpha=True)
         
-        export_modelviewer(html_path, export_path, "Testing visualization")
+        export_modelviewer(html_path, base, "Testing visualization")
 
 
 @viewer_tool
