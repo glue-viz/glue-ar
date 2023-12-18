@@ -11,7 +11,10 @@ from echo.qt import autoconnect_callbacks_to_qt
 
 __all__ = ["ExportScatterDialog"]
 
-
+# Note that this class only holds the state that is
+# currently displayed in the dialog. In particular,
+# this means that `theta_resolution` and `phi_resolution`
+# represent the resolutions for `layer`
 class ExportScatterDialogState(State):
 
     filetype = SelectionCallbackProperty()
