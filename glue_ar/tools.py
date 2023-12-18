@@ -1,5 +1,5 @@
 import os
-from os.path import basename, splitext
+from os.path import join, split, splitext
 
 import pyvista as pv
 
@@ -10,6 +10,7 @@ from glue.config import viewer_tool
 from glue.viewers.common.tool import Tool
 
 from glue_ar.export_scatter import ExportScatterDialog
+from glue_ar.export_volume import ExportVolumeDialog
 from glue_ar.scatter import scatter_layer_as_multiblock
 from glue_ar.export import export_gl, export_modelviewer
 from glue_ar.volume import create_meshes
@@ -36,7 +37,7 @@ class GLScatterExportTool(Tool):
         if result == QDialog.Rejected:
             return
 
-        export_path, _ = compat.getsavefilename(parent=self.viewer, basedir=f"scatter.{dialog.state.filetype}".lower())
+        export_path, _ = compat.getsavefilename(parent=self.viewer, basedir=f"scatter.{dialog.state.filetype.lower()}")
         if not export_path:
             return
 
@@ -48,12 +49,14 @@ class GLScatterExportTool(Tool):
             data = mesh_info.pop("data")
             plotter.add_mesh(data, **mesh_info)
 
-        base = basename(export_path)
-        name, _ = splitext(base)
-        html_path = f"{name}.html"
-        export_gl(plotter, export_path, with_alpha=True)
-        
-        export_modelviewer(html_path, base, "Testing visualization")
+        dir, base = split(export_path)
+        name, ext = splitext(base)
+        html_path = join(dir, f"{name}.html")
+        if ext:
+            export_gl(plotter, export_path, with_alpha=True)
+            export_modelviewer(html_path, base, "Testing visualization")
+        else:
+            plotter.export_obj(export_path)
 
 
 @viewer_tool
@@ -64,10 +67,28 @@ class GLVolumeExportTool(Tool):
     tool_tip = "Export the current view to a glB file"
 
     def activate(self):
+
+        dialog = ExportVolumeDialog(parent=self.viewer, viewer_state=self.viewer.state)
+        result = dialog.exec_()
+        if result == QDialog.Rejected:
+            return
+
+        export_path, _ = compat.getsavefilename(parent=self.viewer, basedir=f"volume.{dialog.state.filetype.lower()}")
+        if not export_path:
+            return
+
         plotter = pv.Plotter()
-        meshes = create_meshes(self.viewer.state, use_gaussian_filter=True, smoothing_iteration_count=10)
+        layer_states = [state for state in self.viewer.state.layers if state.visible]
+        meshes = create_meshes(self.viewer.state, layer_states, dialog.info_dictionary)
         for data in meshes.values():
             mesh = data.pop("mesh")
             plotter.add_mesh(mesh, color=data["color"], opacity=data["opacity"])
-        export_gl(plotter, "volume.gltf", with_alpha=True)  # Do we want alpha for volume renderings?
-        export_modelviewer("volume.html", "volume.gltf", "Testing visualization")
+
+        dir, base = split(export_path)
+        name, ext = splitext(base)
+        html_path = join(dir, f"{name}.html")
+        if ext == 'glTF':
+            export_gl(plotter, export_path, with_alpha=True)  # Do we want alpha for volume renderings?
+            export_modelviewer(html_path, base, "Testing visualization")
+        else:
+            plotter.export_obj(export_path)

@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>327</width>
-    <height>416</height>
+    <width>321</width>
+    <height>414</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Export 3D Scatter</string>
+   <string>Export 3D Volume</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
@@ -27,7 +27,7 @@
    <item row="2" column="0">
     <widget class="QLabel" name="label_settings_message">
      <property name="text">
-      <string>Select the export settings for each layer</string>
+      <string>Set the export settings for each layer</string>
      </property>
     </widget>
    </item>
@@ -35,49 +35,36 @@
     <widget class="QListWidget" name="listsel_layer"/>
    </item>
    <item row="4" column="0">
-    <widget class="QLabel" name="label_resolution_message">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;The resolution values affect how many points are used to draw each sphere. Higher values mean better resolution, but a larger exported file. The total number of points per sphere is &lt;div&gt;2 + (phi_resolution - 2) * theta_resolution&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0">
-    <widget class="QWidget" name="widget" native="true">
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_theta_resolution">
+    <widget class="QWidget" name="widget_2" native="true">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QCheckBox" name="bool_gaussian_filter">
         <property name="text">
-         <string>Theta resolution:</string>
+         <string>Use Gaussian filter</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_phi_resolution">
-        <property name="text">
-         <string>Phi resolution:</string>
-        </property>
+      <item>
+       <widget class="QWidget" name="widget_3" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="label_smoothing_iterations">
+           <property name="text">
+            <string>Smoothing iterations</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="valuetext_smoothing_iterations"/>
+         </item>
+        </layout>
        </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="valuetext_theta_resolution"/>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="valuetext_phi_resolution"/>
       </item>
      </layout>
     </widget>
    </item>
-   <item row="6" column="0">
-    <widget class="QWidget" name="widget_2" native="true">
+   <item row="5" column="0">
+    <widget class="QWidget" name="widget" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <spacer name="horizontalSpacer_3">
@@ -86,7 +73,7 @@
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>40</width>
+          <width>110</width>
           <height>20</height>
          </size>
         </property>
