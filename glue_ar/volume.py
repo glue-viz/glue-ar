@@ -1,13 +1,9 @@
-from numpy import invert
+from numpy import invert, nan_to_num
 import pyvista as pv
 from scipy.ndimage import gaussian_filter
 
 from glue.core.subset_group import GroupedSubset
 from glue_ar.utils import isomin_for_layer, layer_color
-
-test_parent_cube = None
-test_subcube = None
-test_data = None
 
 
 # Trying to export each layer individually, rather than doing all of the meshes
@@ -16,11 +12,7 @@ test_data = None
 # the parent mesh as Luca's plugin did.
 # But glue isn't going to be doing that, and if we have opacity then we should(?)
 # get the same effect as in glue in the exported file
-def meshes_for_volume_layer(viewer_state, layer_state, bounds, use_gaussian_filter=False, smoothing_iteration_count=0):
-
-    global test_parent_cube
-    global test_subcube
-    global test_data
+def meshes_for_volume_layer(viewer_state, layer_state, bounds, use_gaussian_filter=False, smoothing_iterations=0):
 
     # TODO: Allow passing in a dictionary of precomputed FRBs (keyed by label)
     # so that when we're running this across a viewer, we can possibly avoid repeated FRB computation
@@ -46,11 +38,8 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds, use_gaussian_filt
             bounds=bounds,
             subset_state=layer_state.layer.subset_state
         )
-        test_parent_cube = data
         data = subcube * data 
-
-        test_subcube = subcube
-        test_data = data
+        nan_to_num(data, copy=False, nan=0)
 
     if use_gaussian_filter:
         data = gaussian_filter(data, 1)
@@ -68,8 +57,8 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds, use_gaussian_filt
     grid.point_data["values"] = data.flatten(order="F")
     isodata = grid.contour([isomin])
 
-    if smoothing_iteration_count > 0:
-        isodata = isodata.smooth(n_iter=smoothing_iteration_count)
+    if smoothing_iterations > 0:
+        isodata = isodata.smooth(n_iter=smoothing_iterations)
 
     return {
         "data": isodata,
