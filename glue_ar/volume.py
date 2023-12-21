@@ -20,22 +20,15 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
 
     layer_content = layer_state.layer
     parent = layer_content.data if isinstance(layer_content, GroupedSubset) else layer_content
-    if parent is layer_content:
-        parent_layer_state = layer_state
-    else:
-        for state in viewer_state.layers:
-            if state.layer is layer_content:
-                parent_layer_state = state
-                break
 
-    parent_label = parent_layer_state.layer.label
+    parent_label = parent.label
     if parent_label in precomputed_frbs:
         data = precomputed_frbs[parent_label]
     else:
         data = parent.compute_fixed_resolution_buffer(
             target_data=viewer_state.reference_data,
             bounds=bounds,
-            target_cid=parent_layer_state.attribute)
+            target_cid=layer_state.attribute)
         precomputed_frbs[parent_label] = data
 
     if isinstance(layer_state.layer, GroupedSubset):
