@@ -21,7 +21,7 @@ class ExportVolumeDialogState(State):
 
     filetype = SelectionCallbackProperty()
     layer = SelectionCallbackProperty()
-    gaussian_filter = CallbackProperty()
+    use_gaussian_filter = CallbackProperty()
     smoothing_iterations = CallbackProperty()
 
     def __init__(self, viewer_state):
@@ -48,7 +48,7 @@ class ExportVolumeDialog(QDialog):
         layers = [state for state in self.viewer_state.layers if state.visible]
         self.info_dictionary = {
             layer.layer.label: {
-                "gaussian_filter": False,
+                "use_gaussian_filter": False,
                 "smoothing_iterations": 0
             } for layer in layers
         }
@@ -62,16 +62,16 @@ class ExportVolumeDialog(QDialog):
         self.ui.button_cancel.clicked.connect(self.reject)
         self.ui.button_ok.clicked.connect(self.accept)
 
-        self.state.add_callback('gaussian_filter', self._on_gaussian_filter_change)
+        self.state.add_callback('use_gaussian_filter', self._on_gaussian_filter_change)
         self.state.add_callback('smoothing_iterations', self._on_smoothing_iterations_change)
         self.state.add_callback('layer', self._on_layer_change)
 
     def _on_gaussian_filter_change(self, filter):
-        self.info_dictionary[self.state.layer]["gaussian_filter"] = filter
+        self.info_dictionary[self.state.layer]["use_gaussian_filter"] = filter
 
     def _on_smoothing_iterations_change(self, iterations):
         self.info_dictionary[self.state.layer]["smoothing_iterations"] = int(iterations)
 
     def _on_layer_change(self, layer):
-        self.state.gaussian_filter = self.info_dictionary[layer]["gaussian_filter"]
+        self.state.use_gaussian_filter = self.info_dictionary[layer]["use_gaussian_filter"]
         self.state.smoothing_iterations = self.info_dictionary[layer]["smoothing_iterations"]

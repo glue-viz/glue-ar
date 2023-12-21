@@ -38,7 +38,7 @@
     <widget class="QWidget" name="widget_2" native="true">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QCheckBox" name="bool_gaussian_filter">
+       <widget class="QCheckBox" name="bool_use_gaussian_filter">
         <property name="text">
          <string>Use Gaussian filter</string>
         </property>

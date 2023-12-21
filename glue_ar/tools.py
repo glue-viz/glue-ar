@@ -13,7 +13,7 @@ from glue_ar.export_scatter import ExportScatterDialog
 from glue_ar.export_volume import ExportVolumeDialog
 from glue_ar.scatter import scatter_layer_as_multiblock
 from glue_ar.export import export_gl, export_modelviewer
-from glue_ar.volume import create_meshes
+from glue_ar.volume import bounds_3d, meshes_for_volume_layer
 
 __all__ = ["GLScatterExportTool", "GLVolumeExportTool"]
 
@@ -42,7 +42,7 @@ class GLScatterExportTool(Tool):
             return
 
         plotter = pv.Plotter()
-        layer_states = [state for state in self.viewer.state.layers if state.visible]
+        layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         for layer_state in layer_states:
             layer_info = dialog.info_dictionary[layer_state.layer.label]
             mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state, **layer_info)
@@ -52,7 +52,7 @@ class GLScatterExportTool(Tool):
         dir, base = split(export_path)
         name, ext = splitext(base)
         html_path = join(dir, f"{name}.html")
-        if ext:
+        if ext == '.gltf':
             export_gl(plotter, export_path, with_alpha=True)
             export_modelviewer(html_path, base, "Testing visualization")
         else:
@@ -78,16 +78,22 @@ class GLVolumeExportTool(Tool):
             return
 
         plotter = pv.Plotter()
-        layer_states = [state for state in self.viewer.state.layers if state.visible]
-        meshes = create_meshes(self.viewer.state, layer_states, dialog.info_dictionary)
-        for data in meshes.values():
-            mesh = data.pop("mesh")
-            plotter.add_mesh(mesh, color=data["color"], opacity=data["opacity"])
+        layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
+        bounds = bounds_3d(self.viewer.state) 
+        frbs = {}
+        for layer_state in layer_states:
+            layer_info = dialog.info_dictionary[layer_state.layer.label]
+            mesh_info = meshes_for_volume_layer(self.viewer.state, layer_state,
+                                                bounds=bounds,
+                                                precomputed_frbs=frbs,
+                                                **layer_info)
+            data = mesh_info.pop("data")
+            plotter.add_mesh(data, **mesh_info)
 
         dir, base = split(export_path)
         name, ext = splitext(base)
         html_path = join(dir, f"{name}.html")
-        if ext == 'glTF':
+        if ext == '.gltf':
             export_gl(plotter, export_path, with_alpha=True)  # Do we want alpha for volume renderings?
             export_modelviewer(html_path, base, "Testing visualization")
         else:
