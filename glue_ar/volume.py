@@ -12,10 +12,11 @@ from glue_ar.utils import isomin_for_layer, layer_color
 # the parent mesh as Luca's plugin did.
 # But glue isn't going to be doing that, and if we have opacity then we should(?)
 # get the same effect as in glue in the exported file
-def meshes_for_volume_layer(viewer_state, layer_state, bounds, use_gaussian_filter=False, smoothing_iterations=0):
+def meshes_for_volume_layer(viewer_state, layer_state, bounds,
+                            use_gaussian_filter=False, smoothing_iterations=0,
+                            precomputed_frbs=None):
 
-    # TODO: Allow passing in a dictionary of precomputed FRBs (keyed by label)
-    # so that when we're running this across a viewer, we can possibly avoid repeated FRB computation
+    precomputed_frbs = precomputed_frbs or {}
 
     layer_content = layer_state.layer
     parent = layer_content.data if isinstance(layer_content, GroupedSubset) else layer_content
@@ -27,10 +28,15 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds, use_gaussian_filt
                 parent_layer_state = state
                 break
 
-    data = parent.compute_fixed_resolution_buffer(
-        target_data=viewer_state.reference_data,
-        bounds=bounds,
-        target_cid=parent_layer_state.attribute)
+    parent_label = parent_layer_state.layer.label
+    if parent_label in precomputed_frbs:
+        data = precomputed_frbs[parent_label]
+    else:
+        data = parent.compute_fixed_resolution_buffer(
+            target_data=viewer_state.reference_data,
+            bounds=bounds,
+            target_cid=parent_layer_state.attribute)
+        precomputed_frbs[parent_label] = data
 
     if isinstance(layer_state.layer, GroupedSubset):
         subcube = parent.compute_fixed_resolution_buffer(

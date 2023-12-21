@@ -73,5 +73,5 @@ class ExportVolumeDialog(QDialog):
         self.info_dictionary[self.state.layer]["smoothing_iterations"] = int(iterations)
 
     def _on_layer_change(self, layer):
-        self.state.gaussian_filter = self.info_dictionary[layer]["use_gaussian_filter"]
+        self.state.use_gaussian_filter = self.info_dictionary[layer]["use_gaussian_filter"]
         self.state.smoothing_iterations = self.info_dictionary[layer]["smoothing_iterations"]

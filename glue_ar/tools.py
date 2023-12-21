@@ -80,10 +80,12 @@ class GLVolumeExportTool(Tool):
         plotter = pv.Plotter()
         layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         bounds = bounds_3d(self.viewer.state) 
+        frbs = {}
         for layer_state in layer_states:
             layer_info = dialog.info_dictionary[layer_state.layer.label]
             mesh_info = meshes_for_volume_layer(self.viewer.state, layer_state,
                                                 bounds=bounds,
+                                                precomputed_frbs=frbs,
                                                 **layer_info)
             data = mesh_info.pop("data")
             plotter.add_mesh(data, **mesh_info)
