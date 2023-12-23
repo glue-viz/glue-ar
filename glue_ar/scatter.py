@@ -55,7 +55,12 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
         point_cmap_values = [y for x in cmap_values for y in (x,) * sphere_points]
         # geometry.cell_data["colors"] = cell_cmap_values
         geometry.point_data["colors"] = point_cmap_values
-        info["cmap"] = layer_state.cmap.name  # This assumes that we're using a matplotlib colormap
-        info["clim"] = [layer_state.cmap_vmin, layer_state.cmap_vmax]
+        cmap = layer_state.cmap.name  # This assumes that we're using a matplotlib colormap
+        clim = [layer_state.cmap_vmin, layer_state.cmap_vmax]
+        if clim[0] > clim[1]:
+            clim = [clim[1], clim[0]]
+            cmap = f"{cmap}_r"
+        info["cmap"] = cmap
+        info["clim"] = clim
         info["scalars"] = "colors"
     return info
