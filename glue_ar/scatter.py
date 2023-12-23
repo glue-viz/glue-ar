@@ -35,8 +35,9 @@ def scatter_layer_as_glyphs(viewer_state, layer_state, glyph):
 
 def scatter_layer_as_multiblock(viewer_state, layer_state,
                                 theta_resolution=8,
-                                phi_resolution=8):
-    data = xyz_for_layer(viewer_state, layer_state, scaled=True)
+                                phi_resolution=8,
+                                scaled=True):
+    data = xyz_for_layer(viewer_state, layer_state, scaled=scaled)
     spheres = [pv.Sphere(center=p, radius=layer_state.size_scaling * layer_state.size / 600, phi_resolution=phi_resolution, theta_resolution=theta_resolution) for p in data]
     blocks = pv.MultiBlock(spheres)
     geometry = blocks.extract_geometry()
