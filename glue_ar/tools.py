@@ -1,5 +1,6 @@
 import os
 from os.path import join, split, splitext
+from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 
 import pyvista as pv
 
@@ -8,9 +9,8 @@ from qtpy.QtWidgets import QDialog
 
 from glue.config import viewer_tool
 from glue.viewers.common.tool import Tool
+from glue_ar.export_dialog import ARExportDialog
 
-from glue_ar.export_scatter import ExportScatterDialog
-from glue_ar.export_volume import ExportVolumeDialog
 from glue_ar.scatter import scatter_layer_as_multiblock
 from glue_ar.export import export_gl, export_modelviewer
 from glue_ar.volume import bounds_3d, meshes_for_volume_layer
@@ -32,7 +32,7 @@ class GLScatterExportTool(Tool):
 
     def activate(self):
         
-        dialog = ExportScatterDialog(parent=self.viewer, viewer_state=self.viewer.state)
+        dialog = ARExportDialog(parent=self.viewer, viewer_state=self.viewer.state)
         result = dialog.exec_()
         if result == QDialog.Rejected:
             return
@@ -44,7 +44,7 @@ class GLScatterExportTool(Tool):
         plotter = pv.Plotter()
         layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         for layer_state in layer_states:
-            layer_info = dialog.info_dictionary[layer_state.layer.label]
+            layer_info = dialog.state_dictionary[layer_state.layer.label].as_dict()
             mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state, **layer_info)
             data = mesh_info.pop("data")
             plotter.add_mesh(data, **mesh_info)
@@ -68,7 +68,7 @@ class GLVolumeExportTool(Tool):
 
     def activate(self):
 
-        dialog = ExportVolumeDialog(parent=self.viewer, viewer_state=self.viewer.state)
+        dialog = ARExportDialog(parent=self.viewer, viewer_state=self.viewer.state)
         result = dialog.exec_()
         if result == QDialog.Rejected:
             return
@@ -82,11 +82,14 @@ class GLVolumeExportTool(Tool):
         bounds = bounds_3d(self.viewer.state) 
         frbs = {}
         for layer_state in layer_states:
-            layer_info = dialog.info_dictionary[layer_state.layer.label]
-            mesh_info = meshes_for_volume_layer(self.viewer.state, layer_state,
-                                                bounds=bounds,
-                                                precomputed_frbs=frbs,
-                                                **layer_info)
+            layer_info = dialog.state_dictionary[layer_state.layer.label].as_dict()
+            if isinstance(layer_state, VolumeLayerState):
+                mesh_info = meshes_for_volume_layer(self.viewer.state, layer_state,
+                                                    bounds=bounds,
+                                                    precomputed_frbs=frbs,
+                                                    **layer_info)
+            else:
+                mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state, **layer_info, scaled=False)
             data = mesh_info.pop("data")
             plotter.add_mesh(data, **mesh_info)
 

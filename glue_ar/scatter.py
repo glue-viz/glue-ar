@@ -35,8 +35,9 @@ def scatter_layer_as_glyphs(viewer_state, layer_state, glyph):
 
 def scatter_layer_as_multiblock(viewer_state, layer_state,
                                 theta_resolution=8,
-                                phi_resolution=8):
-    data = xyz_for_layer(viewer_state, layer_state, scaled=True)
+                                phi_resolution=8,
+                                scaled=True):
+    data = xyz_for_layer(viewer_state, layer_state, scaled=scaled)
     spheres = [pv.Sphere(center=p, radius=layer_state.size_scaling * layer_state.size / 600, phi_resolution=phi_resolution, theta_resolution=theta_resolution) for p in data]
     blocks = pv.MultiBlock(spheres)
     geometry = blocks.extract_geometry()
@@ -54,7 +55,12 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
         point_cmap_values = [y for x in cmap_values for y in (x,) * sphere_points]
         # geometry.cell_data["colors"] = cell_cmap_values
         geometry.point_data["colors"] = point_cmap_values
-        info["cmap"] = layer_state.cmap.name  # This assumes that we're using a matplotlib colormap
-        info["clim"] = [layer_state.cmap_vmin, layer_state.cmap_vmax]
+        cmap = layer_state.cmap.name  # This assumes that we're using a matplotlib colormap
+        clim = [layer_state.cmap_vmin, layer_state.cmap_vmax]
+        if clim[0] > clim[1]:
+            clim = [clim[1], clim[0]]
+            cmap = f"{cmap}_r"
+        info["cmap"] = cmap
+        info["clim"] = clim
         info["scalars"] = "colors"
     return info
