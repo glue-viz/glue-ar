@@ -92,7 +92,6 @@ class GLVolumeExportTool(Tool):
                 mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state, **layer_info, scaled=False)
             data = mesh_info.pop("data")
             plotter.add_mesh(data, **mesh_info)
-        print(plotter.meshes)
 
         dir, base = split(export_path)
         name, ext = splitext(base)
