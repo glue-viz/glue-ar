@@ -57,7 +57,7 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     isodata = grid.contour([isomin])
 
     if smoothing_iterations > 0:
-        isodata = isodata.smooth(n_iter=smoothing_iterations)
+        isodata = isodata.smooth(n_iter=int(smoothing_iterations))
 
     return {
         "data": isodata,
