@@ -1,3 +1,5 @@
+from math import floor
+
 import pyvista as pv
 from glue_ar.utils import layer_color, xyz_bounds, xyz_for_layer
 
@@ -37,13 +39,15 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
                                 theta_resolution=8,
                                 phi_resolution=8,
                                 scaled=True):
-    data = xyz_for_layer(viewer_state, layer_state, scaled=scaled)
+    data = xyz_for_layer(viewer_state, layer_state, scaled=scaled, preserve_aspect=viewer_state.native_aspect)
     bounds = xyz_bounds(viewer_state)
     factor = max((abs(b[1] - b[0]) for b in bounds))
-    radius = layer_state.size_scaling * layer_state.size / factor
+    radius = layer_state.size_scaling * layer_state.size
+    radius /= factor
     spheres = [pv.Sphere(center=p, radius=radius, phi_resolution=phi_resolution, theta_resolution=theta_resolution) for p in data]
     blocks = pv.MultiBlock(spheres)
     geometry = blocks.extract_geometry()
+
     info = {
         "data": geometry,
         "opacity": layer_state.alpha
@@ -66,4 +70,5 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
         info["cmap"] = cmap
         info["clim"] = clim
         info["scalars"] = "colors"
+
     return info
