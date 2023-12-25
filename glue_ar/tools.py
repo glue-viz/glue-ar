@@ -45,7 +45,7 @@ class GLScatterExportTool(Tool):
         layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         for layer_state in layer_states:
             layer_info = dialog.state_dictionary[layer_state.layer.label].as_dict()
-            mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state, **layer_info)
+            mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state, **layer_info, scaled=True)
             data = mesh_info.pop("data")
             plotter.add_mesh(data, **mesh_info)
 
