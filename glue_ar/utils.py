@@ -59,6 +59,7 @@ def scale(data, bounds, preserve_aspect=True):
 
 
 # TODO: Worry about efficiency later
+# and just generally make this better
 def xyz_for_layer(viewer_state, layer_state,
                   scaled=False,
                   preserve_aspect=True,
@@ -80,7 +81,6 @@ def xyz_for_layer(viewer_state, layer_state,
                        ys.append(y)
                        zs.append(z)
             vals = [xs, ys, zs]
-
 
         if scaled:
             vals = scale(vals, bounds, preserve_aspect=preserve_aspect)

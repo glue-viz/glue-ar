@@ -46,8 +46,7 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
                          scaled=scaled)
     bounds = xyz_bounds(viewer_state)
     factor = max((abs(b[1] - b[0]) for b in bounds))
-    radius = layer_state.size_scaling * layer_state.size
-    radius /= factor
+    radius = (layer_state.size_scaling * layer_state.size) / factor
     spheres = [pv.Sphere(center=p, radius=radius, phi_resolution=phi_resolution, theta_resolution=theta_resolution) for p in data]
     blocks = pv.MultiBlock(spheres)
     geometry = blocks.extract_geometry()
