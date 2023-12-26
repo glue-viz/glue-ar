@@ -1,3 +1,5 @@
+from math import floor
+
 import pyvista as pv
 from glue_ar.utils import layer_color, xyz_bounds, xyz_for_layer
 
@@ -6,7 +8,7 @@ from glue_ar.utils import layer_color, xyz_bounds, xyz_for_layer
 def scatter_layer_as_points(viewer_state, layer_state):
     xyz = xyz_for_layer(viewer_state, layer_state)
     return {
-        "data": xyz,
+        "mesh": xyz,
         "color": layer_color(layer_state),
         "opacity": layer_state.alpha,
         "style": "points_gaussian",
@@ -18,7 +20,7 @@ def scatter_layer_as_points(viewer_state, layer_state):
 def scatter_layer_as_spheres(viewer_state, layer_state):
     data = xyz_for_layer(viewer_state, layer_state)
     return {
-        "data": [pv.Sphere(center=p) for p in data]
+        "mesh": [pv.Sphere(center=p) for p in data]
     }
 
 
@@ -27,7 +29,7 @@ def scatter_layer_as_glyphs(viewer_state, layer_state, glyph):
     points = pv.PointSet(data)
     glyphs = points.glyph(geom=glyph, orient=False, scale=False)
     return {
-        "data": glyphs,
+        "mesh": glyphs,
         "color": layer_color(layer_state),
         "opacity": layer_state.alpha,
     }
@@ -36,16 +38,21 @@ def scatter_layer_as_glyphs(viewer_state, layer_state, glyph):
 def scatter_layer_as_multiblock(viewer_state, layer_state,
                                 theta_resolution=8,
                                 phi_resolution=8,
-                                scaled=True):
-    data = xyz_for_layer(viewer_state, layer_state, scaled=scaled)
+                                scaled=True,
+                                clip_to_bounds=True):
+    data = xyz_for_layer(viewer_state, layer_state,
+                         preserve_aspect=viewer_state.native_aspect,
+                         clip_to_bounds=clip_to_bounds,
+                         scaled=scaled)
     bounds = xyz_bounds(viewer_state)
     factor = max((abs(b[1] - b[0]) for b in bounds))
-    radius = layer_state.size_scaling * layer_state.size / factor
+    radius = (layer_state.size_scaling * layer_state.size) / factor
     spheres = [pv.Sphere(center=p, radius=radius, phi_resolution=phi_resolution, theta_resolution=theta_resolution) for p in data]
     blocks = pv.MultiBlock(spheres)
     geometry = blocks.extract_geometry()
+
     info = {
-        "data": geometry,
+        "mesh": geometry,
         "opacity": layer_state.alpha
     }
     if layer_state.color_mode == "Fixed":
@@ -66,4 +73,5 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
         info["cmap"] = cmap
         info["clim"] = clim
         info["scalars"] = "colors"
+
     return info
