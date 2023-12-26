@@ -8,7 +8,7 @@ from glue_ar.utils import layer_color, xyz_bounds, xyz_for_layer
 def scatter_layer_as_points(viewer_state, layer_state):
     xyz = xyz_for_layer(viewer_state, layer_state)
     return {
-        "data": xyz,
+        "mesh": xyz,
         "color": layer_color(layer_state),
         "opacity": layer_state.alpha,
         "style": "points_gaussian",
@@ -20,7 +20,7 @@ def scatter_layer_as_points(viewer_state, layer_state):
 def scatter_layer_as_spheres(viewer_state, layer_state):
     data = xyz_for_layer(viewer_state, layer_state)
     return {
-        "data": [pv.Sphere(center=p) for p in data]
+        "mesh": [pv.Sphere(center=p) for p in data]
     }
 
 
@@ -29,7 +29,7 @@ def scatter_layer_as_glyphs(viewer_state, layer_state, glyph):
     points = pv.PointSet(data)
     glyphs = points.glyph(geom=glyph, orient=False, scale=False)
     return {
-        "data": glyphs,
+        "mesh": glyphs,
         "color": layer_color(layer_state),
         "opacity": layer_state.alpha,
     }
@@ -53,7 +53,7 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
     geometry = blocks.extract_geometry()
 
     info = {
-        "data": geometry,
+        "mesh": geometry,
         "opacity": layer_state.alpha
     }
     if layer_state.color_mode == "Fixed":

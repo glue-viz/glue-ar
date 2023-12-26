@@ -59,7 +59,7 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
         isodata = isodata.smooth(n_iter=int(smoothing_iterations))
 
     return {
-        "data": isodata,
+        "mesh": isodata,
         "color": layer_color(layer_state),
         "opacity": layer_state.alpha,
         # "isomin": isomin,

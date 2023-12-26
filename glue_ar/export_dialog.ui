@@ -14,13 +14,13 @@
    <string>Export 3D Volume</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="4" column="0">
+   <item row="3" column="0">
     <widget class="QListWidget" name="listsel_layer"/>
    </item>
-   <item row="5" column="0">
+   <item row="4" column="0">
     <layout class="QFormLayout" name="layer_layout"/>
    </item>
-   <item row="6" column="0">
+   <item row="5" column="0">
     <widget class="QWidget" name="widget" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
@@ -69,17 +69,10 @@
    <item row="1" column="0">
     <widget class="QComboBox" name="combosel_filetype"/>
    </item>
-   <item row="3" column="0">
+   <item row="2" column="0">
     <widget class="QLabel" name="label_settings_message">
      <property name="text">
       <string>Set the export settings for each layer</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QCheckBox" name="bool_clip_to_bounds">
-     <property name="text">
-      <string>Clip to viewer bounds</string>
      </property>
     </widget>
    </item>

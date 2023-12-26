@@ -48,9 +48,9 @@ class GLScatterExportTool(Tool):
             layer_info = dialog.state_dictionary[layer_state.layer.label].as_dict()
             mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state,
                                                     scaled=True,
-                                                    clip_to_bounds=dialog.state.clip_to_bounds,
+                                                    clip_to_bounds=self.viewer.state.clip_data,
                                                     **layer_info)
-            mesh = mesh_info.pop("data")
+            mesh = mesh_info.pop("mesh")
             if len(mesh.points) > 0:
                 plotter.add_mesh(mesh, **mesh_info)
 
@@ -85,7 +85,7 @@ class GLVolumeExportTool(Tool):
         plotter = pv.Plotter()
         layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         frbs = {}
-        if dialog.state.clip_to_bounds:
+        if self.viewer.state.clip_data:
             bounds = bounds_3d(self.viewer.state) 
         else:
             bounds = bounds_3d_from_layers(self.viewer.state, layer_states)
@@ -98,9 +98,10 @@ class GLVolumeExportTool(Tool):
                                                     **layer_info)
             else:
                 mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state,
-                                                        scaled=False, clip_to_bounds=dialog.state.clip_to_bounds,
+                                                        scaled=False,
+                                                        clip_to_bounds=self.viewer.state.clip_data,
                                                         **layer_info)
-            mesh = mesh_info.pop("data")
+            mesh = mesh_info.pop("mesh")
             if len(mesh.points) > 0:
                 plotter.add_mesh(mesh, **mesh_info)
 

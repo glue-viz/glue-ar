@@ -40,7 +40,6 @@ ar_layer_export = ARExportLayerOptionsRegistry()
 
 class ARExportDialogState(State):
 
-    clip_to_bounds = CallbackProperty(True)
     filetype = SelectionCallbackProperty()
     layer = SelectionCallbackProperty()
 
