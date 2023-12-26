@@ -1,5 +1,4 @@
-from math import floor
-
+from numpy import isnan, ones
 import pyvista as pv
 from glue_ar.utils import layer_color, xyz_bounds, xyz_for_layer
 
@@ -35,6 +34,8 @@ def scatter_layer_as_glyphs(viewer_state, layer_state, glyph):
     }
 
 
+# This function creates a multiblock mesh for a given scatter layer
+# Everything is scaled into clip space for better usability with e.g. model-viewer
 def scatter_layer_as_multiblock(viewer_state, layer_state,
                                 theta_resolution=8,
                                 phi_resolution=8,
@@ -46,8 +47,24 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
                          scaled=scaled)
     bounds = xyz_bounds(viewer_state)
     factor = max((abs(b[1] - b[0]) for b in bounds))
-    radius = (layer_state.size_scaling * layer_state.size) / factor
-    spheres = [pv.Sphere(center=p, radius=radius, phi_resolution=phi_resolution, theta_resolution=theta_resolution) for p in data]
+    if layer_state.size_mode == "Fixed":
+        radius = (layer_state.size_scaling * layer_state.size) / factor
+        spheres = [pv.Sphere(center=p, radius=radius,
+                             phi_resolution=phi_resolution,
+                             theta_resolution=theta_resolution) for p in data]
+    else:
+        # The specific size calculation is take from the scatter layer artist
+        size_data = layer_state.layer[layer_state.size_attribute].ravel()
+        if layer_state.size_vmax == layer_state.size_vmin:
+            sizes = ones(size_data.shape) * 10
+        else:
+            sizes = (20 * (size_data - layer_state.size_vmin) /
+                     (layer_state.size_vmax - layer_state.size_vmin))
+        sizes *= (layer_state.size_scaling / factor)
+        sizes[isnan(size_data)] = 0.
+        spheres = [pv.Sphere(center=p, radius=r,
+                             phi_resolution=phi_resolution,
+                             theta_resolution=theta_resolution) for p, r in zip(data, sizes)]
     blocks = pv.MultiBlock(spheres)
     geometry = blocks.extract_geometry()
 
