@@ -7,6 +7,7 @@ from glue.config import DictRegistry
 from glue.core.data_combo_helper import ComboHelper
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
+from glue_vispy_viewers.volume.layer_state import CallbackProperty
 from qtpy.QtGui import QDoubleValidator, QIntValidator
 
 
@@ -39,6 +40,7 @@ ar_layer_export = ARExportLayerOptionsRegistry()
 
 class ARExportDialogState(State):
 
+    clip_to_bounds = CallbackProperty(True)
     filetype = SelectionCallbackProperty()
     layer = SelectionCallbackProperty()
 
