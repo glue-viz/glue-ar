@@ -16,20 +16,19 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
                             use_gaussian_filter=False, smoothing_iterations=0,
                             precomputed_frbs=None):
 
-    precomputed_frbs = precomputed_frbs or {}
-
     layer_content = layer_state.layer
     parent = layer_content.data if isinstance(layer_content, GroupedSubset) else layer_content
 
     parent_label = parent.label
-    if parent_label in precomputed_frbs:
+    if precomputed_frbs is not None and parent_label in precomputed_frbs:
         data = precomputed_frbs[parent_label]
     else:
         data = parent.compute_fixed_resolution_buffer(
             target_data=viewer_state.reference_data,
             bounds=bounds,
             target_cid=layer_state.attribute)
-        precomputed_frbs[parent_label] = data
+        if precomputed_frbs is not None:
+            precomputed_frbs[parent_label] = data
 
     if isinstance(layer_state.layer, GroupedSubset):
         subcube = parent.compute_fixed_resolution_buffer(

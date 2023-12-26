@@ -38,8 +38,12 @@ def scatter_layer_as_glyphs(viewer_state, layer_state, glyph):
 def scatter_layer_as_multiblock(viewer_state, layer_state,
                                 theta_resolution=8,
                                 phi_resolution=8,
-                                scaled=True):
-    data = xyz_for_layer(viewer_state, layer_state, scaled=scaled, preserve_aspect=viewer_state.native_aspect)
+                                scaled=True,
+                                clip_to_bounds=True):
+    data = xyz_for_layer(viewer_state, layer_state,
+                         preserve_aspect=viewer_state.native_aspect,
+                         clip_to_bounds=clip_to_bounds,
+                         scaled=scaled)
     bounds = xyz_bounds(viewer_state)
     factor = max((abs(b[1] - b[0]) for b in bounds))
     radius = layer_state.size_scaling * layer_state.size

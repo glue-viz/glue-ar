@@ -13,6 +13,7 @@ from glue_ar.export_dialog import ARExportDialog
 
 from glue_ar.scatter import scatter_layer_as_multiblock
 from glue_ar.export import export_gl, export_modelviewer
+from glue_ar.utils import bounds_3d_from_layers
 from glue_ar.volume import bounds_3d, meshes_for_volume_layer
 
 __all__ = ["GLScatterExportTool", "GLVolumeExportTool"]
@@ -45,9 +46,13 @@ class GLScatterExportTool(Tool):
         layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         for layer_state in layer_states:
             layer_info = dialog.state_dictionary[layer_state.layer.label].as_dict()
-            mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state, **layer_info, scaled=True)
-            data = mesh_info.pop("data")
-            plotter.add_mesh(data, **mesh_info)
+            mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state,
+                                                    scaled=True,
+                                                    clip_to_bounds=dialog.state.clip_to_bounds,
+                                                    **layer_info)
+            mesh = mesh_info.pop("data")
+            if len(mesh.points) > 0:
+                plotter.add_mesh(mesh, **mesh_info)
 
         dir, base = split(export_path)
         name, ext = splitext(base)
@@ -79,8 +84,11 @@ class GLVolumeExportTool(Tool):
 
         plotter = pv.Plotter()
         layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
-        bounds = bounds_3d(self.viewer.state) 
         frbs = {}
+        if dialog.state.clip_to_bounds:
+            bounds = bounds_3d(self.viewer.state) 
+        else:
+            bounds = bounds_3d_from_layers(self.viewer.state, layer_states)
         for layer_state in layer_states:
             layer_info = dialog.state_dictionary[layer_state.layer.label].as_dict()
             if isinstance(layer_state, VolumeLayerState):
@@ -89,9 +97,12 @@ class GLVolumeExportTool(Tool):
                                                     precomputed_frbs=frbs,
                                                     **layer_info)
             else:
-                mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state, **layer_info, scaled=False)
-            data = mesh_info.pop("data")
-            plotter.add_mesh(data, **mesh_info)
+                mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state,
+                                                        scaled=False, clip_to_bounds=dialog.state.clip_to_bounds,
+                                                        **layer_info)
+            mesh = mesh_info.pop("data")
+            if len(mesh.points) > 0:
+                plotter.add_mesh(mesh, **mesh_info)
 
         dir, base = split(export_path)
         name, ext = splitext(base)
