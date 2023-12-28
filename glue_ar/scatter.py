@@ -42,6 +42,63 @@ _VECTOR_OFFSETS = {
 }
 
 
+def vector_meshes_for_layer(viewer_state, layer_state,
+                            data, bounds,
+                            tip_resolution=10,
+                            shaft_resolution=10,
+                            mask=None):
+    atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
+    tip_factor = 0.25 if layer_state.vector_arrowhead else 0
+    vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
+    if viewer_state.native_aspect:
+        factor = max((abs(b[1] - b[0]) for b in bounds))
+        vector_data = [[0.5 * t / factor for t in v] for v in vector_data]
+    else:
+        bound_factors = [abs(b[1] - b[0]) for b in bounds]
+        vector_data = [[0.5 * t / b for t in v] for v, b in zip(vector_data, bound_factors)]
+    vector_data = array(list(zip(*vector_data)))
+
+    arrows = []
+    offset = _VECTOR_OFFSETS[layer_state.vector_origin]
+    for pt, v in zip(data, vector_data):
+        adjusted_v = v * layer_state.vector_scaling
+        length = norm(adjusted_v)
+        tip_length = tip_factor * length
+        adjusted_pt = [c + offset * vc for c, vc in zip(pt, adjusted_v)]
+        arrow = pv.Arrow(
+                start=adjusted_pt,
+                direction=v,
+                shaft_resolution=shaft_resolution,
+                tip_resolution=tip_resolution,
+                shaft_radius=0.002,
+                tip_radius=0.01,
+                scale=length,
+                tip_length=tip_length)
+        arrows.append(arrow)
+
+    return arrows
+
+
+def meshes_for_error_bars(viewer_state, layer_state, axis, data, bounds, mask=None):
+    att = getattr(layer_state, f"{axis}err_attribute")
+    err_values = layer_state.layer[att].ravel()[mask]
+    index = ['x', 'y', 'z'].index(axis)
+    axis_range = abs(bounds[index][1] - bounds[index][0])
+    if viewer_state.native_aspect:
+        max_range = max((abs(b[1] - b[0]) for b in bounds))
+        factor = 1 / max_range
+    else:
+        factor = 1 / axis_range
+    err_values *= factor
+    lines = []
+    for pt, err in zip(data, err_values):
+        start = [c - err if idx == index else c for idx, c in enumerate(pt)]
+        end = [c + err if idx == index else c for idx, c in enumerate(pt)]
+        lines.append(pv.Line(start, end))
+
+    return lines
+
+
 # This function creates a multiblock mesh for a given scatter layer
 # Everything is scaled into clip space for better usability with e.g. model-viewer
 def scatter_layer_as_multiblock(viewer_state, layer_state,
@@ -49,18 +106,21 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
                                 phi_resolution=8,
                                 clip_to_bounds=True,
                                 scaled=True):
+    meshes = []
     bounds = xyz_bounds(viewer_state)
     if clip_to_bounds:
         mask = mask_for_bounds(viewer_state, layer_state, bounds)
     else:
         mask = None
+
+    fixed_color = layer_state.color_mode == "Fixed"
     data = xyz_for_layer(viewer_state, layer_state,
                          preserve_aspect=viewer_state.native_aspect,
                          mask=mask,
                          scaled=scaled)
     factor = max((abs(b[1] - b[0]) for b in bounds))
     if layer_state.size_mode == "Fixed":
-        radius = layer_state.size_scaling * sqrt((layer_state.size)) / (7 * factor)
+        radius = layer_state.size_scaling * sqrt((layer_state.size)) / (10 * factor)
         spheres = [pv.Sphere(center=p, radius=radius,
                              phi_resolution=phi_resolution,
                              theta_resolution=theta_resolution) for p in data]
@@ -81,55 +141,34 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
     blocks = pv.MultiBlock(spheres)
 
     if layer_state.vector_visible:
-        tip_resolution = 10
         shaft_resolution = 10
-        atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
-        tip_factor = 0.25 if layer_state.vector_arrowhead else 0
-        vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
-        if viewer_state.native_aspect:
-            factor = max((abs(b[1] - b[0]) for b in bounds))
-            vector_data = [[0.5 * t / factor for t in v] for v in vector_data]
-        else:
-            bound_factors = [abs(b[1] - b[0]) for b in bounds]
-            vector_data = [[0.5 * t / b for t in v] for v, b in zip(vector_data, bound_factors)]
-        vector_data = array(list(zip(*vector_data)))
-
-        arrows = []
-        offset = _VECTOR_OFFSETS[layer_state.vector_origin]
-        for pt, v in zip(data, vector_data):
-            adjusted_v = v * layer_state.vector_scaling
-            length = norm(adjusted_v)
-            tip_length = tip_factor * length
-            adjusted_pt = [c + offset * vc for c, vc in zip(pt, adjusted_v)]
-            arrow = pv.Arrow(
-                    start=adjusted_pt,
-                    direction=v,
-                    shaft_resolution=shaft_resolution,
-                    tip_resolution=tip_resolution,
-                    shaft_radius=0.002,
-                    tip_radius=0.01,
-                    scale=length,
-                    tip_length=tip_length)
-            arrows.append(arrow)
-
+        tip_resolution = 10
+        arrows = vector_meshes_for_layer(viewer_state, layer_state,
+                                         data, bounds,
+                                         tip_resolution=tip_resolution,
+                                         shaft_resolution=shaft_resolution,
+                                         mask=mask)
         blocks.extend(arrows)
+
         
-    # Note:
-    # each arrow has (4 * shaft_resolution) + tip_resolution + 1 points
-    
     geometry = blocks.extract_geometry()
     info = {
         "mesh": geometry,
         "opacity": layer_state.alpha
     }
-    if layer_state.color_mode == "Fixed":
+    meshes.append(info)
+    if fixed_color:
         info["color"] = layer_color(layer_state)
     else:
+        # NB: We need to add values to the points cmap array here
+        # in exactly the same order as we added the corresponding meshes
+        # earlier in the method, since the scalar values here have to
+        # match up point-by-point with the mesh points
         sphere_points = 2 + (phi_resolution - 2) * theta_resolution  # The number of points on each sphere
         cmap_values = layer_state.layer[layer_state.cmap_attribute][mask]
         point_cmap_values = [y for x in cmap_values for y in (x,) * sphere_points]
         if layer_state.vector_visible:
-            arrow_points = (4 * shaft_resolution) + tip_resolution + 1
+            arrow_points = (4 * shaft_resolution) + tip_resolution + 1  # The number of points on each arrow
             point_cmap_values.extend([y for x in cmap_values for y in (x,) * arrow_points])
         geometry.point_data["colors"] = point_cmap_values
         cmap = layer_state.cmap.name  # This assumes that we're using a matplotlib colormap
@@ -141,4 +180,29 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
         info["clim"] = clim
         info["scalars"] = "colors"
 
-    return info
+    # Add error bars
+    if any((layer_state.xerr_visible, layer_state.yerr_visible, layer_state.zerr_visible)):
+        bars = pv.MultiBlock()
+        bars_info = {}
+        bars_cmap_values = []
+        for axis in ['x', 'y', 'z']:
+            if getattr(layer_state, f"{axis}err_visible"):
+                axis_bars = meshes_for_error_bars(viewer_state, layer_state,
+                                             axis, data, bounds, mask=mask)
+                bars.extend(axis_bars)
+                if not fixed_color:
+                    bars_cmap_values.extend([y for x in cmap_values for y in (x,) * 2])  # Each line has just two points
+
+        bars_geometry = bars.extract_geometry()
+        bars_info["mesh"] = bars_geometry
+        if fixed_color:
+            bars_info["color"] = layer_color(layer_state)
+        else:
+            bars_geometry.point_data["colors"] = bars_cmap_values
+            bars_info["cmap"] = cmap
+            bars_info["clim"] = clim
+            bars_info["scalars"] = "colors"
+
+        meshes.append(bars_info)
+
+    return meshes

@@ -46,13 +46,15 @@ class GLScatterExportTool(Tool):
         layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         for layer_state in layer_states:
             layer_info = dialog.state_dictionary[layer_state.layer.label].as_dict()
-            mesh_info = scatter_layer_as_multiblock(self.viewer.state, layer_state,
+            meshes = scatter_layer_as_multiblock(self.viewer.state, layer_state,
                                                     scaled=True,
                                                     clip_to_bounds=self.viewer.state.clip_data,
                                                     **layer_info)
-            mesh = mesh_info.pop("mesh")
-            if len(mesh.points) > 0:
-                plotter.add_mesh(mesh, **mesh_info)
+            for mesh_info in meshes:
+                mesh = mesh_info.pop("mesh")
+                print(mesh)
+                if len(mesh.points) > 0:
+                    plotter.add_mesh(mesh, **mesh_info)
 
         dir, base = split(export_path)
         name, ext = splitext(base)
