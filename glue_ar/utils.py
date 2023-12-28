@@ -1,5 +1,5 @@
 from glue.core.subset_group import GroupedSubset
-from numpy import array, inf
+from numpy import array, half, inf
 
 
 def isomin_for_layer(viewer_state, layer):
@@ -29,6 +29,12 @@ def bounds_3d_from_layers(viewer_state, layer_states):
     return [(l, u) for l, u in zip(mins, maxes)]
 
 
+def slope_intercept_between(a, b):
+    slope = (b[1] - a[1]) / (b[0] - a[0])
+    intercept = b[1] - slope * b[0]
+    return slope, intercept
+
+
 # TODO: Make this better?
 # glue-plotly has had to deal with similar issues,
 # the utilities there are at least better than this
@@ -39,23 +45,31 @@ def layer_color(layer_state):
     return layer_color
 
 
-def scale(data, bounds, preserve_aspect=True):
+def bring_into_clip(data, bounds, preserve_aspect=True):
     if preserve_aspect:
         ranges = [abs(bds[1] - bds[0]) for bds in bounds]
         max_range = max(ranges)
-        index = ranges.index(max_range)
-        bds = bounds[index]
-        m = 2 / (bds[1] - bds[0])
-        b = (bds[0] + bds[1]) / (bds[1] - bds[0])
-        scaled = [[m * v + b for v in d] for d in data]
+        line_data = []
+        for bds, rg in zip(bounds, ranges):
+            frac = rg / max_range
+            half_frac = frac / 2
+            line_data.append(slope_intercept_between((bds[0], -half_frac), (bds[1], half_frac)))
     else:
-        scaled = []
-        for idx, bds in enumerate(bounds):
-            m = 2 / (bds[1] - bds[0])
-            b = (bds[0] + bds[1]) / (bds[1] - bds[0])
-            scaled.append([m * d + b for d in data[idx]])
+        line_data = [slope_intercept_between((bds[0], -1), (bds[1], 1)) for bds in bounds]
+
+    scaled = [[m * d + b for d in data[idx]] for idx, (m, b) in enumerate(line_data)]
     
     return scaled
+
+
+def mask_for_bounds(viewer_state, layer_state, bounds):
+    data = layer_state.layer
+    return (data[viewer_state.x_att] >= bounds[0][0]) & \
+           (data[viewer_state.x_att] <= bounds[0][1]) & \
+           (data[viewer_state.y_att] >= bounds[1][0]) & \
+           (data[viewer_state.y_att] <= bounds[1][1]) & \
+           (data[viewer_state.z_att] >= bounds[2][0]) & \
+           (data[viewer_state.z_att] <= bounds[2][1])
 
 
 # TODO: Worry about efficiency later
@@ -63,26 +77,14 @@ def scale(data, bounds, preserve_aspect=True):
 def xyz_for_layer(viewer_state, layer_state,
                   scaled=False,
                   preserve_aspect=True,
-                  clip_to_bounds=True):
-    xs = layer_state.layer[viewer_state.x_att]
-    ys = layer_state.layer[viewer_state.y_att]
-    zs = layer_state.layer[viewer_state.z_att]
+                  mask=None):
+    xs = layer_state.layer[viewer_state.x_att][mask]
+    ys = layer_state.layer[viewer_state.y_att][mask]
+    zs = layer_state.layer[viewer_state.z_att][mask]
     vals = [xs, ys, zs]
 
-    if scaled or clip_to_bounds:
+    if scaled:
         bounds = xyz_bounds(viewer_state)
-        if clip_to_bounds:
-            xs, ys, zs = [], [], []
-            for x, y, z in zip(*vals):
-                if (x >= bounds[0][0] and x <= bounds[0][1]) and \
-                   (y >= bounds[1][0] and y <= bounds[1][1]) and \
-                   (z >= bounds[2][0] and z <= bounds[2][1]):
-                       xs.append(x)
-                       ys.append(y)
-                       zs.append(z)
-            vals = [xs, ys, zs]
-
-        if scaled:
-            vals = scale(vals, bounds, preserve_aspect=preserve_aspect)
+        vals = bring_into_clip(vals, bounds, preserve_aspect=preserve_aspect)
         
     return array(list(zip(*vals)))
