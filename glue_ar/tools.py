@@ -52,7 +52,6 @@ class GLScatterExportTool(Tool):
                                                     **layer_info)
             for mesh_info in meshes:
                 mesh = mesh_info.pop("mesh")
-                print(mesh)
                 if len(mesh.points) > 0:
                     plotter.add_mesh(mesh, **mesh_info)
 

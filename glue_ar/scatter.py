@@ -138,8 +138,15 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
         spheres = [pv.Sphere(center=p, radius=r,
                              phi_resolution=phi_resolution,
                              theta_resolution=theta_resolution) for p, r in zip(data, sizes)]
+
+    if not fixed_color:
+        sphere_points = 2 + (phi_resolution - 2) * theta_resolution  # The number of points on each sphere
+        cmap_values = layer_state.layer[layer_state.cmap_attribute][mask]
+        point_cmap_values = [y for x in cmap_values for y in (x,) * sphere_points]
+
     blocks = pv.MultiBlock(spheres)
 
+    # Create the meshes for vectors, if necessary
     if layer_state.vector_visible:
         shaft_resolution = 10
         tip_resolution = 10
@@ -148,9 +155,10 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
                                          tip_resolution=tip_resolution,
                                          shaft_resolution=shaft_resolution,
                                          mask=mask)
+        arrow_points = (4 * shaft_resolution) + tip_resolution + 1  # The number of points on each arrow
+        point_cmap_values.extend([y for x in cmap_values for y in (x,) * arrow_points])
         blocks.extend(arrows)
 
-        
     geometry = blocks.extract_geometry()
     info = {
         "mesh": geometry,
@@ -160,16 +168,6 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
     if fixed_color:
         info["color"] = layer_color(layer_state)
     else:
-        # NB: We need to add values to the points cmap array here
-        # in exactly the same order as we added the corresponding meshes
-        # earlier in the method, since the scalar values here have to
-        # match up point-by-point with the mesh points
-        sphere_points = 2 + (phi_resolution - 2) * theta_resolution  # The number of points on each sphere
-        cmap_values = layer_state.layer[layer_state.cmap_attribute][mask]
-        point_cmap_values = [y for x in cmap_values for y in (x,) * sphere_points]
-        if layer_state.vector_visible:
-            arrow_points = (4 * shaft_resolution) + tip_resolution + 1  # The number of points on each arrow
-            point_cmap_values.extend([y for x in cmap_values for y in (x,) * arrow_points])
         geometry.point_data["colors"] = point_cmap_values
         cmap = layer_state.cmap.name  # This assumes that we're using a matplotlib colormap
         clim = [layer_state.cmap_vmin, layer_state.cmap_vmax]
@@ -181,6 +179,9 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
         info["scalars"] = "colors"
 
     # Add error bars
+    # We make these their own mesh because (for some reason) they disrupt the coloring of the
+    # points and arrows if they're together in one MultiBlock
+    # TODO: Why is this?
     if any((layer_state.xerr_visible, layer_state.yerr_visible, layer_state.zerr_visible)):
         bars = pv.MultiBlock()
         bars_info = {}
