@@ -44,7 +44,7 @@ def export_gl(plotter, filepath, with_alpha=True):
     plotter.export_gltf(gltf_path)
 
     if glb or with_alpha:
-        gl = GLTF.load(gltf_path)
+        gl = GLTF.load_gltf(gltf_path)
         if with_alpha and gl.model.materials is not None:
             for material in gl.model.materials:
                 material.alphaMode = "BLEND"

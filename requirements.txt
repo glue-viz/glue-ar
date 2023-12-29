@@ -2,4 +2,6 @@ gltflib
 glue-core
 glue-qt
 glue-vispy-viewers
+pillow
 pyvista
+segno
