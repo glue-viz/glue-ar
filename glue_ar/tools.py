@@ -51,7 +51,7 @@ def create_plotter(viewer, state_dictionary):
                                                 **layer_info)
         else:
             meshes = scatter_layer_as_multiblock(viewer.state, layer_state,
-                                                    scaled=False,
+                                                    scaled=True,
                                                     clip_to_bounds=viewer.state.clip_data,
                                                     **layer_info)
         for mesh_info in meshes:
@@ -75,6 +75,8 @@ class ARExportTool(Tool):
     tool_id = "ar:export"
     action_text = "Export to 3D"
     tool_tip = "Export the current view to a 3D file"
+
+    _default_filename = "glue_export"
 
     def activate(self):
 
@@ -127,7 +129,6 @@ class ARLocalQRTool(Tool):
                 ip = get_local_ip()
                 url = f"http://{ip}:{port}/{filename}"
                 img = create_qr(url)
-                print(url)
                 dialog = QRDialog(parent=self.viewer, img=img)
                 dialog.exec_()
 
