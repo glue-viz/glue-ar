@@ -25,7 +25,6 @@ def bounds_3d_from_layers(viewer_state, layer_states):
         data = state.layer.layer
         mins = [min(min(data[att]), m) for m, att in zip(mins, atts)]
         maxes = [max(max(data[att]), m) for m, att in zip(maxes, atts)]
-        print(mins)
     return [(l, u) for l, u in zip(mins, maxes)]
 
 
