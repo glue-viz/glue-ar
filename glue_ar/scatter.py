@@ -140,9 +140,9 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
                              theta_resolution=theta_resolution) for p, r in zip(data, sizes)]
 
     if not fixed_color:
-        sphere_points = 2 + (phi_resolution - 2) * theta_resolution  # The number of points on each sphere
+        points_per_sphere = 2 + (phi_resolution - 2) * theta_resolution
         cmap_values = layer_state.layer[layer_state.cmap_attribute][mask]
-        point_cmap_values = [y for x in cmap_values for y in (x,) * sphere_points]
+        point_cmap_values = [y for x in cmap_values for y in (x,) * points_per_sphere]
 
     blocks = pv.MultiBlock(spheres)
 
@@ -155,8 +155,8 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
                                          tip_resolution=tip_resolution,
                                          shaft_resolution=shaft_resolution,
                                          mask=mask)
-        arrow_points = (4 * shaft_resolution) + tip_resolution + 1  # The number of points on each arrow
-        point_cmap_values.extend([y for x in cmap_values for y in (x,) * arrow_points])
+        points_per_arrow = (4 * shaft_resolution) + tip_resolution + 1
+        point_cmap_values.extend([y for x in cmap_values for y in (x,) * points_per_arrow])
         blocks.extend(arrows)
 
     geometry = blocks.extract_geometry()
