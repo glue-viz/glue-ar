@@ -63,6 +63,7 @@ def bring_into_clip(data, bounds, preserve_aspect=True):
 
 def mask_for_bounds(viewer_state, layer_state, bounds):
     data = layer_state.layer
+    bounds = [(min(b), max(b)) for b in bounds]
     return (data[viewer_state.x_att] >= bounds[0][0]) & \
            (data[viewer_state.x_att] <= bounds[0][1]) & \
            (data[viewer_state.y_att] >= bounds[1][0]) & \
