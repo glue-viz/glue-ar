@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>330</width>
-    <height>379</height>
+    <width>315</width>
+    <height>351</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>View in AR</string>
@@ -18,9 +24,15 @@
     <rect>
      <x>9</x>
      <y>9</y>
-     <width>293</width>
+     <width>300</width>
      <height>32</height>
     </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
    </property>
    <property name="text">
     <string>Note: This QR code will only work for devices
@@ -31,10 +43,16 @@ connected to the same network as this computer</string>
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>60</y>
+     <y>50</y>
      <width>300</width>
      <height>300</height>
     </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
    </property>
    <property name="text">
     <string/>

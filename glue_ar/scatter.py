@@ -113,6 +113,8 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
     else:
         mask = None
 
+    theta_resolution = int(theta_resolution)
+    phi_resolution = int(phi_resolution)
     fixed_color = layer_state.color_mode == "Fixed"
     data = xyz_for_layer(viewer_state, layer_state,
                          preserve_aspect=viewer_state.native_aspect,
@@ -121,6 +123,7 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
     factor = max((abs(b[1] - b[0]) for b in bounds))
     if layer_state.size_mode == "Fixed":
         radius = layer_state.size_scaling * sqrt((layer_state.size)) / (10 * factor)
+        print(radius)
         spheres = [pv.Sphere(center=p, radius=radius,
                              phi_resolution=phi_resolution,
                              theta_resolution=theta_resolution) for p in data]

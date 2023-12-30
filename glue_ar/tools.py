@@ -33,7 +33,8 @@ AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
 def create_plotter(viewer, state_dictionary):
     plotter = pv.Plotter()
     layer_states = [layer.state for layer in viewer.layers if layer.enabled and layer.state.visible]
-    if isinstance(viewer.state, Vispy3DScatterViewerState):
+    scatter_viewer = isinstance(viewer.state, Vispy3DScatterViewerState)
+    if scatter_viewer:
         bounds = xyz_bounds(viewer.state)
     elif viewer.state.clip_data:
         bounds = bounds_3d(viewer.state)
@@ -51,7 +52,7 @@ def create_plotter(viewer, state_dictionary):
                                                 **layer_info)
         else:
             meshes = scatter_layer_as_multiblock(viewer.state, layer_state,
-                                                    scaled=True,
+                                                    scaled=scatter_viewer,
                                                     clip_to_bounds=viewer.state.clip_data,
                                                     **layer_info)
         for mesh_info in meshes:
@@ -80,7 +81,7 @@ class ARExportTool(Tool):
 
     def activate(self):
 
-        dialog = ARExportDialog(parent=self.viewer, viewer_state=self.viewer.state)
+        dialog = ARExportDialog(parent=self.viewer, viewer=self.viewer)
         result = dialog.exec_()
         if result == QDialog.Rejected:
             return

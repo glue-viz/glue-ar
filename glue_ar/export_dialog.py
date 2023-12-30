@@ -42,31 +42,31 @@ class ARExportDialogState(State):
     filetype = SelectionCallbackProperty()
     layer = SelectionCallbackProperty()
 
-    def __init__(self, viewer_state):
+    def __init__(self, layers):
 
         super(ARExportDialogState, self).__init__()
 
         self.filetype_helper = ComboHelper(self, 'filetype')
         self.filetype_helper.choices = ['glTF', 'OBJ']
 
-        self.layers = [state for state in viewer_state.layers if state.visible]
+        self.layers = layers
         self.layer_helper = ComboHelper(self, 'layer')
         self.layer_helper.choices = [state.layer.label for state in self.layers]
 
 
 class ARExportDialog(QDialog):
 
-    def __init__(self, parent=None, viewer_state=None):
+    def __init__(self, parent=None, viewer=None):
 
         super(ARExportDialog, self).__init__(parent=parent)
 
-        self.viewer_state = viewer_state
-        self.state = ARExportDialogState(self.viewer_state)
+        self.viewer = viewer
+        layers = [layer for layer in self.viewer.layers if layer.enabled and layer.state.visible]
+        self.state = ARExportDialogState(layers)
         self.ui = load_ui('export_dialog.ui', self, directory=os.path.dirname(__file__))
 
-        layers = [state for state in self.viewer_state.layers if state.visible]
         self.state_dictionary = {
-            layer.layer.label: ar_layer_export.members[type(layer)]()
+            layer.layer.label: ar_layer_export.members[type(layer.state)]()
             for layer in layers
         }
 
