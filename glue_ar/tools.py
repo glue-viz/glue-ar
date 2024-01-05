@@ -6,6 +6,7 @@ from threading import Thread
 from glue_vispy_viewers.scatter.scatter_viewer import Vispy3DScatterViewerState
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 
+import ngrok
 import pyvista as pv
 
 from qtpy import compat
@@ -119,19 +120,25 @@ class ARLocalQRTool(Tool):
             _, gltf_base = split(gltf_tmp.name)
             export_modelviewer(html_tmp.name, gltf_base, self.viewer.state.title)
 
+
             port = 4000
             directory, filename = split(html_tmp.name)
             server = run_ar_server(port, directory)
+            listener = ngrok.forward(port, authtoken_from_env=True)
 
             try:
                 thread = Thread(target=server.serve_forever)
                 thread.start()
 
-                ip = get_local_ip()
-                url = f"http://{ip}:{port}/{filename}"
+                # ip = get_local_ip()
+                # url = f"http://{ip}:{port}/{filename}"
+
+                url = f"{listener.url()}/{filename}"
                 img = create_qr(url)
                 dialog = QRDialog(parent=self.viewer, img=img)
                 dialog.exec_()
 
             finally:
                 server.shutdown()
+                listener.close()
+        

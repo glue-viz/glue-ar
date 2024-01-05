@@ -16,4 +16,5 @@ class QRDialog(QDialog):
         self.pix = QPixmap.fromImage(self.img)
         self.ui = load_ui("qr_dialog.ui", self, directory=dirname(__file__))
         self.ui.label_image.setPixmap(self.pix)
-        self.setFixedSize(300, 325)
+        width, height = img.size
+        self.setFixedSize(width, height + 25)
