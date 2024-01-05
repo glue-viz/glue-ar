@@ -2,6 +2,7 @@ gltflib
 glue-core
 glue-qt
 glue-vispy-viewers
+ngrok
 pillow
 pyvista
 segno
