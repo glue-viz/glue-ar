@@ -124,21 +124,24 @@ class ARLocalQRTool(Tool):
             port = 4000
             directory, filename = split(html_tmp.name)
             server = run_ar_server(port, directory)
-            listener = ngrok.forward(port, authtoken_from_env=True)
+            use_ngrok = os.getenv("NGROK_AUTHTOKEN", None) is not None
 
             try:
                 thread = Thread(target=server.serve_forever)
                 thread.start()
 
-                # ip = get_local_ip()
-                # url = f"http://{ip}:{port}/{filename}"
-
-                url = f"{listener.url()}/{filename}"
+                if use_ngrok:
+                    listener = ngrok.forward(port, authtoken_from_env=True)
+                    url = f"{listener.url()}/{filename}"
+                else:
+                    ip = get_local_ip()
+                    url = f"http://{ip}:{port}/{filename}"
                 img = create_qr(url)
                 dialog = QRDialog(parent=self.viewer, img=img)
                 dialog.exec_()
 
             finally:
                 server.shutdown()
-                listener.close()
+                if use_ngrok:
+                    listener.close()
         
