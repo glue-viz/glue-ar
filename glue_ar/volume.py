@@ -1,4 +1,4 @@
-from numpy import invert, nan_to_num
+from numpy import invert, isfinite, nan_to_num
 import pyvista as pv
 from scipy.ndimage import gaussian_filter
 
@@ -29,6 +29,7 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
             target_cid=layer_state.attribute)
         if precomputed_frbs is not None:
             precomputed_frbs[parent_label] = data
+        data[~isfinite(data)] = 0
 
     if isinstance(layer_state.layer, GroupedSubset):
         subcube = parent.compute_fixed_resolution_buffer(
