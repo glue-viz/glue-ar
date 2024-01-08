@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>315</width>
-    <height>351</height>
+    <height>372</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -43,7 +43,7 @@ connected to the same network as this computer</string>
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>50</y>
+     <y>69</y>
      <width>300</width>
      <height>300</height>
     </rect>
@@ -53,6 +53,19 @@ connected to the same network as this computer</string>
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_url">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>40</y>
+     <width>291</width>
+     <height>20</height>
+    </rect>
    </property>
    <property name="text">
     <string/>
