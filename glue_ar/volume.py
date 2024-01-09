@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import invert, isfinite, isnan
+from numpy import full, invert, isfinite, isnan
 import pyvista as pv
 from scipy.ndimage import gaussian_filter
 
@@ -57,10 +57,16 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     # Comment from Luca: # I think the voxel spacing will always be 1, because of how glue downsamples to a fixed resolution grid. But don't hold me to this!
     grid.spacing = (1, 1, 1)
     values = data.flatten(order="F")
-    cvalues = values - isomin
-    cvalues *= 1 / (isomax - isomin)
+    opacities = values - isomin
+    opacities *= layer_state.alpha / (isomax - isomin)
     grid.point_data["values"] = values
-    grid.point_data["cvalues"] = cvalues
+    grid.point_data["opacities"] = opacities
+
+    color = layer_color(layer_state)
+    # We make a simple "colormap" where the RGB portion is constant
+    # and A goes from 0 -> 1 over the range [isomin, isomax]
+    cmap = [f"{color}00", f"{color}FF"]
+    grid.point_data["colors"] = full(values.shape, color)
 
     isosurfaces = np.linspace(isomin, isomax, num=10)
     isodata = grid.contour(isosurfaces)
@@ -68,14 +74,16 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     if smoothing_iterations > 0:
         isodata = isodata.smooth(n_iter=int(smoothing_iterations))
 
-    color = layer_color(layer_state)
+
 
     return [{
         "mesh": isodata,
         "color": color,
-        "opacity": layer_state.alpha,
-        "scalars": "cvalues",
-        "cmap": [f"{color}00", f"{color}FF"],
+        "opacity": "opacities",
+        "scalars": "colors",
+
+        # "cmap": cmap,
+
         # "clim": [isomin, isomax],
         # "isomin": isomin,
     }]
