@@ -15,6 +15,7 @@ from glue_ar.utils import isomin_for_layer, isomax_for_layer, layer_color
 # get the same effect as in glue in the exported file
 def meshes_for_volume_layer(viewer_state, layer_state, bounds,
                             use_gaussian_filter=False, smoothing_iterations=0,
+                            isosurface_count=5,
                             precomputed_frbs=None):
 
     layer_content = layer_state.layer
@@ -84,7 +85,7 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     cmap = [color]
     grid.point_data["colors"] = colors
 
-    isosurfaces = np.linspace(isomin, isomax, num=10)
+    isosurfaces = np.linspace(isomin, isomax, num=int(isosurface_count))
     isodata = grid.contour(isosurfaces)
 
     if smoothing_iterations > 0:

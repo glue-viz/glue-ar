@@ -11,3 +11,4 @@ class ARVolumeExportOptions(State):
 
     use_gaussian_filter = CallbackProperty(False)
     smoothing_iterations = CallbackProperty(0)
+    isosurface_count = CallbackProperty(5)
