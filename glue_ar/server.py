@@ -3,6 +3,7 @@ from os.path import split
 from http.server import SimpleHTTPRequestHandler
 from socketserver import TCPServer
 
+
 def create_handler(directory):
 
     class ARHttpRequestHandler(SimpleHTTPRequestHandler):

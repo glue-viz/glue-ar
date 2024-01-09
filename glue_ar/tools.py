@@ -140,10 +140,11 @@ class ARLocalQRTool(Tool):
                 dialog.exec_()
 
             finally:
-                server.shutdown()
                 if use_ngrok:
                     try:
-                        listener.close()
+                        ngrok.disconnect(listener.url())
                     except RuntimeError:
                         pass
-        
+                server.shutdown()
+                server.server_close()
+

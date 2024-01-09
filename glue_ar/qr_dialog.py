@@ -20,4 +20,4 @@ class QRDialog(QDialog):
         self.ui.label_url.setText(f"<a href=\"{url}\">Open 3D view</a>")
         self.ui.label_image.setPixmap(self.pix)
         width, height = img.size
-        self.setFixedSize(width, height + 70)
+        self.setFixedSize(width, height + 30)
