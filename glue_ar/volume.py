@@ -63,7 +63,7 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     grid.point_data["opacities"] = opacities
 
     color = layer_color(layer_state)
-    colors = full(values.shape, color)
+    colors = full(values.shape, 0.5)
     # We need a "colormap" to map the scalars to
     # but we want a constant color, so our cmap is just one entry
     cmap = [color]
@@ -81,6 +81,7 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
         "opacity": "opacities",
         "scalars": "colors",
         "cmap": cmap,
+        "clim": [0, 1],
     }]
 
 
