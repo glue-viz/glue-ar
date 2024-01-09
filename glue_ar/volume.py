@@ -53,8 +53,22 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     grid = pv.ImageData()
     grid.dimensions = (viewer_state.resolution,) * 3
     grid.origin = (viewer_state.x_min, viewer_state.y_min, viewer_state.z_min)
-    # Comment from Luca: # I think the voxel spacing will always be 1, because of how glue downsamples to a fixed resolution grid. But don't hold me to this!
-    grid.spacing = (1, 1, 1)
+
+    # Comment from Luca: # I think the voxel spacing will always be 1,
+    # because of how glue downsamples to a fixed resolution grid. But don't hold me to this!
+    #
+    # However, we're not using that idea anymore - the spacing entries can be floats,
+    # so we just calculate them based on the axis ranges and the resolution
+    ranges = (
+        viewer_state.x_max - viewer_state.x_min,
+        viewer_state.y_max - viewer_state.y_min,
+        viewer_state.z_max - viewer_state.z_min
+    )
+    if viewer_state.native_aspect:
+        grid.spacing = tuple(r / viewer_state.resolution for r in ranges)
+    else:
+        max_range = max(ranges)
+        grid.spacing = (max_range / viewer_state.resolution,) * 3
     values = data.flatten(order="F")
     opacities = values - isomin
     opacities *= layer_state.alpha / (isomax - isomin)
