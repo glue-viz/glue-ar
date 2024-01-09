@@ -26,7 +26,12 @@ def export_gl_by_extension(exporter, filepath):
         exporter.export_glb(filepath)
     elif ext == ".gltf":
         exporter.export_gltf(filepath)
-        run(["gltf-pipeline", "-i", filepath, "-o", filepath, "-d"], capture_output=False)
+        # If gltf-pipeline is installed, use Draco compression
+        # TODO: Find a not-hacky way to do this!
+        try:
+            run(["gltf-pipeline", "-i", filepath, "-o", filepath, "-d"], capture_output=False)
+        except:
+            pass
     else:
         raise ValueError("File extension should be either .glb or .gltf")
 
