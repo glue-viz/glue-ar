@@ -1,5 +1,6 @@
 from os import remove
 from os.path import splitext
+from subprocess import run
 
 import pyvista as pv
 from gltflib import GLTF
@@ -18,12 +19,19 @@ def export_meshes(meshes, output_path):
     else:
         raise ValueError("Unsupported extension!")
 
+
 def export_gl_by_extension(exporter, filepath):
     _, ext = splitext(filepath)
     if ext == ".glb":
         exporter.export_glb(filepath)
     elif ext == ".gltf":
         exporter.export_gltf(filepath)
+        # If gltf-pipeline is installed, use Draco compression
+        # TODO: Find a not-hacky way to do this!
+        try:
+            run(["gltf-pipeline", "-i", filepath, "-o", filepath, "-d"], capture_output=False)
+        except:
+            pass
     else:
         raise ValueError("File extension should be either .glb or .gltf")
 
@@ -43,14 +51,13 @@ def export_gl(plotter, filepath, with_alpha=True):
 
     plotter.export_gltf(gltf_path)
 
-    if glb or with_alpha:
-        gl = GLTF.load_gltf(gltf_path)
-        if with_alpha and gl.model.materials is not None:
-            for material in gl.model.materials:
-                material.alphaMode = "BLEND"
-        export_gl_by_extension(gl, filepath)
-        if glb:
-            remove(gltf_path)
+    gl = GLTF.load_gltf(gltf_path)
+    if with_alpha and gl.model.materials is not None:
+        for material in gl.model.materials:
+            material.alphaMode = "BLEND"
+    export_gl_by_extension(gl, filepath)
+    if glb:
+        remove(gltf_path)
 
 
 def export_modelviewer(output_path, gltf_path, alt_text):

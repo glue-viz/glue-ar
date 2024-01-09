@@ -15,7 +15,7 @@ from qtpy.QtWidgets import QDialog
 from glue.config import viewer_tool
 from glue.viewers.common.tool import SimpleToolMenu, Tool
 from glue_ar.export_dialog import ARExportDialog
-from glue_ar.qr import create_qr, get_local_ip
+from glue_ar.qr import get_local_ip
 from glue_ar.qr_dialog import QRDialog
 
 from glue_ar.scatter import scatter_layer_as_multiblock
@@ -48,14 +48,14 @@ def create_plotter(viewer, state_dictionary):
             layer_info = layer_info.as_dict()
         if isinstance(layer_state, VolumeLayerState):
             meshes = meshes_for_volume_layer(viewer.state, layer_state,
-                                                bounds=bounds,
-                                                precomputed_frbs=frbs,
-                                                **layer_info)
+                                             bounds=bounds,
+                                             precomputed_frbs=frbs,
+                                             **layer_info)
         else:
             meshes = scatter_layer_as_multiblock(viewer.state, layer_state,
-                                                    scaled=scatter_viewer,
-                                                    clip_to_bounds=viewer.state.clip_data,
-                                                    **layer_info)
+                                                 scaled=scatter_viewer,
+                                                 clip_to_bounds=viewer.state.clip_data,
+                                                 **layer_info)
         for mesh_info in meshes:
             mesh = mesh_info.pop("mesh")
             if len(mesh.points) > 0:
@@ -136,12 +136,15 @@ class ARLocalQRTool(Tool):
                 else:
                     ip = get_local_ip()
                     url = f"http://{ip}:{port}/{filename}"
-                img = create_qr(url)
-                dialog = QRDialog(parent=self.viewer, img=img)
+                dialog = QRDialog(parent=self.viewer, url=url)
                 dialog.exec_()
 
             finally:
-                server.shutdown()
                 if use_ngrok:
-                    listener.close()
-        
+                    try:
+                        ngrok.disconnect(listener.url())
+                    except RuntimeError:
+                        pass
+                server.shutdown()
+                server.server_close()
+

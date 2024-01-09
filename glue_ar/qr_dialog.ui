@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>315</width>
-    <height>351</height>
+    <height>350</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,31 +19,11 @@
   <property name="windowTitle">
    <string>View in AR</string>
   </property>
-  <widget class="QLabel" name="label_message">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>9</y>
-     <width>300</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="text">
-    <string>Note: This QR code will only work for devices
-connected to the same network as this computer</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="label_image">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>50</y>
+     <y>40</y>
      <width>300</width>
      <height>300</height>
     </rect>
@@ -56,6 +36,25 @@ connected to the same network as this computer</string>
    </property>
    <property name="text">
     <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_url">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>291</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="openExternalLinks">
+    <bool>true</bool>
+   </property>
+   <property name="textInteractionFlags">
+    <set>Qt::TextBrowserInteraction</set>
    </property>
   </widget>
  </widget>

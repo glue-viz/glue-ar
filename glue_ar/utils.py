@@ -11,6 +11,15 @@ def isomin_for_layer(viewer_state, layer):
     return layer.vmin
 
 
+def isomax_for_layer(viewer_state, layer):
+    if isinstance(layer.layer, GroupedSubset):
+        for viewer_layer in viewer_state.layers:
+            if viewer_layer.layer is layer.layer.data:
+                return viewer_layer.vmax
+
+    return layer.vmax
+
+
 def xyz_bounds(viewer_state):
     return [(viewer_state.x_min, viewer_state.x_max),
             (viewer_state.y_min, viewer_state.y_max),

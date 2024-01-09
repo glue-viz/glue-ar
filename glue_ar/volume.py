@@ -1,12 +1,13 @@
-from numpy import invert, nan_to_num
+import numpy as np
+from numpy import clip, full, invert, isfinite, isnan
 import pyvista as pv
 from scipy.ndimage import gaussian_filter
 
 from glue.core.subset_group import GroupedSubset
-from glue_ar.utils import isomin_for_layer, layer_color
+from glue_ar.utils import isomin_for_layer, isomax_for_layer, layer_color
 
 
-# Trying to export each layer individually, rather than doing all of the meshes
+# Trying to export each layer individually, rather than doing all the meshes
 # as a global operation on the viewer.
 # The main difference here is that we aren't excising the subset points from
 # the parent mesh as Luca's plugin did.
@@ -29,6 +30,7 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
             target_cid=layer_state.attribute)
         if precomputed_frbs is not None:
             precomputed_frbs[parent_label] = data
+        data[~isfinite(data)] = 0
 
     if isinstance(layer_state.layer, GroupedSubset):
         subcube = parent.compute_fixed_resolution_buffer(
@@ -36,13 +38,14 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
             bounds=bounds,
             subset_state=layer_state.layer.subset_state
         )
-        data = subcube * data 
-        nan_to_num(data, copy=False, nan=0)
+        data = subcube * data
+        data[isnan(data)] = 0.
 
     if use_gaussian_filter:
         data = gaussian_filter(data, 1)
 
     isomin = isomin_for_layer(viewer_state, layer_state)
+    isomax = isomax_for_layer(viewer_state, layer_state)
 
     # Conventions between pyvista and glue data storage
     data = data.transpose(2, 1, 0)
@@ -50,19 +53,50 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     grid = pv.ImageData()
     grid.dimensions = (viewer_state.resolution,) * 3
     grid.origin = (viewer_state.x_min, viewer_state.y_min, viewer_state.z_min)
-    # Comment from Luca: # I think the voxel spacing will always be 1, because of how glue downsamples to a fixed resolution grid. But don't hold me to this!
-    grid.spacing = (1, 1, 1)
-    grid.point_data["values"] = data.flatten(order="F")
-    isodata = grid.contour([isomin])
+
+    # Comment from Luca: # I think the voxel spacing will always be 1,
+    # because of how glue downsamples to a fixed resolution grid. But don't hold me to this!
+    #
+    # However, we're not using that idea anymore - the spacing entries can be floats,
+    # so we just calculate them based on the axis ranges and the resolution
+
+    if viewer_state.native_aspect:
+        ranges = (
+            viewer_state.x_max - viewer_state.x_min,
+            viewer_state.y_max - viewer_state.y_min,
+            viewer_state.z_max - viewer_state.z_min
+        )
+        max_range = max(ranges)
+        grid.spacing = tuple(r / (viewer_state.resolution * max_range) for r in ranges)
+    else:
+        grid.spacing = (1 / viewer_state.resolution,) * 3
+    values = data.flatten(order="F")
+    opacities = values - isomin
+    opacities *= layer_state.alpha / (isomax - isomin)
+    clip(opacities, 0, 1, out=opacities)
+    grid.point_data["values"] = values
+    grid.point_data["opacities"] = opacities
+
+    color = layer_color(layer_state)
+    colors = full(values.shape, 0.5)
+    # We need a "colormap" to map the scalars to
+    # but we want a constant color, so our cmap is just one entry
+    cmap = [color]
+    grid.point_data["colors"] = colors
+
+    isosurfaces = np.linspace(isomin, isomax, num=10)
+    isodata = grid.contour(isosurfaces)
 
     if smoothing_iterations > 0:
         isodata = isodata.smooth(n_iter=int(smoothing_iterations))
 
     return [{
         "mesh": isodata,
-        "color": layer_color(layer_state),
-        "opacity": layer_state.alpha,
-        # "isomin": isomin,
+        "color": color,
+        "opacity": "opacities",
+        "scalars": "colors",
+        "cmap": cmap,
+        "clim": [0, 1],
     }]
 
 

@@ -123,7 +123,6 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
     factor = max((abs(b[1] - b[0]) for b in bounds))
     if layer_state.size_mode == "Fixed":
         radius = layer_state.size_scaling * sqrt((layer_state.size)) / (10 * factor)
-        print(radius)
         spheres = [pv.Sphere(center=p, radius=radius,
                              phi_resolution=phi_resolution,
                              theta_resolution=theta_resolution) for p in data]
