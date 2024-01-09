@@ -1,9 +1,10 @@
-from numpy import invert, isfinite, nan_to_num
+import numpy as np
+from numpy import invert, isfinite, isnan
 import pyvista as pv
 from scipy.ndimage import gaussian_filter
 
 from glue.core.subset_group import GroupedSubset
-from glue_ar.utils import isomin_for_layer, layer_color
+from glue_ar.utils import isomin_for_layer, isomax_for_layer, layer_color
 
 
 # Trying to export each layer individually, rather than doing all of the meshes
@@ -37,13 +38,15 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
             bounds=bounds,
             subset_state=layer_state.layer.subset_state
         )
-        data = subcube * data 
-        nan_to_num(data, copy=False, nan=0)
+        data = subcube * data
+        data[isnan(data)] = 0.
+        # nan_to_num(data, copy=False, nan=0)
 
     if use_gaussian_filter:
         data = gaussian_filter(data, 1)
 
     isomin = isomin_for_layer(viewer_state, layer_state)
+    isomax = isomax_for_layer(viewer_state, layer_state)
 
     # Conventions between pyvista and glue data storage
     data = data.transpose(2, 1, 0)
@@ -53,16 +56,27 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     grid.origin = (viewer_state.x_min, viewer_state.y_min, viewer_state.z_min)
     # Comment from Luca: # I think the voxel spacing will always be 1, because of how glue downsamples to a fixed resolution grid. But don't hold me to this!
     grid.spacing = (1, 1, 1)
-    grid.point_data["values"] = data.flatten(order="F")
-    isodata = grid.contour([isomin])
+    values = data.flatten(order="F")
+    cvalues = values - isomin
+    cvalues *= 1 / (isomax - isomin)
+    grid.point_data["values"] = values
+    grid.point_data["cvalues"] = cvalues
+
+    isosurfaces = np.linspace(isomin, isomax, num=10)
+    isodata = grid.contour(isosurfaces)
 
     if smoothing_iterations > 0:
         isodata = isodata.smooth(n_iter=int(smoothing_iterations))
 
+    color = layer_color(layer_state)
+
     return [{
         "mesh": isodata,
-        "color": layer_color(layer_state),
+        "color": color,
         "opacity": layer_state.alpha,
+        "scalars": "cvalues",
+        "cmap": [f"{color}00", f"{color}FF"],
+        # "clim": [isomin, isomax],
         # "isomin": isomin,
     }]
 
