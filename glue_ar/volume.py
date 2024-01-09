@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import full, invert, isfinite, isnan
+from numpy import clip, full, invert, isfinite, isnan
 import pyvista as pv
 from scipy.ndimage import gaussian_filter
 
@@ -7,7 +7,7 @@ from glue.core.subset_group import GroupedSubset
 from glue_ar.utils import isomin_for_layer, isomax_for_layer, layer_color
 
 
-# Trying to export each layer individually, rather than doing all of the meshes
+# Trying to export each layer individually, rather than doing all the meshes
 # as a global operation on the viewer.
 # The main difference here is that we aren't excising the subset points from
 # the parent mesh as Luca's plugin did.
@@ -40,7 +40,6 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
         )
         data = subcube * data
         data[isnan(data)] = 0.
-        # nan_to_num(data, copy=False, nan=0)
 
     if use_gaussian_filter:
         data = gaussian_filter(data, 1)
@@ -59,14 +58,16 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     values = data.flatten(order="F")
     opacities = values - isomin
     opacities *= layer_state.alpha / (isomax - isomin)
+    clip(opacities, 0, 1, out=opacities)
     grid.point_data["values"] = values
     grid.point_data["opacities"] = opacities
 
     color = layer_color(layer_state)
-    # We make a simple "colormap" where the RGB portion is constant
-    # and A goes from 0 -> 1 over the range [isomin, isomax]
-    cmap = [f"{color}00", f"{color}FF"]
-    grid.point_data["colors"] = full(values.shape, color)
+    colors = full(values.shape, color)
+    # We need a "colormap" to map the scalars to
+    # but we want a constant color, so our cmap is just one entry
+    cmap = [color]
+    grid.point_data["colors"] = colors
 
     isosurfaces = np.linspace(isomin, isomax, num=10)
     isodata = grid.contour(isosurfaces)
@@ -74,18 +75,12 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     if smoothing_iterations > 0:
         isodata = isodata.smooth(n_iter=int(smoothing_iterations))
 
-
-
     return [{
         "mesh": isodata,
         "color": color,
         "opacity": "opacities",
         "scalars": "colors",
-
-        # "cmap": cmap,
-
-        # "clim": [isomin, isomax],
-        # "isomin": isomin,
+        "cmap": cmap,
     }]
 
 
