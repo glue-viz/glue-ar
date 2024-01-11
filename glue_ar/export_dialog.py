@@ -1,13 +1,12 @@
 import os
 
-from echo import SelectionCallbackProperty
+from echo import CallbackProperty, SelectionCallbackProperty
 from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_float_text
 
 from glue.config import DictRegistry
 from glue.core.data_combo_helper import ComboHelper
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
-from qtpy.QtGui import QDoubleValidator, QIntValidator
 
 
 from qtpy.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QLineEdit
@@ -41,6 +40,7 @@ class ARExportDialogState(State):
 
     filetype = SelectionCallbackProperty()
     layer = SelectionCallbackProperty()
+    draco = CallbackProperty(True)
 
     def __init__(self, layers):
 
@@ -77,6 +77,7 @@ class ARExportDialog(QDialog):
         self.ui.button_ok.clicked.connect(self.accept)
 
         self.state.add_callback('layer', self._update_layer_ui)
+        self.state.add_callback('filetype', self._on_filetype_change)
 
         self._update_layer_ui(self.state.layer)
 
@@ -124,3 +125,9 @@ class ARExportDialog(QDialog):
             for widget in widgets:
                 row.addWidget(widget)
             self.ui.layer_layout.addRow(row)
+
+    def _on_filetype_change(self, filetype):
+        gltf = filetype.lower() == "gltf"
+        self.ui.bool_draco.setVisible(gltf)
+
+

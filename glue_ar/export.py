@@ -20,7 +20,7 @@ def export_meshes(meshes, output_path):
         raise ValueError("Unsupported extension!")
 
 
-def export_gl_by_extension(exporter, filepath):
+def export_gl_by_extension(exporter, filepath, draco=True):
     _, ext = splitext(filepath)
     if ext == ".glb":
         exporter.export_glb(filepath)
@@ -28,10 +28,12 @@ def export_gl_by_extension(exporter, filepath):
         exporter.export_gltf(filepath)
         # If gltf-pipeline is installed, use Draco compression
         # TODO: Find a not-hacky way to do this!
-        try:
-            run(["gltf-pipeline", "-i", filepath, "-o", filepath, "-d"], capture_output=False)
-        except:
-            pass
+        if draco:
+            try:
+                # run(["gltf-pipeline", "-i", filepath, "-o", filepath, "-d"], capture_output=False)
+                pass
+            except:
+                pass
     else:
         raise ValueError("File extension should be either .glb or .gltf")
 
@@ -42,7 +44,7 @@ def export_gl_by_extension(exporter, filepath):
 # matters into our own hands.
 # We want alphaMode as BLEND
 # see https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#alpha-coverage
-def export_gl(plotter, filepath, with_alpha=True):
+def export_gl(plotter, filepath, with_alpha=True, draco=True):
     path, ext = splitext(filepath)
     gltf_path = filepath
     glb = ext == ".glb"
@@ -55,7 +57,7 @@ def export_gl(plotter, filepath, with_alpha=True):
     if with_alpha and gl.model.materials is not None:
         for material in gl.model.materials:
             material.alphaMode = "BLEND"
-    export_gl_by_extension(gl, filepath)
+    export_gl_by_extension(gl, filepath, draco)
     if glb:
         remove(gltf_path)
 

@@ -53,7 +53,7 @@ def create_plotter(viewer, state_dictionary):
                                              **layer_info)
         else:
             meshes = scatter_layer_as_multiblock(viewer.state, layer_state,
-                                                 scaled=scatter_viewer,
+                                                 scaled=True,
                                                  clip_to_bounds=viewer.state.clip_data,
                                                  **layer_info)
         for mesh_info in meshes:
@@ -96,7 +96,7 @@ class ARExportTool(Tool):
         name, ext = splitext(base)
         html_path = join(dir, f"{name}.html")
         if ext == ".gltf":
-            export_gl(plotter, export_path, with_alpha=True)
+            export_gl(plotter, export_path, with_alpha=True, draco=dialog.state.draco)
             export_modelviewer(html_path, base, self.viewer.state.title)
         else:
             plotter.export_obj(export_path)
@@ -116,10 +116,9 @@ class ARLocalQRTool(Tool):
              NamedTemporaryFile(suffix=".html") as html_tmp:
 
             plotter = create_plotter(self.viewer, {})
-            export_gl(plotter, gltf_tmp.name, with_alpha=True)
+            export_gl(plotter, gltf_tmp.name, with_alpha=True, draco=True)
             _, gltf_base = split(gltf_tmp.name)
             export_modelviewer(html_tmp.name, gltf_base, self.viewer.state.title)
-
 
             port = 4000
             directory, filename = split(html_tmp.name)
