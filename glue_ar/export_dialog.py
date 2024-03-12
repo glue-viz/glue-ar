@@ -47,7 +47,7 @@ class ARExportDialogState(State):
         super(ARExportDialogState, self).__init__()
 
         self.filetype_helper = ComboHelper(self, 'filetype')
-        self.filetype_helper.choices = ['glTF', 'OBJ']
+        self.filetype_helper.choices = ['glTF', 'glB', 'OBJ']
 
         self.layers = layers
         self.layer_helper = ComboHelper(self, 'layer')
