@@ -15,11 +15,14 @@ from qtpy.QtWidgets import QDialog
 from glue.config import viewer_tool
 from glue.viewers.common.tool import SimpleToolMenu, Tool
 from glue_ar.export_dialog import ARExportDialog
+from glue_qt.utils.threading import Worker
+
 from glue_ar.qr import get_local_ip
 from glue_ar.qr_dialog import QRDialog
 
 from glue_ar.scatter import scatter_layer_as_multiblock
 from glue_ar.export import export_gl, export_modelviewer
+from glue_ar.exporting_dialog import ExportingDialog
 from glue_ar.server import run_ar_server
 from glue_ar.utils import bounds_3d_from_layers, xyz_bounds
 from glue_ar.volume import bounds_3d, meshes_for_volume_layer
@@ -29,6 +32,12 @@ __all__ = ["ARToolMenu", "ARExportTool", "ARLocalQRTool"]
 
 # This is just some placeholder image that I found online
 AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
+
+_FILETYPE_NAMES = {
+    ".obj": "OBJ",
+    ".gltf": "glTF",
+    ".glb": "glB"
+}
 
 
 def create_plotter(viewer, state_dictionary):
@@ -74,8 +83,8 @@ class ARToolMenu(SimpleToolMenu):
 @viewer_tool
 class ARExportTool(Tool):
     icon = AR_ICON
-    tool_id = "ar:export"
-    action_text = "Export to 3D"
+    tool_id = "save:ar"
+    action_text = "Export 3D file"
     tool_tip = "Export the current view to a 3D file"
 
     _default_filename = "glue_export"
@@ -91,15 +100,25 @@ class ARExportTool(Tool):
         if not export_path:
             return
         
-        plotter = create_plotter(self.viewer, dialog.state_dictionary)
-        dir, base = split(export_path)
+        _, ext = splitext(export_path)
+        filetype = _FILETYPE_NAMES.get(ext, None)
+        worker = Worker(self._export_to_ar, export_path, dialog.state_dictionary)
+        exporting_dialog = ExportingDialog(parent=self.viewer, filetype=filetype)
+        worker.result.connect(exporting_dialog.close)
+        worker.error.connect(exporting_dialog.close)
+        worker.start()
+        exporting_dialog.exec_()
+
+    def _export_to_ar(self, filepath, state_dict):
+        dir, base = split(filepath)
         name, ext = splitext(base)
+        plotter = create_plotter(self.viewer, state_dict)
         html_path = join(dir, f"{name}.html")
-        if ext == ".gltf":
-            export_gl(plotter, export_path, with_alpha=True)
+        if ext in [".gltf", ".glb"]:
+            export_gl(plotter, filepath, with_alpha=True)
             export_modelviewer(html_path, base, self.viewer.state.title)
         else:
-            plotter.export_obj(export_path)
+            plotter.export_obj(filepath)
 
 
 

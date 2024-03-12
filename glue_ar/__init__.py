@@ -7,8 +7,16 @@ def setup():
     
     from glue_vispy_viewers.scatter.scatter_viewer import VispyScatterViewer
     VispyScatterViewer.tools += ["ar"]
-    VispyScatterViewer.subtools["ar"] = ["ar:export", "ar:qr"]
+    VispyScatterViewer.subtools = {
+        **VispyScatterViewer.subtools,
+        "save": VispyScatterViewer.subtools["save"] + ["save:ar"]
+    }
+    VispyScatterViewer.subtools["ar"] = ["ar:qr"]
 
     from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewer
     VispyVolumeViewer.tools += ["ar"]
-    VispyVolumeViewer.subtools["ar"] = ["ar:export", "ar:qr"]
+    VispyVolumeViewer.subtools = {
+        **VispyVolumeViewer.subtools,
+        "save": VispyVolumeViewer.subtools["save"] + ["save:ar"]
+    }
+    VispyVolumeViewer.subtools["ar"] = ["ar:qr"]
