@@ -1,6 +1,8 @@
 from numpy import array, clip, isnan, ones, sqrt
 from numpy.linalg import norm
 import pyvista as pv
+
+from glue.utils import ensure_numerical
 from glue_ar.utils import layer_color, mask_for_bounds, xyz_bounds, xyz_for_layer
 
 
@@ -128,7 +130,7 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
                              theta_resolution=theta_resolution) for p in data]
     else:
         # The specific size calculation is taken from the scatter layer artist
-        size_data = layer_state.layer[layer_state.size_attribute].ravel()
+        size_data = ensure_numerical(layer_state.layer[layer_state.size_attribute][mask].ravel())
         size_data = clip(size_data, layer_state.size_vmin, layer_state.size_vmax)
         if layer_state.size_vmax == layer_state.size_vmin:
             sizes = sqrt(ones(size_data.shape) * 10)
@@ -143,7 +145,7 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
 
     if not fixed_color:
         points_per_sphere = 2 + (phi_resolution - 2) * theta_resolution
-        cmap_values = layer_state.layer[layer_state.cmap_attribute][mask]
+        cmap_values = ensure_numerical(layer_state.layer[layer_state.cmap_attribute][mask].ravel())
         point_cmap_values = [y for x in cmap_values for y in (x,) * points_per_sphere]
 
     blocks = pv.MultiBlock(spheres)
