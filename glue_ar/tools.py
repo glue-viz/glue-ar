@@ -83,7 +83,7 @@ class ARToolMenu(SimpleToolMenu):
 @viewer_tool
 class ARExportTool(Tool):
     icon = AR_ICON
-    tool_id = "ar:export"
+    tool_id = "save:ar"
     action_text = "Export 3D file"
     tool_tip = "Export the current view to a 3D file"
 
