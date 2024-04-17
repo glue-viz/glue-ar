@@ -152,7 +152,7 @@ def export_modelviewer(output_path, gltf_path, alt_text):
         camera-orbit="0.9677rad 1.2427rad auto"
         shadow-intensity="1"
         ar
-        ar-modes="webxr scene-viewer quick-look fallback"
+        ar-modes="webxr quick-look"
         camera-controls
         alt="{alt_text}"
     >
