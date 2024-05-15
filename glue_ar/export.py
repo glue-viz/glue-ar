@@ -1,9 +1,9 @@
 from os import remove
-from os.path import splitext
+from os.path import join, splitext
 from subprocess import run
 
 import pyvista as pv
-from gltflib import GLTF
+from gltflib.gltf import GLTF
 
 
 def export_meshes(meshes, output_path):
@@ -19,8 +19,10 @@ def export_meshes(meshes, output_path):
     else:
         raise ValueError("Unsupported extension!")
 
+
 def compress_gl(filepath):
-    run(["gltf-pipeline", "-i", filepath, "-o", filepath, "-d"], capture_output=False)
+    location = join("js", "node_modules", "gltf-pipeline", "bin", "gltf-pipeline.js")
+    run(["node", location, "-i", filepath, "-o", filepath, "-d"], capture_output=True)
 
 
 def export_gl_by_extension(exporter, filepath):
@@ -29,7 +31,6 @@ def export_gl_by_extension(exporter, filepath):
         exporter.export_glb(filepath)
     elif ext == ".gltf":
         exporter.export_gltf(filepath)
-        compress_gl(filepath)
     else:
         raise ValueError("File extension should be either .glb or .gltf")
 
@@ -40,7 +41,7 @@ def export_gl_by_extension(exporter, filepath):
 # matters into our own hands.
 # We want alphaMode as BLEND
 # see https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#alpha-coverage
-def export_gl(plotter, filepath, with_alpha=True):
+def export_gl(plotter, filepath, with_alpha=True, compress=True):
     path, ext = splitext(filepath)
     gltf_path = filepath
     glb = ext == ".glb"

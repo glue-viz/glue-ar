@@ -21,7 +21,7 @@ from glue_ar.qr import get_local_ip
 from glue_ar.qr_dialog import QRDialog
 
 from glue_ar.scatter import scatter_layer_as_multiblock
-from glue_ar.export import export_gl, export_modelviewer
+from glue_ar.export import compress_gl, export_gl, export_modelviewer
 from glue_ar.exporting_dialog import ExportingDialog
 from glue_ar.server import run_ar_server
 from glue_ar.utils import bounds_3d_from_layers, xyz_bounds
@@ -102,20 +102,22 @@ class ARExportTool(Tool):
         
         _, ext = splitext(export_path)
         filetype = _FILETYPE_NAMES.get(ext, None)
-        worker = Worker(self._export_to_ar, export_path, dialog.state_dictionary)
+        worker = Worker(self._export_to_ar, export_path, dialog.state_dictionary, dialog.state.draco)
         exporting_dialog = ExportingDialog(parent=self.viewer, filetype=filetype)
         worker.result.connect(exporting_dialog.close)
         worker.error.connect(exporting_dialog.close)
         worker.start()
         exporting_dialog.exec_()
 
-    def _export_to_ar(self, filepath, state_dict):
+    def _export_to_ar(self, filepath, state_dict, compress=True):
         dir, base = split(filepath)
         name, ext = splitext(base)
         plotter = create_plotter(self.viewer, state_dict)
         html_path = join(dir, f"{name}.html")
         if ext in [".gltf", ".glb"]:
             export_gl(plotter, filepath, with_alpha=True)
+            if compress:
+                compress_gl(filepath)
             export_modelviewer(html_path, base, self.viewer.state.title)
         else:
             plotter.export_obj(filepath)
