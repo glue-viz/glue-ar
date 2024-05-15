@@ -102,7 +102,7 @@ class ARExportTool(Tool):
         
         _, ext = splitext(export_path)
         filetype = _FILETYPE_NAMES.get(ext, None)
-        worker = Worker(self._export_to_ar, export_path, dialog.state_dictionary, dialog.state.draco)
+        worker = Worker(self._export_to_ar, export_path, dialog.state_dictionary, compress=dialog.state.draco)
         exporting_dialog = ExportingDialog(parent=self.viewer, filetype=filetype)
         worker.result.connect(exporting_dialog.close)
         worker.error.connect(exporting_dialog.close)
@@ -115,7 +115,7 @@ class ARExportTool(Tool):
         plotter = create_plotter(self.viewer, state_dict)
         html_path = join(dir, f"{name}.html")
         if ext in [".gltf", ".glb"]:
-            export_gl(plotter, filepath, with_alpha=True)
+            export_gl(plotter, filepath, with_alpha=True, compress=compress)
             if compress:
                 compress_gl(filepath)
             export_modelviewer(html_path, base, self.viewer.state.title)
