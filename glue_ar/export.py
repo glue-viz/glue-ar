@@ -23,7 +23,6 @@ def export_meshes(meshes, output_path):
 
 
 def compress_gl(filepath):
-    print(GLTF_PIPELINE_FILEPATH)
     run(["node", GLTF_PIPELINE_FILEPATH, "-i", filepath, "-o", filepath, "-d"], capture_output=True)
 
 
@@ -57,7 +56,6 @@ def export_gl(plotter, filepath, with_alpha=True, compress=True):
         for material in gl.model.materials:
             material.alphaMode = "BLEND"
     export_gl_by_extension(gl, filepath)
-    print("Compress", compress)
     if compress:
         compress_gl(filepath)
     if glb:
