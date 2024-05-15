@@ -19,6 +19,9 @@ def export_meshes(meshes, output_path):
     else:
         raise ValueError("Unsupported extension!")
 
+def compress_gl(filepath):
+    run(["gltf-pipeline", "-i", filepath, "-o", filepath, "-d"], capture_output=False)
+
 
 def export_gl_by_extension(exporter, filepath):
     _, ext = splitext(filepath)
@@ -26,12 +29,7 @@ def export_gl_by_extension(exporter, filepath):
         exporter.export_glb(filepath)
     elif ext == ".gltf":
         exporter.export_gltf(filepath)
-        # If gltf-pipeline is installed, use Draco compression
-        # TODO: Find a not-hacky way to do this!
-        try:
-            run(["gltf-pipeline", "-i", filepath, "-o", filepath, "-d"], capture_output=False)
-        except:
-            pass
+        compress_gl(filepath)
     else:
         raise ValueError("File extension should be either .glb or .gltf")
 
