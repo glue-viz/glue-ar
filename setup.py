@@ -1,3 +1,5 @@
+import os
+
 from setupbase import (
     create_cmdclass,
     install_npm,
@@ -10,6 +12,13 @@ from setupbase import (
 
 from setuptools import setup
 
+def data_files(root_directory):
+    paths = []
+    for (path, _directories, filenames) in os.walk(root_directory):
+        for filename in filenames:
+            paths.append(os.path.join("..", path, filename))
+    return paths
+
 name = "glue_ar"
 
 js_content_command = combine_commands(
@@ -19,14 +28,14 @@ js_content_command = combine_commands(
 # Custom "command class" that (1) makes sure to create the JS content, (2)
 # includes that content as extra "package data" in the Python package, and (3)
 # can install special metadata files in the Python environment root.
-package_data_spec = {
-    name: [
-        "js/**/*",
-    ]
-}
+data_files_spec = [
+    (".", name, "*.png"),
+    (".", name, "*.ui"),
+    ("js", "js", "**/*.*")
+]
 
 cmdclass = create_cmdclass(
-    "js-content", package_data_spec=package_data_spec,
+    "js-content", data_files_spec=data_files_spec
 )
 cmdclass["js-content"] = js_content_command
 
@@ -34,8 +43,23 @@ cmdclass["js-content"] = js_content_command
 setup_args = dict(
     name=name,
     cmdclass=cmdclass,
+    python_requires=">=3.8",
+    zip_safe=False,
+    packages=[name],
     include_package_data=True,
-    entry_points={}
+    install_requires=[
+        "gltflib",
+        "glue-core",
+        "glue-qt",
+        "glue-vispy-viewers",
+        "ngrok",
+        "pillow",
+        "pyvista",
+        "segno"
+    ],
+    entry_points={
+        "glue.plugins": "glue_ar = glue_ar:setup"
+    }
 )
 
 if __name__ == "__main__":
