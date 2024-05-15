@@ -1,9 +1,11 @@
 from os import remove
-from os.path import splitext
+from os.path import abspath, dirname, join, splitext
 from subprocess import run
 
 import pyvista as pv
-from gltflib import GLTF
+from gltflib.gltf import GLTF
+
+GLTF_PIPELINE_FILEPATH = join(dirname(abspath(__file__)), "js", "node_modules", "gltf-pipeline", "bin", "gltf-pipeline.js")
 
 
 def export_meshes(meshes, output_path):
@@ -20,18 +22,16 @@ def export_meshes(meshes, output_path):
         raise ValueError("Unsupported extension!")
 
 
+def compress_gl(filepath):
+    run(["node", GLTF_PIPELINE_FILEPATH, "-i", filepath, "-o", filepath, "-d"], capture_output=True)
+
+
 def export_gl_by_extension(exporter, filepath):
     _, ext = splitext(filepath)
     if ext == ".glb":
         exporter.export_glb(filepath)
     elif ext == ".gltf":
         exporter.export_gltf(filepath)
-        # If gltf-pipeline is installed, use Draco compression
-        # TODO: Find a not-hacky way to do this!
-        try:
-            run(["gltf-pipeline", "-i", filepath, "-o", filepath, "-d"], capture_output=False)
-        except:
-            pass
     else:
         raise ValueError("File extension should be either .glb or .gltf")
 
@@ -42,7 +42,7 @@ def export_gl_by_extension(exporter, filepath):
 # matters into our own hands.
 # We want alphaMode as BLEND
 # see https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#alpha-coverage
-def export_gl(plotter, filepath, with_alpha=True):
+def export_gl(plotter, filepath, with_alpha=True, compress=True):
     path, ext = splitext(filepath)
     gltf_path = filepath
     glb = ext == ".glb"
@@ -56,6 +56,8 @@ def export_gl(plotter, filepath, with_alpha=True):
         for material in gl.model.materials:
             material.alphaMode = "BLEND"
     export_gl_by_extension(gl, filepath)
+    if compress:
+        compress_gl(filepath)
     if glb:
         remove(gltf_path)
 

@@ -1,5 +1,5 @@
 from glue.core.subset_group import GroupedSubset
-from numpy import array, half, inf
+from numpy import array, inf
 
 
 def isomin_for_layer(viewer_state, layer):
