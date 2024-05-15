@@ -136,7 +136,7 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
             sizes = sqrt(ones(size_data.shape) * 10)
         else:
             sizes = sqrt((20 * (size_data - layer_state.size_vmin) /
-                     (layer_state.size_vmax - layer_state.size_vmin)))
+                         (layer_state.size_vmax - layer_state.size_vmin)))
         sizes *= (layer_state.size_scaling / factor)
         sizes[isnan(sizes)] = 0.
         spheres = [pv.Sphere(center=p, radius=r,
@@ -193,7 +193,7 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
         for axis in ['x', 'y', 'z']:
             if getattr(layer_state, f"{axis}err_visible"):
                 axis_bars = meshes_for_error_bars(viewer_state, layer_state,
-                                             axis, data, bounds, mask=mask)
+                                                  axis, data, bounds, mask=mask)
                 bars.extend(axis_bars)
                 if not fixed_color:
                     bars_cmap_values.extend([y for x in cmap_values for y in (x,) * 2])  # Each line has just two points

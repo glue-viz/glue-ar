@@ -11,7 +11,7 @@ from glue_ar.qr import create_qr
 class QRDialog(QDialog):
 
     def __init__(self, parent, url=None, img=None):
-        
+
         super(QRDialog, self).__init__(parent=parent)
         img = create_qr(url)
         self.img = ImageQt(img)

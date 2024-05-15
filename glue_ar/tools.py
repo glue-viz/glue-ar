@@ -96,10 +96,11 @@ class ARExportTool(Tool):
         if result == QDialog.Rejected:
             return
 
-        export_path, _ = compat.getsavefilename(parent=self.viewer, basedir=f"{self._default_filename}.{dialog.state.filetype.lower()}")
+        export_path, _ = compat.getsavefilename(parent=self.viewer,
+                                                basedir=f"{self._default_filename}.{dialog.state.filetype.lower()}")
         if not export_path:
             return
-        
+
         _, ext = splitext(export_path)
         filetype = _FILETYPE_NAMES.get(ext, None)
         worker = Worker(self._export_to_ar, export_path, dialog.state_dictionary, compress=dialog.state.draco)
@@ -123,8 +124,6 @@ class ARExportTool(Tool):
             plotter.export_obj(filepath)
 
 
-
-
 @viewer_tool
 class ARLocalQRTool(Tool):
     icon = AR_ICON
@@ -140,7 +139,6 @@ class ARLocalQRTool(Tool):
             export_gl(plotter, gltf_tmp.name, with_alpha=True)
             _, gltf_base = split(gltf_tmp.name)
             export_modelviewer(html_tmp.name, gltf_base, self.viewer.state.title)
-
 
             port = 4000
             directory, filename = split(html_tmp.name)
@@ -168,4 +166,3 @@ class ARLocalQRTool(Tool):
                         pass
                 server.shutdown()
                 server.server_close()
-

@@ -7,8 +7,6 @@ from glue.config import DictRegistry
 from glue.core.data_combo_helper import ComboHelper
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
-from qtpy.QtGui import QDoubleValidator, QIntValidator
-
 
 from qtpy.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QLineEdit
 from qtpy.QtGui import QIntValidator, QDoubleValidator

@@ -34,7 +34,7 @@ def bounds_3d_from_layers(viewer_state, layer_states):
         data = state.layer.layer
         mins = [min(min(data[att]), m) for m, att in zip(mins, atts)]
         maxes = [max(max(data[att]), m) for m, att in zip(maxes, atts)]
-    return [(l, u) for l, u in zip(mins, maxes)]
+    return [(lo, hi) for lo, hi in zip(mins, maxes)]
 
 
 def slope_intercept_between(a, b):
@@ -66,7 +66,7 @@ def bring_into_clip(data, bounds, preserve_aspect=True):
         line_data = [slope_intercept_between((bds[0], -1), (bds[1], 1)) for bds in bounds]
 
     scaled = [[m * d + b for d in data[idx]] for idx, (m, b) in enumerate(line_data)]
-    
+
     return scaled
 
 
@@ -95,5 +95,5 @@ def xyz_for_layer(viewer_state, layer_state,
     if scaled:
         bounds = xyz_bounds(viewer_state)
         vals = bring_into_clip(vals, bounds, preserve_aspect=preserve_aspect)
-        
+
     return array(list(zip(*vals)))

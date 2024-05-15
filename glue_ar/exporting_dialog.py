@@ -3,8 +3,9 @@ from qtpy.QtCore import Qt, QTimer
 
 __all__ = ['ExportingDialog']
 
+
 class ExportingDialog(QDialog):
-    
+
     _max_dots = 3
 
     def __init__(self, parent=None, filetype=None):

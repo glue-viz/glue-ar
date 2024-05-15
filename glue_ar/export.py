@@ -5,7 +5,9 @@ from subprocess import run
 import pyvista as pv
 from gltflib.gltf import GLTF
 
-GLTF_PIPELINE_FILEPATH = join(dirname(abspath(__file__)), "js", "node_modules", "gltf-pipeline", "bin", "gltf-pipeline.js")
+GLTF_PIPELINE_FILEPATH = join(dirname(abspath(__file__)), "js",
+                              "node_modules", "gltf-pipeline",
+                              "bin", "gltf-pipeline.js")
 
 
 def export_meshes(meshes, output_path):
@@ -63,16 +65,17 @@ def export_gl(plotter, filepath, with_alpha=True, compress=True):
 
 
 def export_modelviewer(output_path, gltf_path, alt_text):
+    mv_url = "https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"
     html = f"""
         <html>
         <body>
-            <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+            <script type="module" src="{mv_url}"></script>
             <style>
         model-viewer {{
           width: 100%;
           height: 100%;
         }}
-    
+
         /* This keeps child nodes hidden while the element loads */
         :not(:defined) > * {{
           display: none;
@@ -163,6 +166,6 @@ def export_modelviewer(output_path, gltf_path, alt_text):
         </body>
     </html>
     """
-    
+
     with open(output_path, 'w') as f:
         f.write(html)
