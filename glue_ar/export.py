@@ -1,9 +1,11 @@
 from os import remove
-from os.path import join, splitext
+from os.path import abspath, dirname, join, splitext
 from subprocess import run
 
 import pyvista as pv
 from gltflib.gltf import GLTF
+
+GLTF_PIPELINE_FILEPATH = join(dirname(abspath(__file__)), "js", "node_modules", "gltf-pipeline", "bin", "gltf-pipeline.js")
 
 
 def export_meshes(meshes, output_path):
@@ -21,8 +23,8 @@ def export_meshes(meshes, output_path):
 
 
 def compress_gl(filepath):
-    location = join("js", "node_modules", "gltf-pipeline", "bin", "gltf-pipeline.js")
-    run(["node", location, "-i", filepath, "-o", filepath, "-d"], capture_output=True)
+    print(GLTF_PIPELINE_FILEPATH)
+    run(["node", GLTF_PIPELINE_FILEPATH, "-i", filepath, "-o", filepath, "-d"], capture_output=True)
 
 
 def export_gl_by_extension(exporter, filepath):
@@ -55,6 +57,9 @@ def export_gl(plotter, filepath, with_alpha=True, compress=True):
         for material in gl.model.materials:
             material.alphaMode = "BLEND"
     export_gl_by_extension(gl, filepath)
+    print("Compress", compress)
+    if compress:
+        compress_gl(filepath)
     if glb:
         remove(gltf_path)
 

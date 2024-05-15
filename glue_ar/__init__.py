@@ -2,6 +2,7 @@ from glue_ar.export_scatter import *
 from glue_ar.export_volume import *
 from glue_ar.tools import *
 
+
 def setup():
     from glue_qt.config import qt_client
     

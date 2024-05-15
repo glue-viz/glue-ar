@@ -1,0 +1,11 @@
+{
+    "dependencies": {
+        "gltf-pipeline": "^4.1.0"
+    },
+    "scripts": {
+        "glue-ar-export": "npm install && node glue-ar-export.js"
+    },
+    "devDependencies": {
+        "shelljs": "^0.8.5"
+    }
+}
