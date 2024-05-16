@@ -104,8 +104,8 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
 
 def bounds_3d(viewer_state):
     return [(viewer_state.z_min, viewer_state.z_max, viewer_state.resolution),
-              (viewer_state.y_min, viewer_state.y_max, viewer_state.resolution),
-              (viewer_state.x_min, viewer_state.x_max, viewer_state.resolution)]
+            (viewer_state.y_min, viewer_state.y_max, viewer_state.resolution),
+            (viewer_state.x_min, viewer_state.x_max, viewer_state.resolution)]
 
 
 # For the 3D volume viewer
@@ -163,7 +163,6 @@ def create_meshes(viewer_state, layer_states, parameters):
                 parent_data = invert(subcube) * parent_data
                 meshes[parent.label]["data"] = parent_data
 
-
     for label, item in meshes.items():
         data = item["data"]
         isomin = item["isomin"]
@@ -177,7 +176,9 @@ def create_meshes(viewer_state, layer_states, parameters):
         grid = pv.ImageData()
         grid.dimensions = (viewer_state.resolution,) * 3
         grid.origin = (viewer_state.x_min, viewer_state.y_min, viewer_state.z_min)
-        # Comment from Luca: # I think the voxel spacing will always be 1, because of how glue downsamples to a fixed resolution grid. But don't hold me to this!
+        # Comment from Luca: # I think the voxel spacing will always be 1,
+        # because of how glue downsamples to a fixed resolution grid.
+        # But don't hold me to this!
         grid.spacing = (1, 1, 1)
         grid.point_data["values"] = data.flatten(order="F")
         isodata = grid.contour([isomin])
@@ -189,4 +190,3 @@ def create_meshes(viewer_state, layer_states, parameters):
         item["mesh"] = isodata
 
     return meshes
-

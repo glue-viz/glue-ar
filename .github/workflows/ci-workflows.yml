@@ -1,15 +1,26 @@
-name: Deploy Examples
+name: CI Workflows
 
 on:
   push:
     branches:
       master
+  pull_request:
 
 permissions:
   contents: write
 
 jobs:
-  deploy:
+
+  initial_checks:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    with:
+      coverage: false
+      envs: |
+        # Code style
+        - linux: codestyle
+
+  deploy-examples:
+    if: github.event_name != "pull_request"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

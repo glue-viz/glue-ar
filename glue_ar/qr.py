@@ -39,4 +39,3 @@ def create_qr(url):
     box = ((width - logo_img.size[0]) // 2, (height - logo_img.size[1]) // 2)
     img.paste(logo_img, box)
     return img
-

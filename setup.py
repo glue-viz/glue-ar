@@ -57,6 +57,11 @@ setup_args = dict(
         "pyvista",
         "segno"
     ],
+    extras_require={
+        "test": [
+            "flake8"
+        ]
+    },
     entry_points={
         "glue.plugins": "glue_ar = glue_ar:setup"
     }
