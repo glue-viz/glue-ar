@@ -4,6 +4,7 @@ on:
   push:
     branches:
       master
+  pull_request:
 
 permissions:
   contents: write
@@ -19,6 +20,7 @@ jobs:
         - linux: codestyle
 
   deploy-examples:
+    if: github.event_name != "pull_request"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
