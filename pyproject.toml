@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "glue-ar"
+authors = [{name = "glue developers", email = "glue.viz@gmail.com"}]
+description = "glue plugin for exporting augmented reality files"
+readme = "README.md"
+urls = {Homepage = "https://glueviz.org/"}
+requires-python = ">=3.8"
+dependencies = [
+    "echo",
+    "gltflib",
+    "glue-core",
+    "glue-qt",
+    "glue-vispy-viewers>=1.2.1",
+    "numpy",
+    "pillow",
+    "pyvista",
+    "qtpy",
+    "scipy",
+]
+dynamic = ["version"]
