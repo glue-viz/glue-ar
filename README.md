@@ -14,7 +14,7 @@ This package is not (yet) listed on PyPI, so to install you'll need to clone thi
 ```
 git clone https://github.com/Carifio24/glue-ar
 cd glue-ar
-pip install .  # Use `pip install -e .` to install in [editable mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html)
+pip install .  # Use `pip install -e .` to install in editable mode
 ```
 
 
