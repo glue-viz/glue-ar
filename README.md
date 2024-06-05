@@ -22,8 +22,7 @@ pip install .  # Use `pip install -e .` to install in [editable mode](https://se
 
 The AR export tools are exposed in the toolbar as subtools of the "save" meta-tool, and can be accessed from its dropdown menu.
 
-|Qt toolbar demo|
-
+![Qt viewer tool](https://raw.githubusercontent.com/Carifio24/glue-ar/main/doc/viewer_tool.gif)
 
 ## Sharing figures
 
@@ -37,7 +36,7 @@ has no additional dependencies and can be served using static file hosting.
 ## Draco compression
 
 The files exported by glue-ar can, in their original form, be quite large. In order to mitigate this problem, glue-ar allows using 
-[Draco compression](https://google.github.io/draco/) (via the [gltf-pipeline](https://github.com/CesiumGS/gltf-pipeline) package). Using Draco compression
+[Draco compression](https://google.github.io/draco/) via the [gltf-pipeline](https://github.com/CesiumGS/gltf-pipeline) package. Using Draco compression
 allows for a considerable reduction in file size (often an order of magnitude or more), and Draco-compressed files can be read by model-viewer.
 
 ## CoSpaces
@@ -47,4 +46,16 @@ or on a mobile device via a dedicated app. The CoSpaces app allows viewing figur
 to allow for a more tangible AR experience.
 
 CoSpaces supports both OBJ and glTF file formats, so the outputs of glue-ar can be used in CoSpaces without modification. It is our aim to eventually allow
-automatic CoSpaces upload, but for now sharing your AR figures to CoSpaces requires some manual steps.
+automatic CoSpaces upload, but for now sharing your AR figures to CoSpaces requires some manual steps (as well as a CoSpaces account).
+
+To create a scene with your newly-exported figure, do the following:
+1. Go to the CoSpaces website and log in to your account
+2. On the left side menu, navigate to "CoSpaces"
+3. Click the "Create CoSpace" button
+4. Select the environment you want:
+    * 3D environment > Empty scene for tabletop AR
+    * MERGE Cube > Empty scene to use the MERGE Cube (note that creating a MERGE Cube requires a plan addon)
+5. In the bottom left corner, select Upload > 3D models, then press the Upload button to the right
+6. Select your 3D model
+    * Note that CoSpaces currently does not support the extension needed for Draco compression
+7. Done!
