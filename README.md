@@ -1,32 +1,50 @@
 # glue-ar
 
-Right now, this is primarily just for experimenting with exporting AR-compatible files from glue, along with creating utilities to view other 3D file formats in AR. All of the code here is very rough. This is still at a "let's get this to work" point - we can think about things like overall code structure once we have some working implementations that we're satisfied with.
-
-The only particular principle I've been trying to follow is to make anything glue-related depend only on state (viewer and/or layer), unless that absolutely can't happen for some reason. From my experience with glue-plotly, this will help us to reuse as much as possible between different glue frontends (e.g. glue-qt and glue-jupyter). The approach I've been taking so far is to use pyvista's `Plotter` to export to a 3D-compatible format - in particular, pyvista can export to OBJ and glTF.
-
-
-## Relevant file formats
-
-Obviously various file formats and what we do/don't want to support is something we want to think about. Relevant file formats include:
-
-* [glTF](https://en.wikipedia.org/wiki/GlTF)
-* [USDZ](https://en.wikipedia.org/wiki/Universal_Scene_Description)
-* [OBJ/MTL](https://en.wikipedia.org/wiki/Wavefront_.obj_file)
-* [STL](https://en.wikipedia.org/wiki/STL_(file_format))
-
-### Conversion tools
-
-Some of these are just for quick testing purposes, others might be things we could incorporate into a toolchain
-
-* [glTF to USDZ converter](https://products.aspose.app/3d/conversion/gltf-to-usdz) (under 100 MB)
-* [gltz2usd](https://github.com/kcoley/gltf2usd)
+This package is an experimental plugin for [glue](<ttps://glueviz.org/>) that allows exporting augmented reality (AR)
+figures out of the 3D scatter and volume viewers from [vispy viewer](https://github.com/glue-viz/glue-vispy-viewers>).
+Currently this ability is exposed via viewer tools that save a 3D file representing the current view. Currently supported
+file formats include [OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file) and [glTF](https://www.khronos.org/gltf/).
+This export is performed used [pyvista](https://pyvista.org/), which provides a Python interface to the [Visualization Toolkit (VTK)](https://vtk.org/).
 
 
-## Relevant libraries/software
+## Installation
 
-* [model-viewer](https://modelviewer.dev/) - This is a super-cool web component that allows for easily displaying a model in AR via a web page. It only supports GLTF/GLB and USDZ, but it's really easy to use and seems to work pretty well. I've been using this to test out gltf files that I've been creating.
-* [gltflib](https://github.com/lukas-shawford/gltflib)A - Python library for creating/manipulating glTF files
+This package is not (yet) listed on PyPI, so to install you'll need to clone this repository and install from source.
 
-## Other cool stuff
+```
+git clone https://github.com/Carifio24/glue-ar
+cd glue-ar
+pip install .  # Use `pip install -e .` to install in [editable mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html)
+```
 
-* [glTF Viewer](https://gltf-viewer.donmccurdy.com/) - As the name implies, used for viewer glTF files
+
+## Viewer tools
+
+The AR export tools are exposed in the toolbar as subtools of the "save" meta-tool, and can be accessed from its dropdown menu.
+
+|Qt toolbar demo|
+
+
+## Sharing figures
+
+### model-viewer
+
+If glTF is selected as the output file format, an HTML file is exported in addition to the glTF. This HTML file provides a display
+of the exported figure using the [model-viewer](https://modelviewer.dev) web component. This model-viewer page provides a THREE.js-powered
+glTF viewer that, on an Android or iOS device, allows viewing the glTF file using the hardware AR capability. Additionally, this exported HTML
+has no additional dependencies and can be served using static file hosting.
+
+## Draco compression
+
+The files exported by glue-ar can, in their original form, be quite large. In order to mitigate this problem, glue-ar allows using 
+[Draco compression](https://google.github.io/draco/) (via the [gltf-pipeline](https://github.com/CesiumGS/gltf-pipeline) package). Using Draco compression
+allows for a considerable reduction in file size (often an order of magnitude or more), and Draco-compressed files can be read by model-viewer.
+
+## CoSpaces
+
+Another popular option for sharing 3D files in augmented reality is [CoSpaces](https://www.cospaces.io), which allows viewing 3D files in a browser
+or on a mobile device via a dedicated app. The CoSpaces app allows viewing figures in AR on a flat surface directly, or using the [Merge Cube](https://mergeedu.com/cube)
+to allow for a more tangible AR experience.
+
+CoSpaces supports both OBJ and glTF file formats, so the outputs of glue-ar can be used in CoSpaces without modification. It is our aim to eventually allow
+automatic CoSpaces upload, but for now sharing your AR figures to CoSpaces requires some manual steps.
