@@ -22,7 +22,7 @@ pip install .  # Use `pip install -e .` to install in [editable mode](https://se
 
 The AR export tools are exposed in the toolbar as subtools of the "save" meta-tool, and can be accessed from its dropdown menu.
 
-![Qt viewer tool](https://raw.githubusercontent.com/Carifio24/glue-ar/main/doc/viewer_tool.gif)
+![Qt viewer tool](https://raw.githubusercontent.com/Carifio24/glue-ar/master/doc/viewer_tool.gif)
 
 ## Sharing figures
 
