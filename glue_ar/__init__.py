@@ -4,8 +4,10 @@ from glue_ar.tools import *  # noqa
 
 
 def setup():
-
-    from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
+    try:
+        from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
+    except ImportError:
+        from glue_vispy_viewers.scatter.scatter_viewer import VispyScatterViewer
     VispyScatterViewer.tools += ["ar"]
     VispyScatterViewer.subtools = {
         **VispyScatterViewer.subtools,
@@ -13,7 +15,10 @@ def setup():
     }
     VispyScatterViewer.subtools["ar"] = ["ar:qr"]
 
-    from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
+    try:
+        from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
+    except ImportError:
+        from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewer
     VispyVolumeViewer.tools += ["ar"]
     VispyVolumeViewer.subtools = {
         **VispyVolumeViewer.subtools,
