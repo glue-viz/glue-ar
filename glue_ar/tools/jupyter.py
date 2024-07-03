@@ -1,3 +1,4 @@
+import os
 from os import getcwd
 from os.path import exists
 
@@ -11,14 +12,15 @@ from ipywidgets import HBox, Layout  # noqa
 from IPython.display import display  # noqa
 from ipyfilechooser import FileChooser
 
-from glue_ar.tools.qt import AR_ICON  # noqa
-
 __all__ = ["JupyterARExportTool"]
+
+
+AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
 
 
 @viewer_tool
 class JupyterARExportTool(Tool):
-    icon = AR_ICON 
+    icon = AR_ICON
     tool_id = "save:ar_jupyter"
     action_text = "Export 3D file"
     tool_tip = "Export the current view to a 3D file"

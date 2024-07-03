@@ -179,6 +179,7 @@ def export_modelviewer(output_path, gltf_path, alt_text):
         f.write(html)
 
 
+def create_plotter(viewer, state_dictionary):
     plotter = pv.Plotter()
     layer_states = [layer.state for layer in viewer.layers if layer.enabled and layer.state.visible]
     scatter_viewer = isinstance(viewer.state, Vispy3DScatterViewerState)

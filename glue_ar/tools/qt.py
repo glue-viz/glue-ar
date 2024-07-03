@@ -16,13 +16,12 @@ from glue_qt.utils.threading import Worker
 from glue_ar.qr import get_local_ip
 from glue_ar.qr_dialog import QRDialog
 
-from glue_ar.export import export_gl, export_modelviewer
+from glue_ar.export import create_plotter, export_gl, export_modelviewer, export_to_ar
 from glue_ar.exporting_dialog import ExportingDialog
 from glue_ar.server import run_ar_server
-from glue_ar.tools.common import export_to_ar
 
 
-__all__ = ["ARToolMenu", "ARExportTool", "ARLocalQRTool"]
+__all__ = ["ARToolMenu", "QtARExportTool", "ARLocalQRTool"]
 
 # This is just some placeholder image that I found online
 AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
