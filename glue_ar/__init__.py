@@ -28,7 +28,6 @@ def setup_qt():
 
 
 def setup_jupyter():
-    print("Setup jupyter")
     from glue_vispy_viewers.scatter.jupyter import JupyterVispyScatterViewer
     from glue_vispy_viewers.volume.jupyter import JupyterVispyVolumeViewer
     JupyterVispyScatterViewer.tools = [t for t in JupyterVispyScatterViewer.tools] + ["save:ar_jupyter"]
