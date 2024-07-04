@@ -63,7 +63,7 @@ class QtARExportTool(Tool):
 
         _, ext = splitext(export_path)
         filetype = _FILETYPE_NAMES.get(ext, None)
-        worker = Worker(export_to_ar, export_path, dialog.state_dictionary, compress=dialog.state.draco)
+        worker = Worker(export_to_ar, self.viewer, export_path, dialog.state_dictionary, compress=dialog.state.draco)
         exporting_dialog = ExportingDialog(parent=self.viewer, filetype=filetype)
         worker.result.connect(exporting_dialog.close)
         worker.error.connect(exporting_dialog.close)
