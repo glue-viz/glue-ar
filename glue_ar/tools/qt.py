@@ -1,13 +1,9 @@
 import os
-from os.path import join, split, splitext
+from os.path import split, splitext
 from tempfile import NamedTemporaryFile
 from threading import Thread
 
-from glue_vispy_viewers.scatter.scatter_viewer import Vispy3DScatterViewerState
-from glue_vispy_viewers.volume.layer_state import VolumeLayerState
-
 import ngrok
-import pyvista as pv
 
 from qtpy import compat
 from qtpy.QtWidgets import QDialog
@@ -20,15 +16,12 @@ from glue_qt.utils.threading import Worker
 from glue_ar.qr import get_local_ip
 from glue_ar.qr_dialog import QRDialog
 
-from glue_ar.scatter import scatter_layer_as_multiblock
-from glue_ar.export import compress_gl, export_gl, export_modelviewer
+from glue_ar.export import create_plotter, export_gl, export_modelviewer, export_to_ar
 from glue_ar.exporting_dialog import ExportingDialog
 from glue_ar.server import run_ar_server
-from glue_ar.utils import bounds_3d_from_layers, xyz_bounds
-from glue_ar.volume import bounds_3d, meshes_for_volume_layer
 
 
-__all__ = ["ARToolMenu", "ARExportTool", "ARLocalQRTool"]
+__all__ = ["ARToolMenu", "QtARExportTool", "ARLocalQRTool"]
 
 # This is just some placeholder image that I found online
 AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
@@ -40,39 +33,6 @@ _FILETYPE_NAMES = {
 }
 
 
-def create_plotter(viewer, state_dictionary):
-    plotter = pv.Plotter()
-    layer_states = [layer.state for layer in viewer.layers if layer.enabled and layer.state.visible]
-    scatter_viewer = isinstance(viewer.state, Vispy3DScatterViewerState)
-    if scatter_viewer:
-        bounds = xyz_bounds(viewer.state)
-    elif viewer.state.clip_data:
-        bounds = bounds_3d(viewer.state)
-    else:
-        bounds = bounds_3d_from_layers(viewer.state, layer_states)
-    frbs = {}
-    for layer_state in layer_states:
-        layer_info = state_dictionary.get(layer_state.layer.label, {})
-        if layer_info:
-            layer_info = layer_info.as_dict()
-        if isinstance(layer_state, VolumeLayerState):
-            meshes = meshes_for_volume_layer(viewer.state, layer_state,
-                                             bounds=bounds,
-                                             precomputed_frbs=frbs,
-                                             **layer_info)
-        else:
-            meshes = scatter_layer_as_multiblock(viewer.state, layer_state,
-                                                 scaled=scatter_viewer,
-                                                 clip_to_bounds=viewer.state.clip_data,
-                                                 **layer_info)
-        for mesh_info in meshes:
-            mesh = mesh_info.pop("mesh")
-            if len(mesh.points) > 0:
-                plotter.add_mesh(mesh, **mesh_info)
-
-    return plotter
-
-
 @viewer_tool
 class ARToolMenu(SimpleToolMenu):
     tool_id = "ar"
@@ -81,7 +41,7 @@ class ARToolMenu(SimpleToolMenu):
 
 
 @viewer_tool
-class ARExportTool(Tool):
+class QtARExportTool(Tool):
     icon = AR_ICON
     tool_id = "save:ar"
     action_text = "Export 3D file"
@@ -103,25 +63,12 @@ class ARExportTool(Tool):
 
         _, ext = splitext(export_path)
         filetype = _FILETYPE_NAMES.get(ext, None)
-        worker = Worker(self._export_to_ar, export_path, dialog.state_dictionary, compress=dialog.state.draco)
+        worker = Worker(export_to_ar, self.viewer, export_path, dialog.state_dictionary, compress=dialog.state.draco)
         exporting_dialog = ExportingDialog(parent=self.viewer, filetype=filetype)
         worker.result.connect(exporting_dialog.close)
         worker.error.connect(exporting_dialog.close)
         worker.start()
         exporting_dialog.exec_()
-
-    def _export_to_ar(self, filepath, state_dict, compress=True):
-        dir, base = split(filepath)
-        name, ext = splitext(base)
-        plotter = create_plotter(self.viewer, state_dict)
-        html_path = join(dir, f"{name}.html")
-        if ext in [".gltf", ".glb"]:
-            export_gl(plotter, filepath, with_alpha=True, compress=compress)
-            if compress:
-                compress_gl(filepath)
-            export_modelviewer(html_path, base, self.viewer.state.title)
-        else:
-            plotter.export_obj(filepath)
 
 
 @viewer_tool

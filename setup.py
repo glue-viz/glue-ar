@@ -48,16 +48,25 @@ setup_args = dict(
     install_requires=[
         "gltflib",
         "glue-core",
-        "glue-qt",
         "glue-vispy-viewers",
-        "ngrok",
         "pillow",
         "pyvista",
-        "segno"
     ],
     extras_require={
         "test": [
             "flake8"
+        ],
+        "qt": [
+            "glue-qt"
+        ],
+        "jupyter": [
+            "glue-jupyter",
+            "ipyfilechooser",
+            "ipyvuetify"
+        ],
+        "qr": [
+            "ngrok",
+            "segno"
         ]
     },
     entry_points={
