@@ -7,7 +7,7 @@ import struct
 
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
-from glue_ar.export import compress_gl
+from glue_ar.common.export import compress_gl
 
 from glue_ar.utils import hex_to_components, isomin_for_layer, isomax_for_layer, layer_color
 
@@ -275,11 +275,10 @@ def create_voxel_export(
 
 def test_prism_mesh():
 
-
-
     center = (0, 0, 0)
     sides = (1, 1, 3)
-    points, triangles = rectangular_prism_mesh(center, sides)
+    points = rectangular_prism_points(center, sides)
+    triangles = rectangular_prism_triangulation()
     point_mins = [min([operator.itemgetter(i)(point) for point in points]) for i in range(3)]
     point_maxes = [max([operator.itemgetter(i)(point) for point in points]) for i in range(3)]
     
