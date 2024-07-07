@@ -1,5 +1,9 @@
+import os
 from glue.core.subset_group import GroupedSubset
 from numpy import array, inf
+
+
+AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
 
 
 def isomin_for_layer(viewer_state, layer):

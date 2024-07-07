@@ -1,56 +1,19 @@
 import os
 
-from echo import CallbackProperty, SelectionCallbackProperty
 from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_float_text
-
-from glue.config import DictRegistry
-from glue.core.data_combo_helper import ComboHelper
-from glue.core.state_objects import State
 from glue_qt.utils import load_ui
+
+from glue_ar.common.export_state import ARExportDialogState, ar_layer_export
 
 from qtpy.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QLineEdit
 from qtpy.QtGui import QIntValidator, QDoubleValidator
 
 
-__all__ = ['ar_layer_export', 'ARExportDialog']
+__all__ = ['ARExportDialog']
 
 
 def display_name(prop):
     return prop.replace("_", " ").capitalize()
-
-
-class ARExportLayerOptionsRegistry(DictRegistry):
-
-    def add(self, layer_state_cls, layer_options_state):
-        if not issubclass(layer_options_state, State):
-            raise ValueError("Layer options must be a glue State type")
-        self._members[layer_state_cls] = layer_options_state
-
-    def __call__(self, layer_state_cls):
-        def adder(export_state_class):
-            self.add(layer_state_cls, export_state_class)
-        return adder
-
-
-ar_layer_export = ARExportLayerOptionsRegistry()
-
-
-class ARExportDialogState(State):
-
-    filetype = SelectionCallbackProperty()
-    layer = SelectionCallbackProperty()
-    draco = CallbackProperty(True)
-
-    def __init__(self, layers):
-
-        super(ARExportDialogState, self).__init__()
-
-        self.filetype_helper = ComboHelper(self, 'filetype')
-        self.filetype_helper.choices = ['glTF', 'glB', 'OBJ']
-
-        self.layers = layers
-        self.layer_helper = ComboHelper(self, 'layer')
-        self.layer_helper.choices = [state.layer.label for state in self.layers]
 
 
 class ARExportDialog(QDialog):
@@ -99,6 +62,8 @@ class ARExportDialog(QDialog):
             widget.setValidator(validator)
             self._layer_connections.append(connect_float_text(instance, property, widget))
             return [label, widget]
+        else:
+            return []
 
     def _clear_layout(self, layout):
         if layout is not None:
@@ -127,4 +92,4 @@ class ARExportDialog(QDialog):
 
     def _on_filetype_change(self, filetype):
         gl = filetype.lower() in ["gltf", "glb"]
-        self.ui.bool_draco.setVisible(gl)
+        self.ui.combosel_compression.setVisible(gl)

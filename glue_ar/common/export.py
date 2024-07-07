@@ -8,14 +8,17 @@ from gltflib.gltf import GLTF
 from glue_vispy_viewers.scatter.scatter_viewer import Vispy3DScatterViewerState
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 
-from glue_ar.scatter import scatter_layer_as_multiblock
+from glue_ar.common.scatter import scatter_layer_as_multiblock
 from glue_ar.utils import bounds_3d_from_layers, xyz_bounds
-from glue_ar.volume import bounds_3d, meshes_for_volume_layer
+from glue_ar.common.volume import bounds_3d, meshes_for_volume_layer
 
 
-GLTF_PIPELINE_FILEPATH = join(dirname(abspath(__file__)), "js",
-                              "node_modules", "gltf-pipeline",
-                              "bin", "gltf-pipeline.js")
+NODE_MODULES_DIR = join(abspath(join(dirname(abspath(__file__)), "..")),
+                        "js", "node_modules")
+
+
+GLTF_PIPELINE_FILEPATH = join(NODE_MODULES_DIR, "gltf-pipeline", "bin", "gltf-pipeline.js")
+GLTFPACK_FILEPATH = join(NODE_MODULES_DIR, "gltfpack", "cli.js")
 
 
 def export_meshes(meshes, output_path):
@@ -32,8 +35,25 @@ def export_meshes(meshes, output_path):
         raise ValueError("Unsupported extension!")
 
 
-def compress_gl(filepath):
+def compress_gltf_pipeline(filepath):
     run(["node", GLTF_PIPELINE_FILEPATH, "-i", filepath, "-o", filepath, "-d"], capture_output=True)
+
+
+def compress_gltfpack(filepath):
+    run(["node", GLTFPACK_FILEPATH, "-i", filepath, "-o", filepath], capture_output=True)
+
+
+COMPRESSORS = {
+    "draco": compress_gltf_pipeline,
+    "meshoptimizer": compress_gltfpack
+}
+
+
+def compress_gl(filepath, method="draco"):
+    compressor = COMPRESSORS.get(method, None)
+    if compressor is None:
+        raise ValueError("Invalid compression method specified")
+    compressor(filepath)
 
 
 def export_gl_by_extension(exporter, filepath):
@@ -52,7 +72,7 @@ def export_gl_by_extension(exporter, filepath):
 # matters into our own hands.
 # We want alphaMode as BLEND
 # see https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#alpha-coverage
-def export_gl(plotter, filepath, with_alpha=True, compress=True):
+def export_gl(plotter, filepath, with_alpha=True, compression="draco"):
     path, ext = splitext(filepath)
     gltf_path = filepath
     glb = ext == ".glb"
@@ -66,8 +86,8 @@ def export_gl(plotter, filepath, with_alpha=True, compress=True):
         for material in gl.model.materials:
             material.alphaMode = "BLEND"
     export_gl_by_extension(gl, filepath)
-    if compress:
-        compress_gl(filepath)
+    if compression != "none":
+        compress_gl(filepath, method=compression)
     if glb:
         remove(gltf_path)
 
@@ -212,15 +232,13 @@ def create_plotter(viewer, state_dictionary):
     return plotter
 
 
-def export_to_ar(viewer, filepath, state_dict, compress=True):
+def export_to_ar(viewer, filepath, state_dict, compression="draco"):
     dir, base = split(filepath)
     name, ext = splitext(base)
     plotter = create_plotter(viewer, state_dict)
     html_path = join(dir, f"{name}.html")
     if ext in [".gltf", ".glb"]:
-        export_gl(plotter, filepath, with_alpha=True, compress=compress)
-        if compress:
-            compress_gl(filepath)
+        export_gl(plotter, filepath, with_alpha=True, compression=compression)
         export_modelviewer(html_path, base, viewer.state.title)
     else:
         plotter.export_obj(filepath)

@@ -1,11 +1,11 @@
-import os
 from os import getcwd
 from os.path import exists
 
 from glue.config import viewer_tool
 from glue.viewers.common.tool import Tool
 
-from glue_ar.export import export_to_ar
+from glue_ar.common.export import export_to_ar
+from glue_ar.utils import AR_ICON
 
 import ipyvuetify as v  # noqa
 from ipywidgets import HBox, Layout  # noqa
@@ -13,9 +13,6 @@ from IPython.display import display  # noqa
 from ipyfilechooser import FileChooser
 
 __all__ = ["JupyterARExportTool"]
-
-
-AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
 
 
 @viewer_tool
@@ -92,4 +89,4 @@ class JupyterARExportTool(Tool):
             self.viewer.output_widget.clear_output()
 
     def save_figure(self, filepath):
-        export_to_ar(self.viewer, filepath, state_dict={}, compress=True)
+        export_to_ar(self.viewer, filepath, state_dict={}, compression="draco")
