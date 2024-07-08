@@ -1,6 +1,7 @@
 from gltflib.gltf_resource import FileResource
 from mcubes import marching_cubes
-from numpy import isfinite, linspace
+from numpy import isfinite, linspace, transpose
+from uuid import uuid4
 import operator
 import struct
 
@@ -8,13 +9,21 @@ from gltflib import GLTF
 from gltflib import Accessor, AccessorType, Asset, BufferTarget, BufferView, Primitive, \
     ComponentType, GLTFModel, Node, Scene, Attributes, Mesh, Buffer
 
+from pxr import Gf, Sdf, Usd, UsdGeom, UsdLux, UsdShade, Vt
+
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 
+from glue_ar.common.export import compress_gl
 from glue_ar.utils import hex_to_components, isomin_for_layer, isomax_for_layer, layer_color
 from glue_ar.gltf_utils import *
 
-def create_marching_cubes_export(
+
+def unique_id():
+    return uuid4().hex
+
+
+def create_marching_cubes_gltf(
     viewer_state: Vispy3DVolumeViewerState,
     layer_state: VolumeLayerState,
 ):
@@ -33,10 +42,12 @@ def create_marching_cubes_export(
             bounds=bounds,
             target_cid=layer_state.attribute)
 
-    isomin = isomin_for_layer(viewer_state, layer_state) 
-    isomax = isomax_for_layer(viewer_state, layer_state) 
+    isomin = isomin_for_layer(viewer_state, layer_state)
+    isomax = isomax_for_layer(viewer_state, layer_state)
 
-    data[~isfinite(data)] = isomin - 1
+    data[~isfinite(data)] = isomin - 10
+
+    data = transpose(data, (1, 0, 2))
 
     isosurface_count = 30
 
@@ -137,6 +148,79 @@ def create_marching_cubes_export(
     glb_filepath = "marching_cubes.glb"
     gltf.export(gltf_filepath)
     gltf.export(glb_filepath)
-    # print("About to compress")
-    # compress_gl(glb_filepath)
+    print("About to compress")
+    compress_gl(glb_filepath)
+
+
+def create_marching_cubes_usd(
+    viewer_state: Vispy3DVolumeViewerState,
+    layer_state: VolumeLayerState,
+):
+
+    resolution = int(viewer_state.resolution)
+    bounds = [
+        (viewer_state.z_min, viewer_state.z_max, resolution),
+        (viewer_state.y_min, viewer_state.y_max, resolution),
+        (viewer_state.x_min, viewer_state.x_max, resolution)
+    ]
+
+    # For now, only consider one layer
+    # shape = (resolution, resolution, resolution)
+    data = layer_state.layer.compute_fixed_resolution_buffer(
+            target_data=layer_state.layer,
+            bounds=bounds,
+            target_cid=layer_state.attribute)
+
+    isomin = isomin_for_layer(viewer_state, layer_state) 
+    isomax = isomax_for_layer(viewer_state, layer_state) 
+
+    data[~isfinite(data)] = isomin - 10
+
+    data = transpose(data, (1, 0, 2))
+
+    isosurface_count = 30
+
+    output_filename = "marching_cubes.usdc"
+    output_filepath = output_filename
+    stage = Usd.Stage.CreateNew(output_filepath)
+    UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.y)
+
+    default_prim_key = "/world"
+    default_prim = UsdGeom.Xform.Define(stage, default_prim_key).GetPrim()
+    stage.SetDefaultPrim(default_prim)
+
+    light = UsdLux.RectLight.Define(stage, "/light")
+    light.CreateHeightAttr(-1)
+
+    levels = linspace(isomin, isomax, isosurface_count)
+    opacity = 0.5 * layer_state.alpha
+    color = layer_color(layer_state)
+    color_components = hex_to_components(color)
+
+    # TODO: Refactor this into a utility function
+    material = UsdShade.Material.Define(stage, "/material")
+    pbr_shader = UsdShade.Shader.Define(stage, "/material/PBRShader")
+    pbr_shader.CreateIdAttr("UsdPreviewSurface")
+    pbr_shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.4)
+    pbr_shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.0)
+    pbr_shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(tuple(c / 255 for c in color_components))
+    pbr_shader.CreateInput("opacity", Sdf.ValueTypeNames.Float).Set(opacity)
+    material.CreateSurfaceOutput().ConnectToSource(pbr_shader.ConnectableAPI(), "surface")
+
+    for level in levels:
+        points, triangles = marching_cubes(data, level)
+        xform_key = f"{default_prim_key}/xform_{unique_id()}"
+        UsdGeom.Xform.Define(stage, xform_key)
+        surface_key = f"{xform_key}/level_{unique_id()}"
+        surface = UsdGeom.Mesh.Define(stage, surface_key)
+        surface.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
+        surface.CreatePointsAttr(points)
+        surface.CreateFaceVertexCountsAttr([3] * len(triangles))
+        surface.CreateFaceVertexIndicesAttr([int(idx) for tri in triangles for idx in tri])
+
+        surface.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
+        UsdShade.MaterialBindingAPI(surface).Bind(material)
+
+
+    stage.GetRootLayer().Save()
 
