@@ -1,6 +1,6 @@
 from math import floor
 from itertools import product
-from numpy import isfinite, linspace, argwhere
+from numpy import isfinite, argwhere, transpose
 from os.path import join
 import operator
 import struct
@@ -109,7 +109,7 @@ def create_voxel_export(
     materials = [create_material_for_color(color_components, i / n_opacities) for i in range(n_opacities + 1)]
 
     # resolution = int(viewer_state.resolution)
-    resolution = 256
+    resolution = 512
     bounds = [
         (viewer_state.z_min, viewer_state.z_max, resolution),
         (viewer_state.y_min, viewer_state.y_max, resolution),
@@ -127,6 +127,8 @@ def create_voxel_export(
     isomax = isomax_for_layer(viewer_state, layer_state) 
 
     data[~isfinite(data)] = isomin - 1
+
+    data = transpose(data, (1, 0, 2))
 
     # data = data.transpose(0, 2, 1)
 

@@ -95,7 +95,7 @@ def export_gl(plotter, filepath, with_alpha=True, compression="draco"):
 def export_modelviewer(output_path, gltf_path, alt_text):
     mv_url = "https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"
     html = f"""
-        <html>
+    <html>
         <body>
             <script type="module" src="{mv_url}"></script>
             <style>
