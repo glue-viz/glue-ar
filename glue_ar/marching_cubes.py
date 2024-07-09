@@ -49,7 +49,7 @@ def create_marching_cubes_gltf(
 
     data = transpose(data, (1, 0, 2))
 
-    isosurface_count = 30
+    isosurface_count = 75
 
     buffers = []
     buffer_views = []
@@ -58,12 +58,12 @@ def create_marching_cubes_gltf(
     file_resources = []
 
     levels = linspace(isomin, isomax, isosurface_count)
-    opacity = layer_state.alpha / isosurface_count
+    opacity = 0.25 * layer_state.alpha
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
     materials = [create_material_for_color(color_components, opacity)]
 
-    for level in levels:
+    for level in levels[1:]:
         barr = bytearray()
         level_bin = f"level_{level}.bin"
 
@@ -80,8 +80,8 @@ def create_marching_cubes_gltf(
 
         pt_mins = [min([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
         pt_maxes = [max([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
-        tri_mins = [int(min([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)]
-        tri_maxes = [int(max([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)]
+        tri_mins = [min([int(min([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
+        tri_maxes = [max([int(max([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
        
         buffers.append(Buffer(byteLength=len(barr), uri=level_bin))
 
@@ -178,7 +178,7 @@ def create_marching_cubes_usd(
 
     data = transpose(data, (1, 0, 2))
 
-    isosurface_count = 30
+    isosurface_count = 75
 
     output_filename = "marching_cubes.usdc"
     output_filepath = output_filename
@@ -193,7 +193,7 @@ def create_marching_cubes_usd(
     light.CreateHeightAttr(-1)
 
     levels = linspace(isomin, isomax, isosurface_count)
-    opacity = 0.5 * layer_state.alpha
+    opacity = 0.3 * layer_state.alpha
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
 
@@ -202,12 +202,12 @@ def create_marching_cubes_usd(
     pbr_shader = UsdShade.Shader.Define(stage, "/material/PBRShader")
     pbr_shader.CreateIdAttr("UsdPreviewSurface")
     pbr_shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.4)
-    pbr_shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.0)
+    pbr_shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.1)
     pbr_shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(tuple(c / 255 for c in color_components))
     pbr_shader.CreateInput("opacity", Sdf.ValueTypeNames.Float).Set(opacity)
     material.CreateSurfaceOutput().ConnectToSource(pbr_shader.ConnectableAPI(), "surface")
 
-    for level in levels:
+    for level in levels[1:]:
         points, triangles = marching_cubes(data, level)
         xform_key = f"{default_prim_key}/xform_{unique_id()}"
         UsdGeom.Xform.Define(stage, xform_key)
