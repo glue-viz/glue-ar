@@ -1,5 +1,7 @@
-from gltflib import Asset, GLTFModel, Node, Scene
+from gltflib import Accessor, Asset, Attributes, Buffer, BufferView, GLTFModel, \
+        Material, Mesh, Node, PBRMetallicRoughness, Primitive, PrimitiveMode, Scene
 from gltflib.gltf import GLTF 
+from gltflib.gltf_resource import FileResource
 
 
 class GLTFBuilder:
@@ -12,23 +14,78 @@ class GLTFBuilder:
         self.accessors = []
         self.file_resources = []
 
-    def add_material(self, material):
-        self.materials.append(material)
+    def add_material(self, color, opacity=1,
+                     roughness_factor=1, metallic_factor=0,
+                     alpha_mode="BLEND"):
+        if any(c > 1 for c in color):
+            color = [c / 256 for c in color[:3]]
+        self.materials.append(
+            Material(
+                pbrMetallicRoughness=PBRMetallicRoughness(
+                    baseColorFactor=color + [opacity],
+                    roughnessFactor=roughness_factor,
+                    metallicFactor=metallic_factor
+                ),
+                alphaMode=alpha_mode
+            )
+        )
+        return self
     
-    def add_mesh(self, mesh):
-        self.meshes.append(mesh)
+    def add_mesh(self, position_accessor, indices_accessor, material,
+                 mode=PrimitiveMode.TRIANGLES):
+        self.meshes.append(
+            Mesh(primitives=[
+                Primitive(attributes=Attributes(POSITION=position_accessor),
+                          indices=indices_accessor,
+                          material=material,
+                          mode=mode,
+                )]
+            )
+        )
+        return self
 
-    def add_buffer(self, buffer):
-        self.buffers.append(buffer)
+    def add_buffer(self, byte_length, uri):
+        self.buffers.append(
+            Buffer(
+                byteLength=byte_length,
+                uri=uri
+            )
+        )
+        return self
 
-    def add_buffer_view(self, view):
-        self.buffer_views.append(view)
+    def add_buffer_view(self, buffer, byte_length, byte_offset, target):
+        self.buffer_views.append(
+            BufferView(
+                buffer=buffer,
+                byteLength=byte_length,
+                byteOffset=byte_offset,
+                target=target
+            )
+        )
+        return self
 
-    def add_accessor(self, accessor):
-        self.accessors.append(accessor)
+    def add_accessor(self, buffer_view, component_type, count,
+                     type, mins, maxes):
+        self.accessors.append(
+            Accessor(
+                bufferView=buffer_view,
+                componentType=component_type,
+                count=count,
+                type=type,
+                min=mins,
+                max=maxes,
+            )
+        )
+        return self
 
-    def add_file_resource(self, resource):
-        self.file_resources.append(resource)
+    def add_file_resource(self, filename, data):
+        self.file_resources.append(
+            FileResource(
+                filename,
+                data=data,
+            )
+        )
+        return self
 
     @property
     def material_count(self):

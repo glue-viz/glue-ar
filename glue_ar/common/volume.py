@@ -1,4 +1,3 @@
-from gltflib.gltf_resource import FileResource
 from mcubes import marching_cubes
 import numpy as np
 from numpy import clip, full, invert, isfinite, isnan, linspace, transpose
@@ -7,12 +6,10 @@ import pyvista as pv
 from scipy.ndimage import gaussian_filter
 import struct
 
-from gltflib import Accessor, AccessorType, Asset, BufferTarget, BufferView, Primitive, \
-    ComponentType, GLTFModel, Node, Scene, Attributes, Mesh, Buffer
+from gltflib import AccessorType, BufferTarget, ComponentType
 
 from glue.core.subset_group import GroupedSubset
 from glue_ar.utils import hex_to_components, isomin_for_layer, isomax_for_layer, layer_color
-from glue_ar.gltf_utils import create_material_for_color
 
 
 # Trying to export each layer individually, rather than doing all the meshes
@@ -132,17 +129,11 @@ def add_volume_layer_gltf(builder, viewer_state, layer_state):
 
     isosurface_count = 75
 
-    buffers = []
-    buffer_views = []
-    accessors = []
-    meshes = []
-    file_resources = []
-
     levels = linspace(isomin, isomax, isosurface_count)
     opacity = 0.25 * layer_state.alpha
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
-    materials = [create_material_for_color(color_components, opacity)]
+    builder.add_material(color_components, opacity=opacity)
    
     for level in levels[1:]:
         barr = bytearray()
@@ -164,52 +155,44 @@ def add_volume_layer_gltf(builder, viewer_state, layer_state):
         tri_mins = [min([int(min([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
         tri_maxes = [max([int(max([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
 
-        builder.add_buffer(Buffer(byteLength=len(barr), uri=level_bin))
+        builder.add_buffer(byte_length=len(barr), uri=level_bin)
         
         buffer = builder.buffer_count - 1
         builder.add_buffer_view( 
-            BufferView(buffer=buffer,
-                       byteLength=point_len,
-                       byteOffset=0,
-                       target=BufferTarget.ARRAY_BUFFER.value,
-            )
-        )
+            buffer=buffer,
+            byte_length=point_len,
+            byte_offset=0,
+            target=BufferTarget.ARRAY_BUFFER.value,
+        ) 
         builder.add_accessor( 
-            Accessor(bufferView=len(buffer_views)-1,
-                     componentType=ComponentType.FLOAT.value,
-                     count=len(points),
-                     type=AccessorType.VEC3.value,
-                     min=pt_mins,
-                     max=pt_maxes,
-            )
+            buffer_view=builder.buffer_view_count-1,
+            component_type=ComponentType.FLOAT.value,
+            count=len(points),
+            type=AccessorType.VEC3.value,
+            min=pt_mins,
+            max=pt_maxes,
         )
         builder.add_buffer_view( 
-            BufferView(buffer=buffer,
-                       byteLength=triangle_len,
-                       byteOffset=point_len,
-                       target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
-            )
+            buffer=buffer,
+            byte_length=triangle_len,
+            byte_offset=point_len,
+            target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
         )
         builder.add_accessor(
-            Accessor(bufferView=len(buffer_views)-1,
-                     componentType=ComponentType.UNSIGNED_INT.value,
-                     count=len(triangles) * 3,
-                     type=AccessorType.SCALAR.value,
-                     min=tri_mins,
-                     max=tri_maxes,
-            )
+            buffer_view=builder.buffer_view_count-1,
+            component_type=ComponentType.UNSIGNED_INT.value,
+            count=len(triangles) * 3,
+            type=AccessorType.SCALAR.value,
+            mins=tri_mins,
+            maxes=tri_maxes,
         )
         builder.add_mesh(
-            Mesh(primitives=[
-                Primitive(attributes=Attributes(POSITION=len(accessors)-2),
-                          indices=len(accessors)-1,
-                          material=0
-                )]
-            )
+            position_accessor=builder.accessor_count-2,
+            indices_accessor=builder.accessor_count-1,
+            material=0,
         )
         
-        builder.add_file_resource(FileResource(level_bin, data=barr))
-
+        builder.add_file_resource(level_bin, data=barr)
 
 
 # For the 3D volume viewer

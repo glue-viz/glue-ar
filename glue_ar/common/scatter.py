@@ -1,9 +1,12 @@
+from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
 from numpy import array, clip, isnan, ones, sqrt
 from numpy.linalg import norm
+import operator
 import pyvista as pv
+import struct
 
 from glue.utils import ensure_numerical
-from glue_ar.utils import layer_color, mask_for_bounds, xyz_bounds, xyz_for_layer
+from glue_ar.utils import hex_to_components, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer
 
 
 # For the 3D scatter viewer
@@ -211,3 +214,110 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
         meshes.append(bars_info)
 
     return meshes
+
+def add_error_bars_gltf(builder, viewer_state, layer_state,
+                        axis, data, bounds, mask=None):
+    att = getattr(layer_state, f"{axis}err_attribute")
+    err_values = layer_state.layer[att].ravel()[mask]
+    index = ['x', 'y', 'z'].index(axis)
+    axis_range = abs(bounds[index][1] - bounds[index][0])
+    if viewer_state.native_aspect:
+        max_range = max((abs(b[1] - b[0]) for b in bounds))
+        factor = 1 / max_range
+    else:
+        factor = 1 / axis_range
+    err_values *= factor
+
+    barr = bytearray()
+
+    # Lines just go from 0 -> 1 (start -> end)
+    barr.extend(struct.pack('I', 0))
+    barr.extend(struct.pack('I', 1))
+
+    line_len = len(barr)
+
+    builder.add_buffer_view(
+        buffer=builder.buffer_count,
+        byte_length=line_len,
+        byte_offset=0,
+        target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
+    )
+    builder.add_accessor(
+        buffer_view=builder.buffer_view_count-1,
+        component_type=ComponentType.UNSIGNED_INT.value,
+        count=2,
+        type=AccessorType.SCALAR.value,
+        mins=[0],
+        maxes=[1],
+    )
+    line_accessor = builder.accessor_count - 1
+
+    errors_bin = f"errors_{unique_id()}.bin"
+    points = []
+    current_len = len(barr)
+    for pt, err in zip(data, err_values):
+        start = [c - err if idx == index else c for idx, c in enumerate(pt)]
+        end = [c + err if idx == index else c for idx, c in enumerate(pt)]
+        points.extend((start, end))
+
+        prev_len = current_len
+        for ep in (start, end):
+            for coord in ep:
+                barr.extend(struct.pack('f', coord))
+    
+        current_len = len(barr)
+        new_len = current_len - prev_len
+        pt_mins = [min([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
+        pt_maxes = [max([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
+    
+        builder.add_buffer_view(
+            buffer=builder.buffer_count,
+            byte_length=new_len,
+            byte_offset=prev_len,
+            target=BufferTarget.ARRAY_BUFFER.value,
+        )
+        builder.add_accessor(
+            buffer_view=builder.buffer_view_count-1,
+            component_type=ComponentType.FLOAT.value,
+            count=len(points),
+            type=AccessorType.VEC3.value,
+            mins=pt_mins,
+            maxes=pt_maxes,
+        )
+        builder.add_mesh(
+            position_accessor=builder.accessor_count-1,
+            indices_accessor=line_accessor,
+            material=builder.material_count-1,
+            mode=PrimitiveMode.LINES,
+        )
+
+    builder.add_buffer(byte_length=len(barr), uri=errors_bin)
+    builder.add_file_resource(errors_bin, data=barr)
+
+
+def add_scatter_layer_gltf(builder, viewer_state, layer_state,
+                           theta_resolution=8,
+                           phi_resolution=8,
+                           clip_to_bounds=True,
+                           scaled=True):
+    bounds = xyz_bounds(viewer_state)
+    if clip_to_bounds:
+        mask = mask_for_bounds(viewer_state, layer_state, bounds)
+    else:
+        mask = None
+
+    color = layer_color(layer_state)
+    color_components = hex_to_components(color)
+    builder.add_material(color_components, opacity=layer_state.alpha)
+
+    theta_resolution = int(theta_resolution)
+    phi_resolution = int(phi_resolution)
+    fixed_color = layer_state.color_mode == "Fixed"
+    data = xyz_for_layer(viewer_state, layer_state,
+                         preserve_aspect=viewer_state.native_aspect,
+                         mask=mask,
+                         scaled=scaled)
+    factor = max((abs(b[1] - b[0]) for b in bounds))
+    if layer_state.size_mode == "Fixed":
+        radius = layer_state.size_scaling * sqrt(layer_state.size) / (10 * factor)
+

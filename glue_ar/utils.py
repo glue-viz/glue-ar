@@ -1,4 +1,5 @@
 import os
+from uuid import uuid4
 from glue.core.subset_group import GroupedSubset
 from numpy import array, inf
 
@@ -105,3 +106,7 @@ def xyz_for_layer(viewer_state, layer_state,
 
 def hex_to_components(color):
     return [int(color[idx:idx+2], 16) for idx in range(1, len(color), 2)]
+
+
+def unique_id():
+    return uuid4().hex
