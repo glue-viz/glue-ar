@@ -1,7 +1,7 @@
 # glue-ar
 
 This package is an experimental plugin for [glue](<ttps://glueviz.org/>) that allows exporting augmented reality (AR)
-figures out of the 3D scatter and volume viewers from [vispy viewer](https://github.com/glue-viz/glue-vispy-viewers>).
+figures out of the 3D scatter and volume viewers from [glue-vispy-viewers](https://github.com/glue-viz/glue-vispy-viewers).
 Currently this ability is exposed via viewer tools that save a 3D file representing the current view. Currently supported
 file formats include [OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file) and [glTF](https://www.khronos.org/gltf/).
 This export is performed used [pyvista](https://pyvista.org/), which provides a Python interface to the [Visualization Toolkit (VTK)](https://vtk.org/).
