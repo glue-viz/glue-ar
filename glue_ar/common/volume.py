@@ -1,10 +1,18 @@
+from gltflib.gltf_resource import FileResource
+from mcubes import marching_cubes
 import numpy as np
-from numpy import clip, full, invert, isfinite, isnan
+from numpy import clip, full, invert, isfinite, isnan, linspace, transpose
+import operator
 import pyvista as pv
 from scipy.ndimage import gaussian_filter
+import struct
+
+from gltflib import Accessor, AccessorType, Asset, BufferTarget, BufferView, Primitive, \
+    ComponentType, GLTFModel, Node, Scene, Attributes, Mesh, Buffer
 
 from glue.core.subset_group import GroupedSubset
-from glue_ar.utils import isomin_for_layer, isomax_for_layer, layer_color
+from glue_ar.utils import hex_to_components, isomin_for_layer, isomax_for_layer, layer_color
+from glue_ar.gltf_utils import create_material_for_color
 
 
 # Trying to export each layer individually, rather than doing all the meshes
@@ -106,6 +114,102 @@ def bounds_3d(viewer_state):
     return [(viewer_state.z_min, viewer_state.z_max, viewer_state.resolution),
             (viewer_state.y_min, viewer_state.y_max, viewer_state.resolution),
             (viewer_state.x_min, viewer_state.x_max, viewer_state.resolution)]
+
+
+def add_volume_layer_gltf(builder, viewer_state, layer_state):
+    bounds = bounds_3d(viewer_state)
+    data = layer_state.layer.compute_fixed_resolution_buffer(
+        target_data=layer_state.layer,
+        bounds=bounds,
+        target_cid=layer_state.attribute)
+
+    isomin = isomin_for_layer(viewer_state, layer_state)
+    isomax = isomax_for_layer(viewer_state, layer_state)
+
+    data[~isfinite(data)] = isomin - 10
+
+    data = transpose(data, (1, 0, 2))
+
+    isosurface_count = 75
+
+    buffers = []
+    buffer_views = []
+    accessors = []
+    meshes = []
+    file_resources = []
+
+    levels = linspace(isomin, isomax, isosurface_count)
+    opacity = 0.25 * layer_state.alpha
+    color = layer_color(layer_state)
+    color_components = hex_to_components(color)
+    materials = [create_material_for_color(color_components, opacity)]
+   
+    for level in levels[1:]:
+        barr = bytearray()
+        level_bin = f"level_{level}.bin"
+
+        points, triangles = marching_cubes(data, level)
+        for pt in points:
+            for coord in pt:
+                barr.extend(struct.pack('f', coord))
+        point_len = len(barr)
+
+        for tri in triangles:
+            for idx in tri:
+                barr.extend(struct.pack('I', idx))
+        triangle_len = len(barr) - point_len
+
+        pt_mins = [min([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
+        pt_maxes = [max([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
+        tri_mins = [min([int(min([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
+        tri_maxes = [max([int(max([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
+
+        builder.add_buffer(Buffer(byteLength=len(barr), uri=level_bin))
+        
+        buffer = builder.buffer_count - 1
+        builder.add_buffer_view( 
+            BufferView(buffer=buffer,
+                       byteLength=point_len,
+                       byteOffset=0,
+                       target=BufferTarget.ARRAY_BUFFER.value,
+            )
+        )
+        builder.add_accessor( 
+            Accessor(bufferView=len(buffer_views)-1,
+                     componentType=ComponentType.FLOAT.value,
+                     count=len(points),
+                     type=AccessorType.VEC3.value,
+                     min=pt_mins,
+                     max=pt_maxes,
+            )
+        )
+        builder.add_buffer_view( 
+            BufferView(buffer=buffer,
+                       byteLength=triangle_len,
+                       byteOffset=point_len,
+                       target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
+            )
+        )
+        builder.add_accessor(
+            Accessor(bufferView=len(buffer_views)-1,
+                     componentType=ComponentType.UNSIGNED_INT.value,
+                     count=len(triangles) * 3,
+                     type=AccessorType.SCALAR.value,
+                     min=tri_mins,
+                     max=tri_maxes,
+            )
+        )
+        builder.add_mesh(
+            Mesh(primitives=[
+                Primitive(attributes=Attributes(POSITION=len(accessors)-2),
+                          indices=len(accessors)-1,
+                          material=0
+                )]
+            )
+        )
+        
+        builder.add_file_resource(FileResource(level_bin, data=barr))
+
 
 
 # For the 3D volume viewer
