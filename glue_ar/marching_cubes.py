@@ -4,6 +4,7 @@ from numpy import isfinite, linspace, transpose
 from uuid import uuid4
 import operator
 import struct
+from typing import List
 
 from gltflib import GLTF
 from gltflib import Accessor, AccessorType, Asset, BufferTarget, BufferView, Primitive, \
@@ -142,7 +143,6 @@ def create_marching_cubes_gltf(
         accessors=accessors,
         materials=materials
     )
-    print(model)
     gltf = GLTF(model=model, resources=file_resources)
     gltf_filepath = "marching_cubes.gltf"
     glb_filepath = "marching_cubes.glb"
@@ -150,6 +150,24 @@ def create_marching_cubes_gltf(
     gltf.export(glb_filepath)
     print("About to compress")
     compress_gl(glb_filepath)
+
+
+def usd_material_for_color(
+    stage: Usd.Stage,
+    color: List[int],
+    opacity: float
+) -> UsdShade.Shader:
+
+    uid = unique_id()
+    material = UsdShade.Material.Define(stage, f"/material_{uid}")
+    pbr_shader = UsdShade.Shader.Define(stage, f"/material_{uid}/PBRShader")
+    pbr_shader.CreateIdAttr("UsdPreviewSurface")
+    pbr_shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.4)
+    pbr_shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.1)
+    pbr_shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(tuple(c / 255 for c in color))
+    pbr_shader.CreateInput("opacity", Sdf.ValueTypeNames.Float).Set(opacity)
+    material.CreateSurfaceOutput().ConnectToSource(pbr_shader.ConnectableAPI(), "surface")
+    return material
 
 
 def create_marching_cubes_usd(
@@ -193,21 +211,11 @@ def create_marching_cubes_usd(
     light.CreateHeightAttr(-1)
 
     levels = linspace(isomin, isomax, isosurface_count)
-    opacity = 0.3 * layer_state.alpha
+    opacity = 0.25 * layer_state.alpha
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
 
-    # TODO: Refactor this into a utility function
-    material = UsdShade.Material.Define(stage, "/material")
-    pbr_shader = UsdShade.Shader.Define(stage, "/material/PBRShader")
-    pbr_shader.CreateIdAttr("UsdPreviewSurface")
-    pbr_shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.4)
-    pbr_shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.1)
-    pbr_shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(tuple(c / 255 for c in color_components))
-    pbr_shader.CreateInput("opacity", Sdf.ValueTypeNames.Float).Set(opacity)
-    material.CreateSurfaceOutput().ConnectToSource(pbr_shader.ConnectableAPI(), "surface")
-
-    for level in levels[1:]:
+    for i, level in enumerate(levels[1:]):
         points, triangles = marching_cubes(data, level)
         xform_key = f"{default_prim_key}/xform_{unique_id()}"
         UsdGeom.Xform.Define(stage, xform_key)
@@ -218,6 +226,7 @@ def create_marching_cubes_usd(
         surface.CreateFaceVertexCountsAttr([3] * len(triangles))
         surface.CreateFaceVertexIndicesAttr([int(idx) for tri in triangles for idx in tri])
 
+        material = usd_material_for_color(stage, color_components, opacity)
         surface.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
         UsdShade.MaterialBindingAPI(surface).Bind(material)
 
