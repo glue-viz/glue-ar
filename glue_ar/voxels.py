@@ -5,10 +5,10 @@ import operator
 import struct
 
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
-from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
+from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
 from glue_ar.common.export import compress_gl
 
-from glue_ar.utils import hex_to_components, isomin_for_layer, isomax_for_layer, layer_color
+from glue_ar.utils import alpha_composite, hex_to_components, isomin_for_layer, isomax_for_layer, layer_color, layers_to_export
 
 from glue_ar.gltf_utils import *
 
@@ -19,36 +19,21 @@ from gltflib.gltf_resource import FileResource
 
 
 def create_voxel_export(
-    viewer_state: Vispy3DVolumeViewerState,
-    layer_state: VolumeLayerState,
+    viewer: VispyVolumeViewerMixin,
     precomputed_frbs=None
 ):
+
+    layers = layers_to_export(viewer)
     n_opacities = 100
-    color = layer_color(layer_state)
-    color_components = hex_to_components(color)
-    materials = [create_material_for_color(color_components, i / n_opacities) for i in range(n_opacities + 1)]
 
     # resolution = int(viewer_state.resolution)
-    resolution = 512
+    resolution = 100 
+    viewer_state = viewer.state
     bounds = [
         (viewer_state.z_min, viewer_state.z_max, resolution),
         (viewer_state.y_min, viewer_state.y_max, resolution),
         (viewer_state.x_min, viewer_state.x_max, resolution)
     ]
-
-    # For now, only consider one layer
-    # shape = (resolution, resolution, resolution)
-    data = layer_state.layer.compute_fixed_resolution_buffer(
-            target_data=layer_state.layer,
-            bounds=bounds,
-            target_cid=layer_state.attribute)
-
-    isomin = isomin_for_layer(viewer_state, layer_state) 
-    isomax = isomax_for_layer(viewer_state, layer_state) 
-
-    data[~isfinite(data)] = isomin - 1
-
-    data = transpose(data, (1, 0, 2))
 
     x_range = viewer_state.x_max - viewer_state.x_min
     y_range = viewer_state.y_max - viewer_state.y_min
@@ -103,24 +88,55 @@ def create_voxel_export(
 
     opacity_cutoff = 0.1
     opacity_factor = 0.75
-    isorange = isomax - isomin
-    nonempty_indices = argwhere(layer_state.alpha * opacity_factor * (data - isomin) / isorange)
-    print(nonempty_indices[0])
-    for indices in nonempty_indices:
+    
+    occupied_voxels = {}
+
+    for layer in layers:
+        layer_state = layer.state
+        data = layer_state.layer.compute_fixed_resolution_buffer(
+                target_data=viewer_state.reference_data,
+                bounds=bounds,
+                target_cid=layer_state.attribute)
+    
+        isomin = isomin_for_layer(viewer_state, layer_state) 
+        isomax = isomax_for_layer(viewer_state, layer_state) 
+
+        data[~isfinite(data)] = isomin - 1
+    
+        data = transpose(data, (1, 0, 2))
+    
+        isorange = isomax - isomin
+        nonempty_indices = argwhere(data - isomin > 0)
+
+        color = layer_color(layer_state)
+        color_components = hex_to_components(color)
+
+        for indices in nonempty_indices:
+            center = tuple((index + 0.5) * side for index, side in zip(indices, clip_sides))
+
+            value = data[*indices]
+            adjusted_opacity = min(max(layer_state.alpha * opacity_factor * (value - isomin) / isorange, 0), 1)
+            indices_tpl = tuple(indices)
+            if indices_tpl in occupied_voxels:
+                current_color = occupied_voxels[indices_tpl]
+                adjusted_a_color = color_components[:3] + [adjusted_opacity]
+                new_color = alpha_composite(adjusted_a_color, current_color)
+                occupied_voxels[indices_tpl] = new_color
+            elif adjusted_opacity >= opacity_cutoff:
+                occupied_voxels[indices_tpl] = color_components[:3] + [adjusted_opacity]
+
+    materials_map = {}
+    materials = []
+    print(len(occupied_voxels))
+    for indices, rgba in occupied_voxels.items():
+        if rgba[-1] < opacity_cutoff:
+            continue
+
         center = tuple((index + 0.5) * side for index, side in zip(indices, clip_sides))
 
         pts = rectangular_prism_points(center, clip_sides)
-        point_index += len(pts)
-        value = data[*indices]
-        adjusted_value = min(max(layer_state.alpha * opacity_factor * (value - isomin) / isorange, 0), 1)
-        print(adjusted_value)
-        if adjusted_value < opacity_cutoff:
-            continue
-
-        print("Keeping it!")
-        material_index = floor(adjusted_value * n_opacities)
-
         prev_ptbarr_len = len(points_barr)
+        point_index += len(pts)
         for pt in pts:
             for coord in pt:
                 points_barr.extend(struct.pack('f', coord))
@@ -148,6 +164,13 @@ def create_voxel_export(
                      max=pt_maxes,
             )
         )
+        rgba_tpl = tuple(rgba)
+        if rgba_tpl in materials_map:
+            material_index = materials_map[rgba_tpl]
+        else:
+            material_index = len(materials)
+            materials_map[rgba_tpl] = material_index
+            materials.append(create_material_for_color(rgba[:3], rgba[3]))
         meshes.append(
             Mesh(primitives=[
                 Primitive(attributes=Attributes(POSITION=len(accessors)-1),
@@ -156,9 +179,6 @@ def create_voxel_export(
                 )]
             )
         )
-
-    print(len(accessors))
-    print(resolution ** 3)
 
 
     points_buffer = Buffer(byteLength=len(points_barr), uri=points_bin)
