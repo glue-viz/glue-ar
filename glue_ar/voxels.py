@@ -8,6 +8,7 @@ from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
 from glue_ar.common.export import compress_gl
 
+from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.utils import alpha_composite, hex_to_components, isomin_for_layer, isomax_for_layer, layer_color, layers_to_export
 
 from glue_ar.gltf_utils import *
@@ -22,6 +23,8 @@ def create_voxel_export(
     viewer: VispyVolumeViewerMixin,
     precomputed_frbs=None
 ):
+
+    builder = GLTFBuilder()
 
     layers = layers_to_export(viewer)
     n_opacities = 100
@@ -53,9 +56,6 @@ def create_voxel_export(
     clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
 
     point_index = 0
-    buffer_views = []
-    accessors = []
-    meshes = []
     points_barr = bytearray()
     triangles_barr = bytearray()
     points_bin = "points.bin"
@@ -68,23 +68,20 @@ def create_voxel_export(
             triangles_barr.extend(struct.pack('I', idx))
     triangle_barrlen = len(triangles_barr)
 
-    buffer_views = [
-        BufferView(buffer=1,
-                   byteLength=triangle_barrlen,
-                   byteOffset=0,
-                   target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
-        )
-    ]
-
-    accessors = [
-        Accessor(bufferView=0,
-                 componentType=ComponentType.UNSIGNED_INT.value,
-                 count=len(triangles) * 3,
-                 type=AccessorType.SCALAR.value,
-                 min=[0],
-                 max=[7]
-        )
-    ]
+    builder.add_buffer_view(
+        buffer=1,
+        byte_length=triangle_barrlen,
+        byte_offset=0,
+        target=BufferTarget.ELEMENT_ARRAY_BUFFER.value
+    )
+    builder.add_accessor(
+        buffer_view=0,
+        component_type=ComponentType.UNSIGNED_INT.value,
+        count=len(triangles) * 3,
+        type=AccessorType.SCALAR.value,
+        mins=[0],
+        maxes=[7],
+    )
 
     opacity_cutoff = 0.1
     opacity_factor = 0.75
@@ -126,8 +123,6 @@ def create_voxel_export(
                 occupied_voxels[indices_tpl] = color_components[:3] + [adjusted_opacity]
 
     materials_map = {}
-    materials = []
-    print(len(occupied_voxels))
     for indices, rgba in occupied_voxels.items():
         if rgba[-1] < opacity_cutoff:
             continue
@@ -148,63 +143,43 @@ def create_voxel_export(
         # We're going to use two buffers
         # The first one (index 0) for the points
         # and the second one (index 1) for the triangles
-        buffer_views.append(
-            BufferView(buffer=0,
-                       byteLength=ptbarr_len-prev_ptbarr_len,
-                       byteOffset=prev_ptbarr_len,
-                       target=BufferTarget.ARRAY_BUFFER.value,
-            )
+        builder.add_buffer_view(
+           buffer=0,
+           byte_length=ptbarr_len-prev_ptbarr_len,
+           byte_offset=prev_ptbarr_len,
+           target=BufferTarget.ARRAY_BUFFER.value,
         )
-        accessors.append(
-            Accessor(bufferView=len(buffer_views)-1,
-                     componentType=ComponentType.FLOAT.value,
-                     count=len(pts),
-                     type=AccessorType.VEC3.value,
-                     min=pt_mins,
-                     max=pt_maxes,
-            )
+        builder.add_accessor(
+            buffer_view=builder.buffer_view_count-1,
+            component_type=ComponentType.FLOAT.value,
+            count=len(pts),
+            type=AccessorType.VEC3.value,
+            mins=pt_mins,
+            maxes=pt_maxes,
         )
         rgba_tpl = tuple(rgba)
         if rgba_tpl in materials_map:
             material_index = materials_map[rgba_tpl]
         else:
-            material_index = len(materials)
+            material_index = builder.material_count
             materials_map[rgba_tpl] = material_index
-            materials.append(create_material_for_color(rgba[:3], rgba[3]))
-        meshes.append(
-            Mesh(primitives=[
-                Primitive(attributes=Attributes(POSITION=len(accessors)-1),
-                          indices=0,
-                          material=material_index,
-                )]
+            builder.add_material(
+                rgba[:3],
+                rgba[3],
             )
+        builder.add_mesh(
+            position_accessor=builder.accessor_count - 1,
+            indices_accessor=0,
+            material=material_index
         )
 
+    builder.add_buffer(byte_length=len(points_barr), uri=points_bin)
+    builder.add_buffer(byte_length=len(triangles_barr), uri=triangles_bin)
 
-    points_buffer = Buffer(byteLength=len(points_barr), uri=points_bin)
-    triangles_buffer = Buffer(byteLength=len(triangles_barr), uri=triangles_bin)
-    buffers = [points_buffer, triangles_buffer]
+    builder.add_file_resource(points_bin, data=points_barr)
+    builder.add_file_resource(triangles_bin, data=triangles_barr)
 
-    nodes = [Node(mesh=i) for i in range(len(meshes))]
-
-    file_resources = [
-        FileResource(points_bin, data=points_barr),
-        FileResource(triangles_bin, data=triangles_barr),
-    ]
-    
-    node_indices = list(range(len(nodes)))
-
-    model = GLTFModel(
-        asset=Asset(version='2.0'),
-        scenes=[Scene(nodes=node_indices)],
-        nodes=nodes,
-        meshes=meshes,
-        buffers=buffers,
-        bufferViews=buffer_views,
-        accessors=accessors,
-        materials=materials
-    )
-    gltf = GLTF(model=model, resources=file_resources)
+    gltf = builder.build()
     gltf_filepath = "voxel_test.gltf"
     glb_filepath = "voxel_test.glb"
     gltf.export(gltf_filepath)
