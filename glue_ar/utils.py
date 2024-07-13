@@ -7,6 +7,10 @@ from numpy import array, inf
 AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
 
 
+def layers_to_export(viewer):
+    return list(filter(lambda artist: artist.enabled and artist.visible, viewer.layers))
+
+
 def isomin_for_layer(viewer_state, layer):
     if isinstance(layer.layer, GroupedSubset):
         for viewer_layer in viewer_state.layers:
@@ -110,3 +114,17 @@ def hex_to_components(color):
 
 def unique_id():
     return uuid4().hex
+
+
+def alpha_composite(over, under):
+    alpha_o = over[3] if len(over) == 4 else over[2]
+    alpha_u = under[3] if len(under) == 4 else under[2]
+    rgb_o = over[:3]
+    rgb_u = under[:3]
+    alpha_new = alpha_o + alpha_u * (1 - alpha_o)
+    rgba_new = [
+        (co * alpha_o + cu * alpha_u * (1 - alpha_o)) / alpha_new
+        for co, cu in zip(rgb_o, rgb_u)
+    ]
+    rgba_new.append(alpha_new)
+    return rgba_new
