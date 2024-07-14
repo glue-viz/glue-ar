@@ -4,9 +4,9 @@ from numpy import isfinite, linspace, transpose
 from uuid import uuid4
 import operator
 import struct
-from typing import List
+from typing import Iterable, List
 
-from gltflib import GLTF
+from gltflib import GLTF, material
 from gltflib import Accessor, AccessorType, Asset, BufferTarget, BufferView, Primitive, \
     ComponentType, GLTFModel, Node, Scene, Attributes, Mesh, Buffer
 
@@ -16,6 +16,7 @@ from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 
 from glue_ar.common.export import compress_gl
+from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.utils import hex_to_components, isomin_for_layer, isomax_for_layer, layer_color
 from glue_ar.gltf_utils import *
 
@@ -26,7 +27,7 @@ def unique_id():
 
 def create_marching_cubes_gltf(
     viewer_state: Vispy3DVolumeViewerState,
-    layer_state: VolumeLayerState,
+    layer_states: Iterable[VolumeLayerState],
 ):
 
     resolution = int(viewer_state.resolution)
@@ -36,114 +37,88 @@ def create_marching_cubes_gltf(
         (viewer_state.x_min, viewer_state.x_max, resolution)
     ]
 
-    # For now, only consider one layer
-    # shape = (resolution, resolution, resolution)
-    data = layer_state.layer.compute_fixed_resolution_buffer(
-            target_data=layer_state.layer,
-            bounds=bounds,
-            target_cid=layer_state.attribute)
+    builder = GLTFBuilder()
 
-    isomin = isomin_for_layer(viewer_state, layer_state)
-    isomax = isomax_for_layer(viewer_state, layer_state)
+    for layer_state in layer_states:
+        data = layer_state.layer.compute_fixed_resolution_buffer(
+                target_data=viewer_state.reference_data,
+                bounds=bounds,
+                target_cid=layer_state.attribute)
 
-    data[~isfinite(data)] = isomin - 10
+        isomin = isomin_for_layer(viewer_state, layer_state)
+        isomax = isomax_for_layer(viewer_state, layer_state)
 
-    data = transpose(data, (1, 0, 2))
+        data[~isfinite(data)] = isomin - 10
 
-    isosurface_count = 75
+        data = transpose(data, (1, 0, 2))
 
-    buffers = []
-    buffer_views = []
-    accessors = []
-    meshes = []
-    file_resources = []
+        isosurface_count = 75
 
-    levels = linspace(isomin, isomax, isosurface_count)
-    opacity = 0.25 * layer_state.alpha
-    color = layer_color(layer_state)
-    color_components = hex_to_components(color)
-    materials = [create_material_for_color(color_components, opacity)]
+        levels = linspace(isomin, isomax, isosurface_count)
+        opacity = 0.25 * layer_state.alpha
+        color = layer_color(layer_state)
+        color_components = hex_to_components(color)
+        materials = [create_material_for_color(color_components, opacity)]
 
-    for level in levels[1:]:
-        barr = bytearray()
-        level_bin = f"level_{level}.bin"
+        for level in levels[1:]:
+            barr = bytearray()
+            level_bin = f"level_{level}.bin"
 
-        points, triangles = marching_cubes(data, level)
-        for pt in points:
-            for coord in pt:
-                barr.extend(struct.pack('f', coord))
-        point_len = len(barr)
+            points, triangles = marching_cubes(data, level)
+            for pt in points:
+                for coord in pt:
+                    barr.extend(struct.pack('f', coord))
+            point_len = len(barr)
 
-        for tri in triangles:
-            for idx in tri:
-                barr.extend(struct.pack('I', idx))
-        triangle_len = len(barr) - point_len
+            for tri in triangles:
+                for idx in tri:
+                    barr.extend(struct.pack('I', idx))
+            triangle_len = len(barr) - point_len
 
-        pt_mins = [min([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
-        pt_maxes = [max([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
-        tri_mins = [min([int(min([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
-        tri_maxes = [max([int(max([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
-       
-        buffers.append(Buffer(byteLength=len(barr), uri=level_bin))
+            pt_mins = [min([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
+            pt_maxes = [max([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
+            tri_mins = [min([int(min([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
+            tri_maxes = [max([int(max([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
+           
+            builder.add_buffer(byte_length=len(barr), uri=level_bin)
 
-        buffer = len(buffers) - 1
-        buffer_views.append(
-            BufferView(buffer=buffer,
-                       byteLength=point_len,
-                       byteOffset=0,
-                       target=BufferTarget.ARRAY_BUFFER.value,
+            buffer = builder.buffer_count - 1
+            builder.add_buffer_view(
+                buffer=buffer,
+                byte_length=point_len,
+                byte_offset=0,
+                target=BufferTarget.ARRAY_BUFFER.value,
             )
-        )
-        accessors.append(
-            Accessor(bufferView=len(buffer_views)-1,
-                     componentType=ComponentType.FLOAT.value,
-                     count=len(points),
-                     type=AccessorType.VEC3.value,
-                     min=pt_mins,
-                     max=pt_maxes,
+            builder.add_accessor(
+                buffer_view=builder.buffer_view_count-1,
+                component_type=ComponentType.FLOAT.value,
+                count=len(points),
+                type=AccessorType.VEC3.value,
+                mins=pt_mins,
+                maxes=pt_maxes,
             )
-        )
-        buffer_views.append(
-            BufferView(buffer=buffer,
-                       byteLength=triangle_len,
-                       byteOffset=point_len,
-                       target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
+            builder.add_buffer_view(
+                buffer=buffer,
+                byte_length=triangle_len,
+                byte_offset=point_len,
+                target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
             )
-        )
-        accessors.append(
-            Accessor(bufferView=len(buffer_views)-1,
-                     componentType=ComponentType.UNSIGNED_INT.value,
-                     count=len(triangles) * 3,
-                     type=AccessorType.SCALAR.value,
-                     min=tri_mins,
-                     max=tri_maxes,
+            builder.add_accessor(
+                buffer_view=builder.buffer_view_count-1,
+                component_type=ComponentType.UNSIGNED_INT.value,
+                count=len(triangles)*3,
+                type=AccessorType.SCALAR.value,
+                mins=tri_mins,
+                maxes=tri_maxes,
             )
-        )
-        meshes.append(
-            Mesh(primitives=[
-                Primitive(attributes=Attributes(POSITION=len(accessors)-2),
-                          indices=len(accessors)-1,
-                          material=0
-                )]
+            builder.add_mesh(
+                position_accessor=builder.accessor_count-2,
+                indices_accessor=builder.accessor_count-1,
+                material=0,
             )
-        )
+            builder.add_file_resource(level_bin, data=barr)
 
-        file_resources.append(FileResource(level_bin, data=barr))
-
-    nodes = [Node(mesh=i) for i in range(len(meshes))]
-    node_indices = list(range(len(nodes)))
-
-    model = GLTFModel(
-        asset=Asset(version='2.0'),
-        scenes=[Scene(nodes=node_indices)],
-        nodes=nodes,
-        meshes=meshes,
-        buffers=buffers,
-        bufferViews=buffer_views,
-        accessors=accessors,
-        materials=materials
-    )
-    gltf = GLTF(model=model, resources=file_resources)
+    gltf = builder.build()
     gltf_filepath = "marching_cubes.gltf"
     glb_filepath = "marching_cubes.glb"
     gltf.export(gltf_filepath)

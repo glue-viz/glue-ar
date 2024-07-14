@@ -1,11 +1,12 @@
 from math import floor
+from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from numpy import isfinite, argwhere, transpose
 from os.path import join
 import operator
 import struct
+from typing import Iterable
 
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
-from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
 from glue_ar.common.export import compress_gl
 
 from glue_ar.common.gltf_builder import GLTFBuilder
@@ -20,18 +21,17 @@ from gltflib.gltf_resource import FileResource
 
 
 def create_voxel_export(
-    viewer: VispyVolumeViewerMixin,
+    viewer_state: Vispy3DVolumeViewerState,
+    layer_states: Iterable[VolumeLayerState],
     precomputed_frbs=None
 ):
 
     builder = GLTFBuilder()
 
-    layers = layers_to_export(viewer)
     n_opacities = 100
 
     # resolution = int(viewer_state.resolution)
     resolution = 100 
-    viewer_state = viewer.state
     bounds = [
         (viewer_state.z_min, viewer_state.z_max, resolution),
         (viewer_state.y_min, viewer_state.y_max, resolution),
@@ -88,8 +88,7 @@ def create_voxel_export(
     
     occupied_voxels = {}
 
-    for layer in layers:
-        layer_state = layer.state
+    for layer_state in layer_states:
         data = layer_state.layer.compute_fixed_resolution_buffer(
                 target_data=viewer_state.reference_data,
                 bounds=bounds,

@@ -295,7 +295,9 @@ def add_error_bars_gltf(builder, viewer_state, layer_state,
     builder.add_file_resource(errors_bin, data=barr)
 
 
-def add_scatter_layer_gltf(builder, viewer_state, layer_state,
+def add_scatter_layer_gltf(builder,
+                           viewer_state,
+                           layer_state,
                            theta_resolution=8,
                            phi_resolution=8,
                            clip_to_bounds=True,
