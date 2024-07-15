@@ -10,7 +10,11 @@ __all__ = [
     "rectangular_prism_triangulation",
     "sphere_mesh_index",
     "sphere_points",
-    "sphere_triangles"
+    "sphere_triangles",
+    "cylinder_points",
+    "cylinder_triangles",
+    "circular_cone_points",
+    "circular_cone_triangles",
 ]
 
 
@@ -61,6 +65,7 @@ def sphere_mesh_index(row, column, theta_resolution, phi_resolution):
 
 
 def sphere_points(center, radius, theta_resolution=5, phi_resolution=5):
+    # Number of points: phi_resolution * (theta_resolution - 2) + 2
     nonpole_thetas = [i * math.pi / theta_resolution for i in range(1, theta_resolution-1)]
     phis = [i * 2 * math.pi / phi_resolution for i in range(phi_resolution)]
     points = [(
@@ -97,7 +102,7 @@ def normalize(vector):
 
 
 def orthogonal_basis(vector):
-    first = [-vector[1], vector[0] + vector[2], -vector[1]],
+    first = [-vector[1], vector[0] + vector[2], -vector[1]]
     return [
         first,
         cross(vector, first),
@@ -118,8 +123,9 @@ def cylinder_points(center,
     ]
 
     orthog_1, orthog_2 = orthogonal_basis(central_axis)
-    
-    thetas = [2 * pi / theta_resolution]
+
+    thetas = [2 * pi * i / theta_resolution for i in range(theta_resolution)]
+
     return [
         [
             c + o1 * radius * math.cos(theta) + o2 * radius * math.sin(theta)
@@ -131,11 +137,13 @@ def cylinder_points(center,
 
 def cylinder_triangles(theta_resolution=5, start_index=0):
     bottom = [
-        (0, i, (i+1) % theta_resolution) for i in range(theta_resolution)
+        (0, i + 1, i) for i in range(1, theta_resolution-1)
     ]
-    top = offset_triangles(bottom, theta_resolution)
+    top = [
+        (theta_resolution, theta_resolution + i, theta_resolution + i + 1) for i in range(1, theta_resolution-1)
+    ]
     bottom_based_sides = [
-        (i, i + theta_resolution, (i + 1) % theta_resolution) for i in range(theta_resolution)
+        (i, (i + 1) % theta_resolution, i + theta_resolution) for i in range(theta_resolution)
     ]
     top_based_sides = [
         (i + theta_resolution, (i + 1) % theta_resolution, (i + 1) % theta_resolution + theta_resolution)
@@ -158,7 +166,7 @@ def circular_cone_points(base_center,
 
     central_axis = normalize(central_axis)
     orthog_1, orthog_2 = orthogonal_basis(central_axis)
-    thetas = [2 * pi / theta_resolution]
+    thetas = [2 * pi * i / theta_resolution for i in range(theta_resolution)]
     top = [c + height * a for c, a in zip(base_center, central_axis)]
 
     return [top] + [
@@ -170,11 +178,11 @@ def circular_cone_points(base_center,
     ]
 
 
-def circular_points_triangles(theta_resolution=5, start_index=0):
-    sides = [(start_index, start_index + i, start_index + (i + 1) % theta_resolution) for i in range(theta_resolution)]
+def circular_cone_triangles(theta_resolution=5, start_index=0):
+    sides = [(start_index, start_index + i, start_index + 1 + (i % theta_resolution)) for i in range(1, theta_resolution + 1)]
     bottom = [
-        (start_index + 1, start_index + 1 + i, 1 + start_index + (i + 1) % theta_resolution)
-        for i in range(theta_resolution)
+        (start_index + i, start_index + 1, 1 + start_index + (i % theta_resolution))
+        for i in range(2, theta_resolution)
     ]
 
     return sides + bottom
