@@ -1,4 +1,4 @@
-from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
+from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode, component_type
 from numpy import array, clip, isnan, ones, sqrt
 from numpy.linalg import norm
 import operator
@@ -6,7 +6,8 @@ import pyvista as pv
 import struct
 
 from glue.utils import ensure_numerical
-from glue_ar.utils import hex_to_components, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer
+from glue_ar.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, sphere_points, sphere_triangles
+from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, hex_to_components, index_mins, index, index_maxes, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer
 
 
 # For the 3D scatter viewer
@@ -215,6 +216,111 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
 
     return meshes
 
+
+def add_vectors_gltf(builder, viewer_state, layer_state,
+                     data, bounds,
+                     tip_resolution=10,
+                     shaft_resolution=10,
+                     mask=None):
+
+    atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
+    vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
+    if viewer_state.native_aspect:
+        factor = max((abs(b[1] - b[0]) for b in bounds))
+        vector_data = [[0.5 * t / factor for t in v] for v in vector_data]
+    else:
+        bound_factors = [abs(b[1] - b[0]) for b in bounds]
+        vector_data = [[0.5 * t / b for t in v] for v, b in zip(vector_data, bound_factors)]
+    vector_data = array(list(zip(*vector_data)))
+
+    offset = _VECTOR_OFFSETS[layer_state.vector_origin]
+    tip_factor = 0.25 if layer_state.vector_arrowhead else 0
+
+    barr = bytearray()
+    triangles = cylinder_triangles(theta_resolution=shaft_resolution)
+    triangle_count = len(triangles)
+    max_index = max(idx for tri in triangles for idx in tri)
+    add_triangles_to_bytearray(barr, triangles)
+
+    if layer_state.vector_arrowhead:
+        tip_triangles = cone_triangles(theta_resolution=tip_resolution, start_index=max_index + 1)
+        add_triangles_to_bytearray(barr, tip_triangles)
+        max_index = max(idx for tri in tip_triangles for idx in tri)
+        triangle_count += len(tip_triangles)
+
+    triangles_len = len(barr)
+    buffer = builder.buffer_count
+
+    builder.add_buffer_view(
+        buffer=buffer,
+        byte_length=triangles_len,
+        byte_offset=0,
+        target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
+    )
+    builder.add_accessor(
+        buffer_view=builder.buffer_view_count-1,
+        component_type=ComponentType.UNSIGNED_INT.value,
+        count=triangle_count*3,
+        type=AccessorType.SCALAR.value,
+        mins=[0],
+        maxes=[max_index],
+    )
+    triangles_accessor = builder.accessort_count - 1
+
+    point_mins = None
+    point_maxes = None
+    for pt, v in zip(data, vector_data):
+        prev_len = len(barr)
+        adjusted_v = v * layer_state.vector_scaling
+        length = norm(adjusted_v)
+        adjusted_pt = [c + offset * vc for c, vc in zip(pt, adjusted_v)]
+        points = cylinder_points(center=adjusted_pt,
+                                 radius=0.002,
+                                 length=length,
+                                 central_axis=adjusted_v,
+                                 theta_resolution=shaft_resolution)
+        add_points_to_bytearray(barr, points)
+        point_count = len(points)
+        point_mins = index_mins(points, point_mins)
+
+        tip_center_base = [p + length * v for p, v in zip(adjusted_pt, adjusted_v)]
+        if tip_factor:
+            tip_points = cone_points(base_center=tip_center_base,
+                                     radius=0.01,
+                                     height=tip_factor * length,
+                                     central_axis=adjusted_v,
+                                     theta_resolution=tip_resolution)
+            add_points_to_bytearray(barr, tip_points)
+            point_count += len(tip_points)
+            point_mins = index_mins(points, point_mins)
+            point_maxes = index_maxes(points, point_maxes)
+
+        builder.add_buffer_view(
+            buffer=buffer,
+            byte_length=len(barr)-prev_len,
+            byte_offset=prev_len,
+            target=BufferTarget.ARRAY_BUFFER.value,
+        )
+        builder.add_accessor(
+            buffer_view=builder.buffer_view_count-1,
+            component_type=ComponentType.FLOAT.value,
+            count=point_count,
+            type=AccessorType.VEC3.value,
+            mins=point_mins,
+            maxes=point_maxes,
+        )
+
+        builder.add_mesh(
+            position_accessor=builder.accessor_count-1,
+            indices_accessor=triangles_accessor,
+            material=builder.material_count-1,
+        )
+
+    uri = f"vectors_{unique_id()}.bin"
+    builder.add_buffer(byte_length=len(barr), uri=uri)
+    builder.add_file_resource(uri, data=barr)
+
+
 def add_error_bars_gltf(builder, viewer_state, layer_state,
                         axis, data, bounds, mask=None):
     att = getattr(layer_state, f"{axis}err_attribute")
@@ -320,6 +426,40 @@ def add_scatter_layer_gltf(builder,
                          mask=mask,
                          scaled=scaled)
     factor = max((abs(b[1] - b[0]) for b in bounds))
-    if layer_state.size_mode == "Fixed":
+    fixed_size = layer_state.size_mode == "Fixed"
+    if fixed_size:
         radius = layer_state.size_scaling * sqrt(layer_state.size) / (10 * factor)
+    else:
+         # The specific size calculation is taken from the scatter layer artist
+        size_data = ensure_numerical(layer_state.layer[layer_state.size_attribute][mask].ravel())
+        size_data = clip(size_data, layer_state.size_vmin, layer_state.size_vmax)
+        if layer_state.size_vmax == layer_state.size_vmin:
+            sizes = sqrt(ones(size_data.shape) * 10)
+        else:
+            sizes = sqrt((20 * (size_data - layer_state.size_vmin) /
+                         (layer_state.size_vmax - layer_state.size_vmin)))
+        sizes *= (layer_state.size_scaling / factor)
+        sizes[isnan(sizes)] = 0.
+        
+    barr = bytearray()
+    triangles = sphere_triangles(theta_resolution=theta_resolution, phi_resolution=phi_resolution)
+    add_triangles_to_bytearray(barr, triangles)
+    triangles_len = len(barr)
+
+    buffer = builder.buffer_count
+    for i, point in enumerate(data):
+        prev_len = len(barr)
+        r = radius if fixed_size else sizes[i]
+        pts = sphere_points(center=point, radius=r,
+                            theta_resolution=theta_resolution,
+                            phi_resolution=phi_resolution)
+        add_points_to_bytearray(barr, pts)
+        builder.add_buffer_view(
+            buffer=buffer,
+            byte_length=len(barr)-prev_len,
+            byte_offset=prev_len,
+            target=BufferTarget.ARRAY_BUFFER.value,
+        )
+
+        
 

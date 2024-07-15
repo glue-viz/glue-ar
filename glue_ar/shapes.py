@@ -13,8 +13,8 @@ __all__ = [
     "sphere_triangles",
     "cylinder_points",
     "cylinder_triangles",
-    "circular_cone_points",
-    "circular_cone_triangles",
+    "cone_points",
+    "cone_triangles",
 ]
 
 
@@ -158,7 +158,7 @@ def cylinder_triangles(theta_resolution=5, start_index=0):
     return [t for v in (bottom, top, bottom_based_sides, top_based_sides) for t in v]
 
 
-def circular_cone_points(base_center,
+def cone_points(base_center,
                 radius,
                 height,
                 central_axis,
@@ -178,7 +178,7 @@ def circular_cone_points(base_center,
     ]
 
 
-def circular_cone_triangles(theta_resolution=5, start_index=0):
+def cone_triangles(theta_resolution=5, start_index=0):
     sides = [(start_index, start_index + i, start_index + 1 + (i % theta_resolution)) for i in range(1, theta_resolution + 1)]
     bottom = [
         (start_index + i, start_index + 1, 1 + start_index + (i % theta_resolution))

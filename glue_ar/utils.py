@@ -2,6 +2,9 @@ import os
 from uuid import uuid4
 from glue.core.subset_group import GroupedSubset
 from numpy import array, inf
+import operator
+import struct
+from typing import Iterable
 
 
 AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
@@ -128,3 +131,31 @@ def alpha_composite(over, under):
     ]
     rgba_new.append(alpha_new)
     return rgba_new
+
+
+def add_points_to_bytearray(arr: bytearray, points: Iterable[Iterable[int | float]]):
+    for point in points:
+        for coordinate in point:
+            arr.extend(struct.pack('f', coordinate))
+
+
+def add_triangles_to_bytearray(arr: bytearray, triangles: Iterable[Iterable[int]]):
+    for triangle in triangles:
+        for index in triangle:
+            arr.extend(struct.pack('I', index))
+
+
+def index_extrema(items, extremum, previous=None):
+    size = len(items[0])
+    extrema = [extremum([operator.itemgetter(i)(item) for item in items]) for i in range(size)]
+    if previous is not None:
+        extrema = [extremum(x, p) for x, p in zip(extrema, previous)]
+    return extrema
+
+
+def index_mins(items, previous=None):
+    return index_extrema(items, extremum=min, previous=previous)
+
+
+def index_maxes(items, previous=None):
+    return index_extrema(items, extremum=max, previous=previous)
