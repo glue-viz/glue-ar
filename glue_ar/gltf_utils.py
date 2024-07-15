@@ -34,7 +34,7 @@ def bring_into_clip(points, transforms):
 
 
 def offset_triangles(triangle_indices, offset):
-    return [[idx + offset for idx in triangle] for triangle in triangle_indices]
+    return [tuple(idx + offset for idx in triangle) for triangle in triangle_indices]
 
 
 def create_material_for_color(
