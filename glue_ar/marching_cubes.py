@@ -1,4 +1,3 @@
-from gltflib.gltf_resource import FileResource
 from mcubes import marching_cubes
 from numpy import isfinite, linspace, transpose
 from uuid import uuid4
