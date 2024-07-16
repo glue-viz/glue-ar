@@ -57,7 +57,7 @@ def create_marching_cubes_gltf(
         opacity = 0.25 * layer_state.alpha
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
-        materials = [create_material_for_color(color_components, opacity)]
+        builder.add_material(color_components, opacity)
 
         for level in levels[1:]:
             barr = bytearray()
@@ -185,11 +185,12 @@ def create_marching_cubes_usd(
     light.CreateHeightAttr(-1)
 
     levels = linspace(isomin, isomax, isosurface_count)
-    opacity = 0.25 * layer_state.alpha
+    opacity = layer_state.alpha
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
 
     for i, level in enumerate(levels[1:]):
+        alpha = (0.5 * (i + isosurface_count) / isosurface_count) * opacity
         points, triangles = marching_cubes(data, level)
         xform_key = f"{default_prim_key}/xform_{unique_id()}"
         UsdGeom.Xform.Define(stage, xform_key)
@@ -200,7 +201,7 @@ def create_marching_cubes_usd(
         surface.CreateFaceVertexCountsAttr([3] * len(triangles))
         surface.CreateFaceVertexIndicesAttr([int(idx) for tri in triangles for idx in tri])
 
-        material = usd_material_for_color(stage, color_components, opacity)
+        material = usd_material_for_color(stage, color_components, alpha)
         surface.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
         UsdShade.MaterialBindingAPI(surface).Bind(material)
 
