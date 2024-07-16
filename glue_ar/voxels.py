@@ -13,6 +13,7 @@ from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.utils import alpha_composite, hex_to_components, isomin_for_layer, isomax_for_layer, layer_color, layers_to_export
 
 from glue_ar.gltf_utils import *
+from glue_ar.shapes import rectangular_prism_points, rectangular_prism_triangulation
 
 from gltflib import Accessor, AccessorType, Asset, BufferTarget, BufferView, Primitive, \
     ComponentType, GLTFModel, Node, Scene, Attributes, Mesh, Buffer
