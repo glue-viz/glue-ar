@@ -437,7 +437,7 @@ def add_scatter_layer_gltf(builder,
         if layer_state.size_vmax == layer_state.size_vmin:
             sizes = sqrt(ones(size_data.shape) * 10)
         else:
-            sizes = sqrt((20 * (size_data - layer_state.size_vmin) /
+            sizes = sqrt(((size_data - layer_state.size_vmin) /
                          (layer_state.size_vmax - layer_state.size_vmin)))
         sizes *= (layer_state.size_scaling / factor)
         sizes[isnan(sizes)] = 0.
