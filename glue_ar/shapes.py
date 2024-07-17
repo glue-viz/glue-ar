@@ -82,7 +82,7 @@ def sphere_triangles(theta_resolution=5, phi_resolution=5):
     triangles = [(int(0), i + 1, i) for i in range(1, phi_resolution)]
     tr, pr = theta_resolution, phi_resolution
     triangles.append((0, 1, theta_resolution))
-    for row in range(1, theta_resolution - 1):
+    for row in range(1, theta_resolution - 2):
         for col in range(phi_resolution):
             rc_index = sphere_mesh_index(row, col, tr, pr)
             triangles.append((rc_index, sphere_mesh_index(row+1, col, tr, pr), sphere_mesh_index(row+1, col-1, tr, pr)))
