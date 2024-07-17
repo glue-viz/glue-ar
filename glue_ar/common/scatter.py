@@ -473,7 +473,7 @@ def add_scatter_layer_gltf(builder,
     buffer = builder.buffer_count
     cmap = layer_state.cmap
     cmap_att = layer_state.cmap_attribute
-    cmap_vals = layer_state.layer[cmap_att]
+    cmap_vals = layer_state.layer[cmap_att][mask]
     crange = layer_state.cmap_vmax - layer_state.cmap_vmin
     uri = f"layer_{unique_id()}.bin"
     for i, point in enumerate(data):
