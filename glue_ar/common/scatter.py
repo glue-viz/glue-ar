@@ -7,7 +7,7 @@ import struct
 
 from glue.utils import ensure_numerical
 from glue_ar.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, sphere_points, sphere_triangles
-from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, hex_to_components, index_mins, index, index_maxes, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer
+from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, hex_to_components, index_mins, index_maxes, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer
 
 
 # For the 3D scatter viewer
@@ -425,6 +425,7 @@ def add_scatter_layer_gltf(builder,
                          preserve_aspect=viewer_state.native_aspect,
                          mask=mask,
                          scaled=scaled)
+    data = data[:, [1, 2, 0]]
     factor = max((abs(b[1] - b[0]) for b in bounds))
     fixed_size = layer_state.size_mode == "Fixed"
     if fixed_size:
@@ -445,8 +446,36 @@ def add_scatter_layer_gltf(builder,
     triangles = sphere_triangles(theta_resolution=theta_resolution, phi_resolution=phi_resolution)
     add_triangles_to_bytearray(barr, triangles)
     triangles_len = len(barr)
+    max_index = max(idx for tri in triangles for idx in tri)
 
     buffer = builder.buffer_count
+    builder.add_buffer_view(
+        buffer=buffer,
+        byte_length=triangles_len,
+        byte_offset=0,
+        target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
+    )
+    builder.add_accessor(
+        buffer_view=builder.buffer_view_count-1,
+        component_type=ComponentType.UNSIGNED_INT.value,
+        count=len(triangles)*3,
+        type=AccessorType.SCALAR.value,
+        mins=[0],
+        maxes=[max_index],
+    )
+    sphere_triangles_accessor = builder.accessor_count - 1
+
+    if fixed_color:
+        builder.add_material(color=color_components, opacity=layer_state.alpha)
+    else:
+        material_map = {}
+
+    buffer = builder.buffer_count
+    cmap = layer_state.cmap
+    cmap_att = layer_state.cmap_attribute
+    cmap_vals = layer_state.layer[cmap_att]
+    crange = layer_state.cmap_vmax - layer_state.cmap_vmin
+    uri = f"layer_{unique_id()}.bin"
     for i, point in enumerate(data):
         prev_len = len(barr)
         r = radius if fixed_size else sizes[i]
@@ -454,12 +483,40 @@ def add_scatter_layer_gltf(builder,
                             theta_resolution=theta_resolution,
                             phi_resolution=phi_resolution)
         add_points_to_bytearray(barr, pts)
+        point_mins = index_mins(pts)
+        point_maxes = index_maxes(pts)
         builder.add_buffer_view(
             buffer=buffer,
             byte_length=len(barr)-prev_len,
             byte_offset=prev_len,
             target=BufferTarget.ARRAY_BUFFER.value,
         )
+        builder.add_accessor(
+            buffer_view=builder.buffer_view_count-1,
+            component_type=ComponentType.FLOAT.value,
+            count=len(pts),
+            type=AccessorType.VEC3.value,
+            mins=point_mins,
+            maxes=point_maxes,
+        )
+       
+        if fixed_color:
+            material_index = builder.material_count - 1
+        else:
+            cval = cmap_vals[i]
+            normalized = (cval - layer_state.cmap_vmin) / crange
+            cindex = int(normalized * 256)
+            color = cmap.colors[cindex]
+            material_index = builder.material_count
+            rgba_tpl = tuple(color)
+            material_map[rgba_tpl] = material_index
+            builder.add_material(color, layer_state.alpha)
+            
+        builder.add_mesh(
+            position_accessor=builder.accessor_count - 1,
+            indices_accessor=sphere_triangles_accessor,
+            material=material_index,
+        )
 
-        
-
+    builder.add_buffer(byte_length=len(barr), uri=uri)
+    builder.add_file_resource(uri, data=barr)
