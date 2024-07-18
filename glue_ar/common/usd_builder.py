@@ -1,7 +1,7 @@
 from pxr import Sdf, Usd, UsdGeom, UsdLux, UsdShade
 from typing import Iterable, Tuple
 
-from glue_ar.marching_cubes import unique_id
+from glue_ar.utils import unique_id
 
 
 class USDBuilder:
@@ -19,7 +19,7 @@ class USDBuilder:
         self.default_prim_key = "/world"
         self.default_prim = UsdGeom.Xform.Define(self.stage, self.default_prim_key).GetPrim()
 
-        light = UsdLux.RectLight.Define(stage, "/light")
+        light = UsdLux.RectLight.Define(self.stage, "/light")
         light.CreateHeightAttr(-1)
 
     def _material_for_color(self,
