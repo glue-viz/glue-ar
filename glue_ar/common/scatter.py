@@ -265,7 +265,7 @@ def add_vectors_gltf(builder, viewer_state, layer_state,
         mins=[0],
         maxes=[max_index],
     )
-    triangles_accessor = builder.accessort_count - 1
+    triangles_accessor = builder.accessor_count - 1
 
     point_mins = None
     point_maxes = None

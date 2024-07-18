@@ -145,17 +145,17 @@ def add_triangles_to_bytearray(arr: bytearray, triangles: Iterable[Iterable[int]
             arr.extend(struct.pack('I', index))
 
 
-def index_extrema(items, extremum, previous=None):
+def index_extrema(items, extremum, previous=None, type=float):
     size = len(items[0])
-    extrema = [extremum([operator.itemgetter(i)(item) for item in items]) for i in range(size)]
+    extrema = [extremum([type(operator.itemgetter(i)(item)) for item in items]) for i in range(size)]
     if previous is not None:
         extrema = [extremum(x, p) for x, p in zip(extrema, previous)]
     return extrema
 
 
-def index_mins(items, previous=None):
-    return index_extrema(items, extremum=min, previous=previous)
+def index_mins(items, previous=None, type=int):
+    return index_extrema(items, extremum=min, type=type, previous=previous)
 
 
-def index_maxes(items, previous=None):
-    return index_extrema(items, extremum=max, previous=previous)
+def index_maxes(items, previous=None, type=int):
+    return index_extrema(items, extremum=max, type=type, previous=previous)

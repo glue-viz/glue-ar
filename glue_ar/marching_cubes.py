@@ -51,8 +51,7 @@ def create_marching_cubes_gltf(
 
         for level in levels[1:]:
             barr = bytearray()
-            level_bin = f"level_{level}.bin"
-
+            level_bin = f"layer_{layer_state.layer.uuid}_level_{level}.bin"
 
             points, triangles = marching_cubes(data, level)
             add_points_to_bytearray(barr, points)
@@ -63,8 +62,8 @@ def create_marching_cubes_gltf(
 
             pt_mins = index_mins(points)
             pt_maxes = index_maxes(points)
-            tri_mins = index_mins(triangles)
-            tri_maxes = index_maxes(triangles)
+            tri_mins = [int(min(idx for tri in triangles for idx in tri))]
+            tri_maxes = [int(max(idx for tri in triangles for idx in tri))]
            
             builder.add_buffer(byte_length=len(barr), uri=level_bin)
 
@@ -100,7 +99,7 @@ def create_marching_cubes_gltf(
             builder.add_mesh(
                 position_accessor=builder.accessor_count-2,
                 indices_accessor=builder.accessor_count-1,
-                material=0,
+                material=builder.material_count-1,
             )
             builder.add_file_resource(level_bin, data=barr)
 
