@@ -147,7 +147,7 @@ def add_triangles_to_bytearray(arr: bytearray, triangles: Iterable[Iterable[int]
 
 def index_extrema(items, extremum, previous=None, type=float):
     size = len(items[0])
-    extrema = [extremum([type(operator.itemgetter(i)(item)) for item in items]) for i in range(size)]
+    extrema = [type(extremum([operator.itemgetter(i)(item) for item in items])) for i in range(size)]
     if previous is not None:
         extrema = [extremum(x, p) for x, p in zip(extrema, previous)]
     return extrema
