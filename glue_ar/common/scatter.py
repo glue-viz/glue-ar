@@ -439,7 +439,7 @@ def add_scatter_layer_gltf(builder,
         else:
             sizes = sqrt(((size_data - layer_state.size_vmin) /
                          (layer_state.size_vmax - layer_state.size_vmin)))
-        sizes *= (layer_state.size_scaling / factor)
+        sizes *= (layer_state.size_scaling / (2 * factor))
         sizes[isnan(sizes)] = 0.
         
     barr = bytearray()
@@ -500,9 +500,7 @@ def add_scatter_layer_gltf(builder,
             maxes=point_maxes,
         )
        
-        if fixed_color:
-            material_index = builder.material_count - 1
-        else:
+        if not fixed_color:
             cval = cmap_vals[i]
             normalized = (cval - layer_state.cmap_vmin) / crange
             cindex = int(normalized * 256)
@@ -512,6 +510,7 @@ def add_scatter_layer_gltf(builder,
             material_map[rgba_tpl] = material_index
             builder.add_material(color, layer_state.alpha)
             
+        material_index = builder.material_count - 1
         builder.add_mesh(
             position_accessor=builder.accessor_count - 1,
             indices_accessor=sphere_triangles_accessor,
