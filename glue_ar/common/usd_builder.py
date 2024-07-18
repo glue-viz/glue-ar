@@ -1,0 +1,68 @@
+from pxr import Sdf, Usd, UsdGeom, UsdLux, UsdShade
+from typing import Iterable, Tuple
+
+from glue_ar.marching_cubes import unique_id
+
+
+class USDBuilder:
+
+    def __init__(self):
+        self._create_stage()
+        self._material_map = {}
+
+    def _create_stage(self):
+        self.stage = Usd.Stage.CreateNew("export.usdc")
+
+        # TODO: Do we want to make changing this an option?
+        UsdGeom.SetStageUpAxis(self.stage, UsdGeom.Tokens.y)
+
+        self.default_prim_key = "/world"
+        self.default_prim = UsdGeom.Xform.Define(self.stage, self.default_prim_key).GetPrim()
+
+        light = UsdLux.RectLight.Define(stage, "/light")
+        light.CreateHeightAttr(-1)
+
+    def _material_for_color(self,
+                            color: Tuple[int, int, int],
+                            opacity: float
+        ) -> UsdShade.Shader:
+
+        rgba_tpl = (*color, opacity)
+        material = self._material_map.get(rgba_tpl, None)
+        if material is not None:
+            return material
+
+        material_key = f"/material_{unique_id()}"
+        material = UsdShade.Material.Define(self.stage, material_key)
+        shader_key = f"{material_key}/PBRShader"
+        pbr_shader = UsdShade.Shader.Define(self.stage, shader_key)
+        pbr_shader.CreateIdAttr("UsdPreviewSurface")
+        pbr_shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.4)
+        pbr_shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.1)
+        pbr_shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(tuple(c / 255 for c in color))
+        pbr_shader.CreateInput("opacity", Sdf.ValueTypeNames.Float).Set(opacity)
+        material.CreateSurfaceOutput().ConnectToSource(pbr_shader.ConnectableAPI(), "surface")
+
+        self._material_map[rgba_tpl] = material
+        return material
+
+    def add_shape(self,
+                   points: Iterable[Iterable[float]],
+                   triangles: Iterable[Iterable[int]],
+                   color: Tuple[int, int, int],
+                   opacity: float):
+       xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
+       UsdGeom.Xform.Define(self.stage, xform_key)
+       surface_key = f"{xform_key}/level_{unique_id()}"
+       surface = UsdGeom.Mesh.Define(self.stage, surface_key)
+       surface.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
+       surface.CreatePointsAttr(points)
+       surface.CreateFaceVertexCountsAttr([3] * len(triangles))
+       surface.CreateFaceVertexIndicesAttr([int(idx) for tri in triangles for idx in tri])
+
+       material = self._material_for_color(color, opacity)
+       surface.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
+       UsdShade.MaterialBindingAPI(surface).Bind(material)
+
+    def export(self, filepath):
+        self.stage.GetRootLayer().Export(filepath)
