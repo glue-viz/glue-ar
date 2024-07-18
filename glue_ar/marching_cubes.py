@@ -5,11 +5,9 @@ import operator
 import struct
 from typing import Iterable, List
 
-from gltflib import GLTF, material
-from gltflib import Accessor, AccessorType, Asset, BufferTarget, BufferView, Primitive, \
-    ComponentType, GLTFModel, Node, Scene, Attributes, Mesh, Buffer
+from gltflib import AccessorType, BufferTarget, ComponentType
 
-from pxr import Gf, Sdf, Usd, UsdGeom, UsdLux, UsdShade, Vt
+from pxr import Sdf, Usd, UsdGeom, UsdLux, UsdShade
 
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
@@ -204,7 +202,6 @@ def create_marching_cubes_usd(
         material = usd_material_for_color(stage, color_components, alpha)
         surface.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
         UsdShade.MaterialBindingAPI(surface).Bind(material)
-
 
     stage.GetRootLayer().Save()
 
