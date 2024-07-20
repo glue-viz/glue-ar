@@ -9,7 +9,7 @@ import pyvista as pv
 from typing import Literal, Optional
 
 from glue.utils import ensure_numerical
-from glue_ar.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, sphere_points, sphere_triangles
+from glue_ar.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, normalize, sphere_points, sphere_triangles
 from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, hex_to_components, index_mins, index_maxes, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 
@@ -48,7 +48,13 @@ def scatter_layer_as_glyphs(viewer_state, layer_state, glyph):
 _VECTOR_OFFSETS = {
     'tail': 0,
     'middle': -0.5,
-    'tip': -1
+    'tip': -1,
+}
+
+_VECTOR_OFFSETS_GLTF = {
+    'tail': -0.5,
+    'middle': 0,
+    'tip': 0.5,
 }
 
 
@@ -232,6 +238,8 @@ def add_vectors_gltf(builder: GLTFBuilder,
 
     atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
     vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
+    for vd in vector_data:
+        vd[~isfinite(vd)] = 0
     if viewer_state.native_aspect:
         factor = max((abs(b[1] - b[0]) for b in bounds))
         vector_data = [[0.5 * t / factor for t in v] for v in vector_data]
@@ -240,7 +248,7 @@ def add_vectors_gltf(builder: GLTFBuilder,
         vector_data = [[0.5 * t / b for t in v] for v, b in zip(vector_data, bound_factors)]
     vector_data = array(list(zip(*vector_data)))
 
-    offset = _VECTOR_OFFSETS[layer_state.vector_origin]
+    offset = _VECTOR_OFFSETS_GLTF[layer_state.vector_origin]
     tip_factor = 0.25 if layer_state.vector_arrowhead else 0
 
     barr = bytearray()
@@ -280,6 +288,9 @@ def add_vectors_gltf(builder: GLTFBuilder,
         prev_len = len(barr)
         adjusted_v = v * layer_state.vector_scaling
         length = norm(adjusted_v)
+        half_length = 0.5 * length
+
+        adjusted_v = list(reversed(adjusted_v))
         adjusted_pt = [c + offset * vc for c, vc in zip(pt, adjusted_v)]
         points = cylinder_points(center=adjusted_pt,
                                  radius=0.002,
@@ -291,8 +302,13 @@ def add_vectors_gltf(builder: GLTFBuilder,
         point_mins = index_mins(points)
         point_maxes = index_maxes(points)
 
-        tip_center_base = [p + length * v for p, v in zip(adjusted_pt, adjusted_v)]
+        print(points)
+
         if tip_factor:
+            normalized_v = normalize(adjusted_v)
+            tip_center_base = [p + half_length * v for p, v in zip(adjusted_pt, normalized_v)]
+            print(tip_center_base)
+            print("======")
             tip_points = cone_points(base_center=tip_center_base,
                                      radius=0.01,
                                      height=tip_factor * length,
@@ -300,8 +316,8 @@ def add_vectors_gltf(builder: GLTFBuilder,
                                      theta_resolution=tip_resolution)
             add_points_to_bytearray(barr, tip_points)
             point_count += len(tip_points)
-            point_mins = index_mins(points, point_mins)
-            point_maxes = index_maxes(points, point_maxes)
+            point_mins = index_mins(tip_points, point_mins)
+            point_maxes = index_maxes(tip_points, point_maxes)
 
         builder.add_buffer_view(
             buffer=buffer,
@@ -419,6 +435,7 @@ def add_scatter_layer_gltf(builder,
     fixed_size = layer_state.size_mode == "Fixed"
     if fixed_size:
         radius = layer_state.size_scaling * sqrt(layer_state.size) / (10 * factor)
+        radius = 0.01
     else:
          # The specific size calculation is taken from the scatter layer artist
         size_data = ensure_numerical(layer_state.layer[layer_state.size_attribute][mask].ravel())
@@ -516,4 +533,14 @@ def add_scatter_layer_gltf(builder,
                 mask=mask,
             )
 
-
+    if layer_state.vector_visible:
+        add_vectors_gltf(
+            builder=builder,
+            viewer_state=viewer_state,
+            layer_state=layer_state,
+            data=data,
+            bounds=bounds,
+            shaft_resolution=10,
+            tip_resolution=10,
+            mask=mask,
+        )
