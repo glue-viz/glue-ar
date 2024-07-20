@@ -160,7 +160,7 @@ T = TypeVar("T", bound=Union[int, float])
 def index_extrema(items: List[List[T]],
                   extremum: Callable[[T, T], T],
                   previous: Optional[List[List[T]]]=None,
-                  type: Type[T]=int
+                  type: Type[T]=float
 ) -> List[List[T]]:
     size = len(items[0])
     extrema = [type(extremum([operator.itemgetter(i)(item) for item in items])) for i in range(size)]
@@ -169,11 +169,11 @@ def index_extrema(items: List[List[T]],
     return extrema
 
 
-def index_mins(items, previous=None, type: Type[T]=int) -> List[List[T]]:
+def index_mins(items, previous=None, type: Type[T]=float) -> List[List[T]]:
     return index_extrema(items, extremum=min, type=type, previous=previous)
 
 
-def index_maxes(items, previous=None, type: Type[T]=int) -> List[List[T]]:
+def index_maxes(items, previous=None, type: Type[T]=float) -> List[List[T]]:
     return index_extrema(items, extremum=max, type=type, previous=previous)
 
 
