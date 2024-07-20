@@ -16,8 +16,8 @@ from typing import Callable, Iterable, List, Optional, Tuple, Type, TypeVar, Uni
 
 AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
 
-type Bounds = List[Tuple[float, float]]
-type BoundsWithResolution = List[Tuple[float, float, int]]
+Bounds = List[Tuple[float, float]]
+BoundsWithResolution = List[Tuple[float, float, int]]
 
 
 def layers_to_export(viewer: Viewer) -> List[LayerArtist]:
