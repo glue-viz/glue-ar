@@ -49,7 +49,7 @@ class GLTFBuilder:
                 "mode": mode
         }
         if indices_accessor is not None:
-            primitive_kwargs["indices"] = indices_accessor,
+            primitive_kwargs["indices"] = indices_accessor
         if material is not None:
             primitive_kwargs["material"] = material
         self.meshes.append(
