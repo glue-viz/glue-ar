@@ -39,16 +39,17 @@ class GLTFBuilder:
     
     def add_mesh(self,
                  position_accessor: int,
-                 indices_accessor: int,
+                 indices_accessor: Optional[int]=None,
                  material: Optional[int]=None,
                  mode: PrimitiveMode=PrimitiveMode.TRIANGLES
     ) -> Self:
 
         primitive_kwargs = {
                 "attributes": Attributes(POSITION=position_accessor),
-                "indices": indices_accessor,
                 "mode": mode
         }
+        if indices_accessor is not None:
+            primitive_kwargs["indices"] = indices_accessor,
         if material is not None:
             primitive_kwargs["material"] = material
         self.meshes.append(
