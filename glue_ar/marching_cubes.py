@@ -11,7 +11,7 @@ from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from glue_ar.common.export import compress_gl
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
-from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, hex_to_components, index_maxes, index_mins, isomin_for_layer, isomax_for_layer, layer_color, unique_id
+from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, data_for_layer, frb_for_layer, hex_to_components, index_maxes, index_mins, isomin_for_layer, isomax_for_layer, layer_color, unique_id
 from glue_ar.gltf_utils import *
 
 
@@ -31,10 +31,8 @@ def create_marching_cubes_gltf(
     isosurface_count = 75
 
     for layer_state in layer_states:
-        data = layer_state.layer.compute_fixed_resolution_buffer(
-                target_data=viewer_state.reference_data,
-                bounds=bounds,
-                target_cid=layer_state.attribute)
+
+        data = frb_for_layer(viewer_state, layer_state, bounds)
 
         isomin = isomin_for_layer(viewer_state, layer_state)
         isomax = isomax_for_layer(viewer_state, layer_state)
@@ -134,10 +132,7 @@ def create_marching_cubes_usd(
 
         # For now, only consider one layer
         # shape = (resolution, resolution, resolution)
-        data = layer_state.layer.compute_fixed_resolution_buffer(
-                target_data=viewer_state.reference_data,
-                bounds=bounds,
-                target_cid=layer_state.attribute)
+        data = frb_for_layer(viewer_state, layer_state, bounds)
 
         isomin = isomin_for_layer(viewer_state, layer_state) 
         isomax = isomax_for_layer(viewer_state, layer_state) 
@@ -152,7 +147,8 @@ def create_marching_cubes_usd(
         color_components = tuple(hex_to_components(color))
 
         for i, level in enumerate(levels[1:]):
-            alpha = (0.5 * (i + isosurface_count) / isosurface_count) * opacity
+            alpha = (3 * i + isosurface_count) / (4 * isosurface_count) * opacity
+            print(alpha / opacity)
             points, triangles = marching_cubes(data, level)
 
             builder.add_shape(points, triangles, color_components, alpha)

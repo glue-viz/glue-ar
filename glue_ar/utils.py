@@ -1,6 +1,8 @@
 import os
 from uuid import uuid4
+from glue.core import BaseData
 from glue.core.subset_group import GroupedSubset
+from glue_vispy_viewers.common.layer_state import LayerState
 from numpy import array, inf
 import operator
 import struct
@@ -159,3 +161,31 @@ def index_mins(items, previous=None, type=int):
 
 def index_maxes(items, previous=None, type=int):
     return index_extrema(items, extremum=max, type=type, previous=previous)
+
+
+def data_for_layer(layer_or_state):
+    if isinstance(layer_or_state.layer, BaseData):
+        return layer_or_state.layer
+    else:
+        return layer_or_state.layer.data
+
+
+def frb_for_layer(viewer_state, layer_or_state, bounds):
+    data = data_for_layer(layer_or_state)
+    layer_state = layer_or_state if isinstance(layer_or_state, LayerState) else layer_or_state.state
+    is_data_layer = data is layer_or_state.layer
+    data_frb = data.compute_fixed_resolution_buffer(
+        target_data=viewer_state.reference_data,
+        bounds=bounds,
+        target_cid=layer_state.attribute
+    )
+
+    if is_data_layer:
+        return data_frb
+    else:
+        subcube = data.compute_fixed_resolution_buffer(
+            target_data=viewer_state.reference_data,
+            bounds=bounds,
+            subset_state=layer_state.layer.subset_state
+        )
+        return subcube * data_frb

@@ -10,7 +10,7 @@ from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_ar.common.export import compress_gl
 
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.utils import alpha_composite, hex_to_components, isomin_for_layer, isomax_for_layer, layer_color, layers_to_export
+from glue_ar.utils import add_triangles_to_bytearray, alpha_composite, data_for_layer, frb_for_layer, hex_to_components, isomin_for_layer, isomax_for_layer, layer_color, layers_to_export
 
 from glue_ar.gltf_utils import *
 from glue_ar.shapes import rectangular_prism_points, rectangular_prism_triangulation
@@ -32,7 +32,7 @@ def create_voxel_export(
     n_opacities = 100
 
     # resolution = int(viewer_state.resolution)
-    resolution = 100 
+    resolution = 200 
     bounds = [
         (viewer_state.z_min, viewer_state.z_max, resolution),
         (viewer_state.y_min, viewer_state.y_max, resolution),
@@ -64,9 +64,7 @@ def create_voxel_export(
 
     triangles = rectangular_prism_triangulation()
     triangles_barr = bytearray()
-    for triangle in triangles:
-        for idx in triangle:
-            triangles_barr.extend(struct.pack('I', idx))
+    add_triangles_to_bytearray(triangles_barr, triangles)
     triangle_barrlen = len(triangles_barr)
 
     builder.add_buffer_view(
@@ -90,10 +88,7 @@ def create_voxel_export(
     occupied_voxels = {}
 
     for layer_state in layer_states:
-        data = layer_state.layer.compute_fixed_resolution_buffer(
-                target_data=viewer_state.reference_data,
-                bounds=bounds,
-                target_cid=layer_state.attribute)
+        data = frb_for_layer(viewer_state, layer_state, bounds)
     
         isomin = isomin_for_layer(viewer_state, layer_state) 
         isomax = isomax_for_layer(viewer_state, layer_state) 
@@ -184,8 +179,8 @@ def create_voxel_export(
     glb_filepath = "voxel_test.glb"
     gltf.export(gltf_filepath)
     gltf.export(glb_filepath)
-    # print("About to compress")
-    # compress_gl(glb_filepath)
+    print("About to compress")
+    compress_gl(glb_filepath)
 
 
 def test_prism_mesh():
