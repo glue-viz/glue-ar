@@ -1,10 +1,12 @@
 from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
 from glue.viewers.common.state import LayerState, ViewerState
-from numpy import array, clip, isnan, ones, sqrt
+from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
+from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
+from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
 from numpy.linalg import norm
-import operator
 import pyvista as pv
-import struct
+
+from typing import Literal, Optional
 
 from glue.utils import ensure_numerical
 from glue_ar.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, sphere_points, sphere_triangles
@@ -260,13 +262,13 @@ def add_vectors_gltf(builder: GLTFBuilder,
         buffer=buffer,
         byte_length=triangles_len,
         byte_offset=0,
-        target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
+        target=BufferTarget.ELEMENT_ARRAY_BUFFER,
     )
     builder.add_accessor(
         buffer_view=builder.buffer_view_count-1,
-        component_type=ComponentType.UNSIGNED_INT.value,
+        component_type=ComponentType.UNSIGNED_INT,
         count=triangle_count*3,
-        type=AccessorType.SCALAR.value,
+        type=AccessorType.SCALAR,
         mins=[0],
         maxes=[max_index],
     )
@@ -304,13 +306,13 @@ def add_vectors_gltf(builder: GLTFBuilder,
             buffer=buffer,
             byte_length=len(barr)-prev_len,
             byte_offset=prev_len,
-            target=BufferTarget.ARRAY_BUFFER.value,
+            target=BufferTarget.ARRAY_BUFFER,
         )
         builder.add_accessor(
             buffer_view=builder.buffer_view_count-1,
-            component_type=ComponentType.FLOAT.value,
+            component_type=ComponentType.FLOAT,
             count=point_count,
-            type=AccessorType.VEC3.value,
+            type=AccessorType.VEC3,
             mins=point_mins,
             maxes=point_maxes,
         )
@@ -326,11 +328,21 @@ def add_vectors_gltf(builder: GLTFBuilder,
     builder.add_file_resource(uri, data=barr)
 
 
-def add_error_bars_gltf(builder, viewer_state, layer_state,
-                        axis, data, bounds, mask=None):
+def add_error_bars_gltf(builder: GLTFBuilder,
+                        viewer_state: Vispy3DViewerState,
+                        layer_state: ScatterLayerState,
+                        axis: Literal["x", "y", "z"],
+                        data: ndarray,
+                        bounds: Bounds,
+                        mask: Optional[ndarray]=None):
     att = getattr(layer_state, f"{axis}err_attribute")
     err_values = layer_state.layer[att].ravel()[mask]
+    err_values[~isfinite(err_values)] = 0
     index = ['x', 'y', 'z'].index(axis)
+
+    # NB: This ordering is intentional to account for glTF coordinate system
+    gltf_index = ['z', 'y', 'x'].index(axis)
+
     axis_range = abs(bounds[index][1] - bounds[index][0])
     if viewer_state.native_aspect:
         max_range = max((abs(b[1] - b[0]) for b in bounds))
@@ -341,68 +353,40 @@ def add_error_bars_gltf(builder, viewer_state, layer_state,
 
     barr = bytearray()
 
-    # Lines just go from 0 -> 1 (start -> end)
-    barr.extend(struct.pack('I', 0))
-    barr.extend(struct.pack('I', 1))
+    errors_bin = f"errors_{unique_id()}.bin"
+    points = []
+    for pt, err in zip(data, err_values):
+        start = [c - err if idx == gltf_index else c for idx, c in enumerate(pt)]
+        end = [c + err if idx == gltf_index else c for idx, c in enumerate(pt)]
+        line_points = (start, end)
+        points.extend(line_points)
 
-    line_len = len(barr)
+        add_points_to_bytearray(barr, line_points)
+    
+    pt_mins = index_mins(points)
+    pt_maxes = index_maxes(points)
 
+    builder.add_buffer(byte_length=len(barr), uri=errors_bin)
     builder.add_buffer_view(
-        buffer=builder.buffer_count,
-        byte_length=line_len,
+        buffer=builder.buffer_count-1,
+        byte_length=len(barr),
         byte_offset=0,
-        target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
+        target=BufferTarget.ARRAY_BUFFER,
     )
     builder.add_accessor(
         buffer_view=builder.buffer_view_count-1,
-        component_type=ComponentType.UNSIGNED_INT.value,
-        count=2,
-        type=AccessorType.SCALAR.value,
-        mins=[0],
-        maxes=[1],
+        component_type=ComponentType.FLOAT,
+        count=len(points),
+        type=AccessorType.VEC3,
+        mins=pt_mins,
+        maxes=pt_maxes,
     )
-    line_accessor = builder.accessor_count - 1
+    builder.add_mesh(
+        position_accessor=builder.accessor_count-1,
+        material=builder.material_count-1,
+        mode=PrimitiveMode.LINES,
+    )
 
-    errors_bin = f"errors_{unique_id()}.bin"
-    points = []
-    current_len = len(barr)
-    for pt, err in zip(data, err_values):
-        start = [c - err if idx == index else c for idx, c in enumerate(pt)]
-        end = [c + err if idx == index else c for idx, c in enumerate(pt)]
-        points.extend((start, end))
-
-        prev_len = current_len
-        for ep in (start, end):
-            for coord in ep:
-                barr.extend(struct.pack('f', coord))
-    
-        current_len = len(barr)
-        new_len = current_len - prev_len
-        pt_mins = [min([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
-        pt_maxes = [max([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
-    
-        builder.add_buffer_view(
-            buffer=builder.buffer_count,
-            byte_length=new_len,
-            byte_offset=prev_len,
-            target=BufferTarget.ARRAY_BUFFER.value,
-        )
-        builder.add_accessor(
-            buffer_view=builder.buffer_view_count-1,
-            component_type=ComponentType.FLOAT.value,
-            count=len(points),
-            type=AccessorType.VEC3.value,
-            mins=pt_mins,
-            maxes=pt_maxes,
-        )
-        builder.add_mesh(
-            position_accessor=builder.accessor_count-1,
-            indices_accessor=line_accessor,
-            material=builder.material_count-1,
-            mode=PrimitiveMode.LINES,
-        )
-
-    builder.add_buffer(byte_length=len(barr), uri=errors_bin)
     builder.add_file_resource(errors_bin, data=barr)
 
 
@@ -421,7 +405,6 @@ def add_scatter_layer_gltf(builder,
 
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
-    builder.add_material(color_components, opacity=layer_state.alpha)
 
     theta_resolution = int(theta_resolution)
     phi_resolution = int(phi_resolution)
@@ -458,13 +441,13 @@ def add_scatter_layer_gltf(builder,
         buffer=buffer,
         byte_length=triangles_len,
         byte_offset=0,
-        target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
+        target=BufferTarget.ELEMENT_ARRAY_BUFFER,
     )
     builder.add_accessor(
         buffer_view=builder.buffer_view_count-1,
-        component_type=ComponentType.UNSIGNED_INT.value,
+        component_type=ComponentType.UNSIGNED_INT,
         count=len(triangles)*3,
-        type=AccessorType.SCALAR.value,
+        type=AccessorType.SCALAR,
         mins=[0],
         maxes=[max_index],
     )
@@ -472,8 +455,6 @@ def add_scatter_layer_gltf(builder,
 
     if fixed_color:
         builder.add_material(color=color_components, opacity=layer_state.alpha)
-    else:
-        material_map = {}
 
     buffer = builder.buffer_count
     cmap = layer_state.cmap
@@ -494,13 +475,13 @@ def add_scatter_layer_gltf(builder,
             buffer=buffer,
             byte_length=len(barr)-prev_len,
             byte_offset=prev_len,
-            target=BufferTarget.ARRAY_BUFFER.value,
+            target=BufferTarget.ARRAY_BUFFER,
         )
         builder.add_accessor(
             buffer_view=builder.buffer_view_count-1,
-            component_type=ComponentType.FLOAT.value,
+            component_type=ComponentType.FLOAT,
             count=len(pts),
-            type=AccessorType.VEC3.value,
+            type=AccessorType.VEC3,
             mins=point_mins,
             maxes=point_maxes,
         )
@@ -510,17 +491,28 @@ def add_scatter_layer_gltf(builder,
             normalized = (cval - layer_state.cmap_vmin) / crange
             cindex = int(normalized * 256)
             color = cmap.colors[cindex]
-            material_index = builder.material_count
-            rgba_tpl = tuple(color)
-            material_map[rgba_tpl] = material_index
             builder.add_material(color, layer_state.alpha)
-            
-        material_index = builder.material_count - 1
+        
+        material_index = builder.material_count -1
         builder.add_mesh(
-            position_accessor=builder.accessor_count - 1,
+            position_accessor=builder.accessor_count-1,
             indices_accessor=sphere_triangles_accessor,
             material=material_index,
         )
 
     builder.add_buffer(byte_length=len(barr), uri=uri)
     builder.add_file_resource(uri, data=barr)
+
+    for axis in ("x", "y", "z"):
+        if getattr(layer_state, f"{axis}err_visible", False):
+            add_error_bars_gltf(
+                builder=builder,
+                viewer_state=viewer_state,
+                layer_state=layer_state,
+                axis=axis,
+                data=data,
+                bounds=bounds, 
+                mask=mask,
+            )
+
+
