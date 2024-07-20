@@ -224,7 +224,7 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
 def add_vectors_gltf(builder: GLTFBuilder,
                      viewer_state: ViewerState,
                      layer_state: LayerState,
-                     data,
+                     data: ndarray,
                      bounds: Bounds,
                      tip_resolution: int=10,
                      shaft_resolution: int=10,
@@ -288,7 +288,8 @@ def add_vectors_gltf(builder: GLTFBuilder,
                                  theta_resolution=shaft_resolution)
         add_points_to_bytearray(barr, points)
         point_count = len(points)
-        point_mins = index_mins(points, point_mins)
+        point_mins = index_mins(points)
+        point_maxes = index_maxes(points)
 
         tip_center_base = [p + length * v for p, v in zip(adjusted_pt, adjusted_v)]
         if tip_factor:
