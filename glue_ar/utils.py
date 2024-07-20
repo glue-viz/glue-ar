@@ -2,45 +2,53 @@ import os
 from uuid import uuid4
 from glue.core import BaseData
 from glue.core.subset_group import GroupedSubset
-from glue_vispy_viewers.common.layer_state import LayerState
-from numpy import array, inf
+from glue.viewers.common.state import ViewerState
+from glue.viewers.common.viewer import LayerArtist, Viewer
+from glue_vispy_viewers.common.layer_state import LayerState, VispyLayerState
+from glue_vispy_viewers.volume.layer_state import VolumeLayerState
+from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
+from numpy import array, inf, ndarray
 import operator
 import struct
-from typing import Iterable
+
+from typing import Callable, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 
 AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
 
+type Bounds = List[Tuple[float, float]]
+type BoundsWithResolution = List[Tuple[float, float, int]]
 
-def layers_to_export(viewer):
+
+def layers_to_export(viewer: Viewer) -> List[LayerArtist]:
     return list(filter(lambda artist: artist.enabled and artist.visible, viewer.layers))
 
 
-def isomin_for_layer(viewer_state, layer):
-    if isinstance(layer.layer, GroupedSubset):
+def isomin_for_layer(viewer_state: ViewerState, layer_state: VolumeLayerState) -> float:
+    if isinstance(layer_state.layer, GroupedSubset):
         for viewer_layer in viewer_state.layers:
-            if viewer_layer.layer is layer.layer.data:
+            if viewer_layer.layer is layer_state.layer.data:
                 return viewer_layer.vmin
 
-    return layer.vmin
+    return layer_state.vmin
 
 
-def isomax_for_layer(viewer_state, layer):
-    if isinstance(layer.layer, GroupedSubset):
+def isomax_for_layer(viewer_state: ViewerState, layer_state: VolumeLayerState) -> float:
+    if isinstance(layer_state.layer, GroupedSubset):
         for viewer_layer in viewer_state.layers:
-            if viewer_layer.layer is layer.layer.data:
+            if viewer_layer.layer is layer_state.layer.data:
                 return viewer_layer.vmax
 
-    return layer.vmax
+    return layer_state.vmax
 
 
-def xyz_bounds(viewer_state):
+def xyz_bounds(viewer_state: Vispy3DViewerState) -> Bounds:
     return [(viewer_state.x_min, viewer_state.x_max),
             (viewer_state.y_min, viewer_state.y_max),
             (viewer_state.z_min, viewer_state.z_max)]
 
 
-def bounds_3d_from_layers(viewer_state, layer_states):
+def bounds_3d_from_layers(viewer_state: Vispy3DViewerState, layer_states: Iterable[VispyLayerState]) -> Bounds:
     mins = [inf, inf, inf]
     maxes = [-inf, -inf, -inf]
     atts = viewer_state.x_att, viewer_state.y_att, viewer_state.z_att
@@ -51,7 +59,7 @@ def bounds_3d_from_layers(viewer_state, layer_states):
     return [(lo, hi) for lo, hi in zip(mins, maxes)]
 
 
-def slope_intercept_between(a, b):
+def slope_intercept_between(a: List[float], b: List[float]) -> Tuple[float, float]:
     slope = (b[1] - a[1]) / (b[0] - a[0])
     intercept = b[1] - slope * b[0]
     return slope, intercept
@@ -60,14 +68,14 @@ def slope_intercept_between(a, b):
 # TODO: Make this better?
 # glue-plotly has had to deal with similar issues,
 # the utilities there are at least better than this
-def layer_color(layer_state):
+def layer_color(layer_state: LayerState) -> str:
     layer_color = layer_state.color
     if layer_color == '0.35' or layer_color == '0.75':
         layer_color = '#808080'
     return layer_color
 
 
-def bring_into_clip(data, bounds, preserve_aspect=True):
+def bring_into_clip(data, bounds: Bounds, preserve_aspect: bool=True):
     if preserve_aspect:
         ranges = [abs(bds[1] - bds[0]) for bds in bounds]
         max_range = max(ranges)
@@ -84,7 +92,7 @@ def bring_into_clip(data, bounds, preserve_aspect=True):
     return scaled
 
 
-def mask_for_bounds(viewer_state, layer_state, bounds):
+def mask_for_bounds(viewer_state: Vispy3DViewerState, layer_state: LayerState, bounds: BoundsWithResolution):
     data = layer_state.layer
     bounds = [(min(b), max(b)) for b in bounds]
     return (data[viewer_state.x_att] >= bounds[0][0]) & \
@@ -97,10 +105,11 @@ def mask_for_bounds(viewer_state, layer_state, bounds):
 
 # TODO: Worry about efficiency later
 # and just generally make this better
-def xyz_for_layer(viewer_state, layer_state,
-                  scaled=False,
-                  preserve_aspect=True,
-                  mask=None):
+def xyz_for_layer(viewer_state: Vispy3DViewerState,
+                  layer_state: LayerState,
+                  scaled: bool=False,
+                  preserve_aspect: bool=True,
+                  mask: Optional[ndarray]=None) -> ndarray:
     xs = layer_state.layer[viewer_state.x_att][mask]
     ys = layer_state.layer[viewer_state.y_att][mask]
     zs = layer_state.layer[viewer_state.z_att][mask]
@@ -113,15 +122,15 @@ def xyz_for_layer(viewer_state, layer_state,
     return array(list(zip(*vals)))
 
 
-def hex_to_components(color):
+def hex_to_components(color: str) -> List[int]:
     return [int(color[idx:idx+2], 16) for idx in range(1, len(color), 2)]
 
 
-def unique_id():
+def unique_id() -> str:
     return uuid4().hex
 
 
-def alpha_composite(over, under):
+def alpha_composite(over: List[float], under: List[float]) -> List[float]:
     alpha_o = over[3] if len(over) == 4 else over[2]
     alpha_u = under[3] if len(under) == 4 else under[2]
     rgb_o = over[:3]
@@ -135,7 +144,7 @@ def alpha_composite(over, under):
     return rgba_new
 
 
-def add_points_to_bytearray(arr: bytearray, points: Iterable[Iterable[int | float]]):
+def add_points_to_bytearray(arr: bytearray, points: Iterable[Iterable[Union[int, float]]]):
     for point in points:
         for coordinate in point:
             arr.extend(struct.pack('f', coordinate))
@@ -147,7 +156,12 @@ def add_triangles_to_bytearray(arr: bytearray, triangles: Iterable[Iterable[int]
             arr.extend(struct.pack('I', index))
 
 
-def index_extrema(items, extremum, previous=None, type=float):
+T = TypeVar("T", bound=Union[int, float])
+def index_extrema(items: List[List[T]],
+                  extremum: Callable[[T, T], T],
+                  previous: Optional[List[List[T]]]=None,
+                  type: Type[T]=int
+) -> List[List[T]]:
     size = len(items[0])
     extrema = [type(extremum([operator.itemgetter(i)(item) for item in items])) for i in range(size)]
     if previous is not None:
@@ -155,22 +169,26 @@ def index_extrema(items, extremum, previous=None, type=float):
     return extrema
 
 
-def index_mins(items, previous=None, type=int):
+def index_mins(items, previous=None, type: Type[T]=int) -> List[List[T]]:
     return index_extrema(items, extremum=min, type=type, previous=previous)
 
 
-def index_maxes(items, previous=None, type=int):
+def index_maxes(items, previous=None, type: Type[T]=int) -> List[List[T]]:
     return index_extrema(items, extremum=max, type=type, previous=previous)
 
 
-def data_for_layer(layer_or_state):
+def data_for_layer(layer_or_state: Union[LayerArtist, LayerState]) -> BaseData:
     if isinstance(layer_or_state.layer, BaseData):
         return layer_or_state.layer
     else:
         return layer_or_state.layer.data
 
 
-def frb_for_layer(viewer_state, layer_or_state, bounds):
+def frb_for_layer(viewer_state: ViewerState,
+                  layer_or_state: Union[LayerArtist, LayerState],
+                  bounds: BoundsWithResolution
+) -> ndarray:
+
     data = data_for_layer(layer_or_state)
     layer_state = layer_or_state if isinstance(layer_or_state, LayerState) else layer_or_state.state
     is_data_layer = data is layer_or_state.layer

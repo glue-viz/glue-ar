@@ -1,22 +1,28 @@
-from gltflib import Accessor, Asset, Attributes, Buffer, BufferView, GLTFModel, \
+from gltflib import Accessor, AccessorType, AlphaMode, Asset, Attributes, Buffer, BufferTarget, BufferView, ComponentType, GLTFModel, \
         Material, Mesh, Node, PBRMetallicRoughness, Primitive, PrimitiveMode, Scene
 from gltflib.gltf import GLTF 
 from gltflib.gltf_resource import FileResource
+
+from typing import List, Optional, Self, Union
 
 
 class GLTFBuilder:
 
     def __init__(self):
-        self.materials = []
-        self.meshes = []
-        self.buffers = []
-        self.buffer_views = []
-        self.accessors = []
-        self.file_resources = []
+        self.materials: List[Material] = []
+        self.meshes: List[Mesh] = []
+        self.buffers: List[Buffer] = []
+        self.buffer_views: List[BufferView] = []
+        self.accessors: List[Accessor] = []
+        self.file_resources: List[FileResource] = []
 
-    def add_material(self, color, opacity=1,
-                     roughness_factor=1, metallic_factor=0,
-                     alpha_mode="BLEND"):
+    def add_material(self,
+                     color: List[float],
+                     opacity: float=1,
+                     roughness_factor: float=1,
+                     metallic_factor: float=0,
+                     alpha_mode: AlphaMode=AlphaMode.BLEND
+    ) -> Self:
         if any(c > 1 for c in color):
             color = [c / 256 for c in color[:3]]
         self.materials.append(
@@ -26,13 +32,18 @@ class GLTFBuilder:
                     roughnessFactor=roughness_factor,
                     metallicFactor=metallic_factor
                 ),
-                alphaMode=alpha_mode
+                alphaMode=alpha_mode.value
             )
         )
         return self
     
-    def add_mesh(self, position_accessor, indices_accessor, material=None,
-                 mode=PrimitiveMode.TRIANGLES):
+    def add_mesh(self,
+                 position_accessor: int,
+                 indices_accessor: int,
+                 material: Optional[int]=None,
+                 mode: PrimitiveMode=PrimitiveMode.TRIANGLES
+    ) -> Self:
+
         primitive_kwargs = {
                 "attributes": Attributes(POSITION=position_accessor),
                 "indices": indices_accessor,
@@ -47,7 +58,10 @@ class GLTFBuilder:
         )
         return self
 
-    def add_buffer(self, byte_length, uri):
+    def add_buffer(self,
+                   byte_length: int,
+                   uri: str
+    ) -> Self:
         self.buffers.append(
             Buffer(
                 byteLength=byte_length,
@@ -56,32 +70,46 @@ class GLTFBuilder:
         )
         return self
 
-    def add_buffer_view(self, buffer, byte_length, byte_offset, target):
+    def add_buffer_view(self,
+                        buffer: int,
+                        byte_length: int,
+                        byte_offset: int,
+                        target: BufferTarget
+    ) -> Self:
         self.buffer_views.append(
             BufferView(
                 buffer=buffer,
                 byteLength=byte_length,
                 byteOffset=byte_offset,
-                target=target
+                target=target.value,
             )
         )
         return self
 
-    def add_accessor(self, buffer_view, component_type, count,
-                     type, mins, maxes):
+    def add_accessor(self,
+                     buffer_view: int,
+                     component_type: ComponentType,
+                     count: int,
+                     type: AccessorType,
+                     mins: List[Union[int, float]],
+                     maxes: List[Union[int, float]],
+    ) -> Self:
         self.accessors.append(
             Accessor(
                 bufferView=buffer_view,
                 componentType=component_type,
                 count=count,
-                type=type,
+                type=type.value,
                 min=mins,
                 max=maxes,
             )
         )
         return self
 
-    def add_file_resource(self, filename, data):
+    def add_file_resource(self,
+                          filename: str,
+                          data: bytearray
+    ) -> Self:
         self.file_resources.append(
             FileResource(
                 filename,
@@ -91,26 +119,26 @@ class GLTFBuilder:
         return self
 
     @property
-    def material_count(self):
+    def material_count(self) -> int:
         return len(self.materials)
 
     @property
-    def mesh_count(self):
+    def mesh_count(self) -> int:
         return len(self.meshes)
 
     @property
-    def buffer_count(self):
+    def buffer_count(self) -> int:
         return len(self.buffers)
 
     @property
-    def buffer_view_count(self):
+    def buffer_view_count(self) -> int:
         return len(self.buffer_views)
 
     @property
-    def accessor_count(self):
+    def accessor_count(self) -> int:
         return len(self.accessors)
 
-    def build_model(self):
+    def build_model(self) -> GLTFModel:
         nodes = [Node(mesh=i) for i in range(len(self.meshes))]
         node_indices = list(range(len(nodes)))
         scenes = [Scene(nodes=node_indices)]
@@ -125,6 +153,6 @@ class GLTFBuilder:
             materials=self.materials or None,
         )
 
-    def build(self):
+    def build(self) -> GLTF:
         model = self.build_model()
         return GLTF(model=model, resources=self.file_resources)

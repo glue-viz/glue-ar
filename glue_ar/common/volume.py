@@ -1,15 +1,17 @@
+from glue_vispy_viewers.common.layer_state import LayerState
+from glue_vispy_viewers.volume.layer_state import VolumeLayerState
+from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
 from mcubes import marching_cubes
 import numpy as np
 from numpy import clip, full, invert, isfinite, isnan, linspace, transpose
-import operator
 import pyvista as pv
 from scipy.ndimage import gaussian_filter
-import struct
 
 from gltflib import AccessorType, BufferTarget, ComponentType
 
 from glue.core.subset_group import GroupedSubset
-from glue_ar.utils import hex_to_components, isomin_for_layer, isomax_for_layer, layer_color
+from glue_ar.common.gltf_builder import GLTFBuilder
+from glue_ar.utils import BoundsWithResolution, add_points_to_bytearray, add_triangles_to_bytearray, frb_for_layer, hex_to_components, index_mins, index_maxes, isomin_for_layer, isomax_for_layer, layer_color, Bounds
 
 
 # Trying to export each layer individually, rather than doing all the meshes
@@ -107,18 +109,18 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     }]
 
 
-def bounds_3d(viewer_state):
+def bounds_3d(viewer_state: Vispy3DViewerState) -> BoundsWithResolution:
     return [(viewer_state.z_min, viewer_state.z_max, viewer_state.resolution),
             (viewer_state.y_min, viewer_state.y_max, viewer_state.resolution),
             (viewer_state.x_min, viewer_state.x_max, viewer_state.resolution)]
 
 
-def add_volume_layer_gltf(builder, viewer_state, layer_state):
+def add_volume_layer_gltf(builder: GLTFBuilder,
+                          viewer_state: Vispy3DViewerState,
+                          layer_state: VolumeLayerState, 
+):
     bounds = bounds_3d(viewer_state)
-    data = layer_state.layer.compute_fixed_resolution_buffer(
-        target_data=layer_state.layer,
-        bounds=bounds,
-        target_cid=layer_state.attribute)
+    data = frb_for_layer(viewer_state, layer_state, bounds)
 
     isomin = isomin_for_layer(viewer_state, layer_state)
     isomax = isomax_for_layer(viewer_state, layer_state)
@@ -137,23 +139,19 @@ def add_volume_layer_gltf(builder, viewer_state, layer_state):
    
     for level in levels[1:]:
         barr = bytearray()
-        level_bin = f"level_{level}.bin"
+        level_bin = f"layer_{layer_state.layer.uuid}_level_{level}.bin"
 
         points, triangles = marching_cubes(data, level)
-        for pt in points:
-            for coord in pt:
-                barr.extend(struct.pack('f', coord))
+        add_points_to_bytearray(barr, points)
         point_len = len(barr)
 
-        for tri in triangles:
-            for idx in tri:
-                barr.extend(struct.pack('I', idx))
+        add_triangles_to_bytearray(barr, triangles)
         triangle_len = len(barr) - point_len
 
-        pt_mins = [min([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
-        pt_maxes = [max([operator.itemgetter(i)(pt) for pt in points]) for i in range(3)]
-        tri_mins = [min([int(min([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
-        tri_maxes = [max([int(max([operator.itemgetter(i)(tri) for tri in triangles])) for i in range(3)])]
+        pt_mins = index_mins(points)
+        pt_maxes = index_maxes(points)
+        tri_mins = [int(min(idx for tri in triangles for idx in tri))]
+        tri_maxes = [int(max(idx for tri in triangles for idx in tri))]
 
         builder.add_buffer(byte_length=len(barr), uri=level_bin)
         
@@ -162,34 +160,34 @@ def add_volume_layer_gltf(builder, viewer_state, layer_state):
             buffer=buffer,
             byte_length=point_len,
             byte_offset=0,
-            target=BufferTarget.ARRAY_BUFFER.value,
+            target=BufferTarget.ARRAY_BUFFER,
         ) 
         builder.add_accessor( 
             buffer_view=builder.buffer_view_count-1,
-            component_type=ComponentType.FLOAT.value,
+            component_type=ComponentType.FLOAT,
             count=len(points),
-            type=AccessorType.VEC3.value,
-            min=pt_mins,
-            max=pt_maxes,
+            type=AccessorType.VEC3,
+            mins=pt_mins,
+            maxes=pt_maxes,
         )
         builder.add_buffer_view( 
             buffer=buffer,
             byte_length=triangle_len,
             byte_offset=point_len,
-            target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
+            target=BufferTarget.ELEMENT_ARRAY_BUFFER,
         )
         builder.add_accessor(
             buffer_view=builder.buffer_view_count-1,
-            component_type=ComponentType.UNSIGNED_INT.value,
-            count=len(triangles) * 3,
-            type=AccessorType.SCALAR.value,
+            component_type=ComponentType.UNSIGNED_INT,
+            count=len(triangles)*3,
+            type=AccessorType.SCALAR,
             mins=tri_mins,
             maxes=tri_maxes,
         )
         builder.add_mesh(
             position_accessor=builder.accessor_count-2,
             indices_accessor=builder.accessor_count-1,
-            material=0,
+            material=builder.material_count-1,
         )
         
         builder.add_file_resource(level_bin, data=barr)

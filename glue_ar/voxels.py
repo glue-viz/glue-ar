@@ -10,7 +10,7 @@ from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_ar.common.export import compress_gl
 
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.utils import add_triangles_to_bytearray, alpha_composite, data_for_layer, frb_for_layer, hex_to_components, isomin_for_layer, isomax_for_layer, layer_color, layers_to_export
+from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, alpha_composite, data_for_layer, frb_for_layer, hex_to_components, isomin_for_layer, isomax_for_layer, layer_color, layers_to_export
 
 from glue_ar.gltf_utils import *
 from glue_ar.shapes import rectangular_prism_points, rectangular_prism_triangulation
@@ -71,13 +71,13 @@ def create_voxel_export(
         buffer=1,
         byte_length=triangle_barrlen,
         byte_offset=0,
-        target=BufferTarget.ELEMENT_ARRAY_BUFFER.value
+        target=BufferTarget.ELEMENT_ARRAY_BUFFER,
     )
     builder.add_accessor(
         buffer_view=0,
-        component_type=ComponentType.UNSIGNED_INT.value,
+        component_type=ComponentType.UNSIGNED_INT,
         count=len(triangles) * 3,
-        type=AccessorType.SCALAR.value,
+        type=AccessorType.SCALAR,
         mins=[0],
         maxes=[7],
     )
@@ -127,9 +127,7 @@ def create_voxel_export(
         pts = rectangular_prism_points(center, clip_sides)
         prev_ptbarr_len = len(points_barr)
         point_index += len(pts)
-        for pt in pts:
-            for coord in pt:
-                points_barr.extend(struct.pack('f', coord))
+        add_points_to_bytearray(points_barr, pts)
         ptbarr_len = len(points_barr)
 
         pt_mins = [min([operator.itemgetter(i)(pt) for pt in pts]) for i in range(3)]
@@ -142,13 +140,13 @@ def create_voxel_export(
            buffer=0,
            byte_length=ptbarr_len-prev_ptbarr_len,
            byte_offset=prev_ptbarr_len,
-           target=BufferTarget.ARRAY_BUFFER.value,
+           target=BufferTarget.ARRAY_BUFFER,
         )
         builder.add_accessor(
             buffer_view=builder.buffer_view_count-1,
-            component_type=ComponentType.FLOAT.value,
+            component_type=ComponentType.FLOAT,
             count=len(pts),
-            type=AccessorType.VEC3.value,
+            type=AccessorType.VEC3,
             mins=pt_mins,
             maxes=pt_maxes,
         )

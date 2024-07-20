@@ -3,6 +3,8 @@ from typing import Iterable, Tuple
 
 from glue_ar.utils import unique_id
 
+from typing import Self
+
 
 class USDBuilder:
 
@@ -25,7 +27,7 @@ class USDBuilder:
     def _material_for_color(self,
                             color: Tuple[int, int, int],
                             opacity: float
-        ) -> UsdShade.Shader:
+    ) -> UsdShade.Shader:
 
         rgba_tpl = (*color, opacity)
         material = self._material_map.get(rgba_tpl, None)
@@ -50,7 +52,8 @@ class USDBuilder:
                    points: Iterable[Iterable[float]],
                    triangles: Iterable[Iterable[int]],
                    color: Tuple[int, int, int],
-                   opacity: float):
+                   opacity: float
+    ) -> Self:
        xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
        UsdGeom.Xform.Define(self.stage, xform_key)
        surface_key = f"{xform_key}/level_{unique_id()}"
@@ -64,5 +67,7 @@ class USDBuilder:
        surface.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
        UsdShade.MaterialBindingAPI(surface).Bind(material)
 
-    def export(self, filepath):
+       return self
+
+   def export(self, filepath):
         self.stage.GetRootLayer().Export(filepath)

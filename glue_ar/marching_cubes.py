@@ -70,13 +70,13 @@ def create_marching_cubes_gltf(
                 buffer=buffer,
                 byte_length=point_len,
                 byte_offset=0,
-                target=BufferTarget.ARRAY_BUFFER.value,
+                target=BufferTarget.ARRAY_BUFFER,
             )
             builder.add_accessor(
                 buffer_view=builder.buffer_view_count-1,
-                component_type=ComponentType.FLOAT.value,
+                component_type=ComponentType.FLOAT,
                 count=len(points),
-                type=AccessorType.VEC3.value,
+                type=AccessorType.VEC3,
                 mins=pt_mins,
                 maxes=pt_maxes,
             )
@@ -84,13 +84,13 @@ def create_marching_cubes_gltf(
                 buffer=buffer,
                 byte_length=triangle_len,
                 byte_offset=point_len,
-                target=BufferTarget.ELEMENT_ARRAY_BUFFER.value,
+                target=BufferTarget.ELEMENT_ARRAY_BUFFER,
             )
             builder.add_accessor(
                 buffer_view=builder.buffer_view_count-1,
-                component_type=ComponentType.UNSIGNED_INT.value,
+                component_type=ComponentType.UNSIGNED_INT,
                 count=len(triangles)*3,
-                type=AccessorType.SCALAR.value,
+                type=AccessorType.SCALAR,
                 mins=tri_mins,
                 maxes=tri_maxes,
             )

@@ -1,4 +1,5 @@
-from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode, component_type
+from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
+from glue.viewers.common.state import LayerState, ViewerState
 from numpy import array, clip, isnan, ones, sqrt
 from numpy.linalg import norm
 import operator
@@ -7,7 +8,8 @@ import struct
 
 from glue.utils import ensure_numerical
 from glue_ar.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, sphere_points, sphere_triangles
-from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, hex_to_components, index_mins, index_maxes, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer
+from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, hex_to_components, index_mins, index_maxes, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer, Bounds
+from glue_ar.common.gltf_builder import GLTFBuilder
 
 
 # For the 3D scatter viewer
@@ -217,10 +219,13 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
     return meshes
 
 
-def add_vectors_gltf(builder, viewer_state, layer_state,
-                     data, bounds,
-                     tip_resolution=10,
-                     shaft_resolution=10,
+def add_vectors_gltf(builder: GLTFBuilder,
+                     viewer_state: ViewerState,
+                     layer_state: LayerState,
+                     data,
+                     bounds: Bounds,
+                     tip_resolution: int=10,
+                     shaft_resolution: int=10,
                      mask=None):
 
     atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
