@@ -10,7 +10,7 @@ from typing import Literal, Optional
 
 from glue.utils import ensure_numerical
 from glue_ar.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, normalize, sphere_points, sphere_triangles
-from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, hex_to_components, index_mins, index_maxes, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer, Bounds
+from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, iterable_has_nan, hex_to_components, index_mins, index_maxes, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 
 
@@ -241,8 +241,7 @@ def add_vectors_gltf(builder: GLTFBuilder,
 
     atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
     vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
-    for vd in vector_data:
-        vd[~isfinite(vd)] = 0
+
     if viewer_state.native_aspect:
         factor = max((abs(b[1] - b[0]) for b in bounds))
         vector_data = [[0.5 * t / factor for t in v] for v in vector_data]
@@ -286,16 +285,17 @@ def add_vectors_gltf(builder: GLTFBuilder,
     )
     triangles_accessor = builder.accessor_count - 1
 
-
     point_mins = None
     point_maxes = None
     for pt, v in zip(data, vector_data):
+        if iterable_has_nan(v):
+            continue
         prev_len = len(barr)
         adjusted_v = v * layer_state.vector_scaling
         length = norm(adjusted_v)
         half_length = 0.5 * length
 
-        adjusted_v = list(reversed(adjusted_v))
+        adjusted_v = [adjusted_v[i] for i in (1, 2, 0)]
         adjusted_pt = [c + offset * vc for c, vc in zip(pt, adjusted_v)]
         points = cylinder_points(center=adjusted_pt,
                                  radius=shaft_radius,

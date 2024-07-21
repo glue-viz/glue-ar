@@ -7,7 +7,7 @@ from glue.viewers.common.viewer import LayerArtist, Viewer
 from glue_vispy_viewers.common.layer_state import LayerState, VispyLayerState
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
-from numpy import array, inf, ndarray
+from numpy import array, inf, isnan, ndarray
 import operator
 import struct
 
@@ -207,3 +207,11 @@ def frb_for_layer(viewer_state: ViewerState,
             subset_state=layer_state.layer.subset_state
         )
         return subcube * data_frb
+
+
+def ndarray_has_nan(arr: ndarray) -> bool:
+    return bool(isnan(arr).any())
+
+
+def iterable_has_nan(arr: Iterable[float]) -> bool:
+    return any(isnan(x) for x in arr)
