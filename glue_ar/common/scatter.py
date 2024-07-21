@@ -1,6 +1,6 @@
 from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
-from glue.viewers.common.state import LayerState, ViewerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
+from glue_vispy_viewers.scatter.viewer_state import Vispy3DScatterViewerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
 from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
 from numpy.linalg import norm
@@ -52,9 +52,9 @@ _VECTOR_OFFSETS = {
 }
 
 _VECTOR_OFFSETS_GLTF = {
-    'tail': -0.5,
+    'tail': 0.5,
     'middle': 0,
-    'tip': 0.5,
+    'tip': -0.5,
 }
 
 
@@ -228,13 +228,16 @@ def scatter_layer_as_multiblock(viewer_state, layer_state,
 
 
 def add_vectors_gltf(builder: GLTFBuilder,
-                     viewer_state: ViewerState,
-                     layer_state: LayerState,
+                     viewer_state: Vispy3DViewerState,
+                     layer_state: ScatterLayerState,
                      data: ndarray,
                      bounds: Bounds,
+                     tip_height: float,
+                     shaft_radius: float,
+                     tip_radius: float,
                      tip_resolution: int=10,
                      shaft_resolution: int=10,
-                     mask=None):
+                     mask: Optional[ndarray]=None):
 
     atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
     vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
@@ -249,7 +252,8 @@ def add_vectors_gltf(builder: GLTFBuilder,
     vector_data = array(list(zip(*vector_data)))
 
     offset = _VECTOR_OFFSETS_GLTF[layer_state.vector_origin]
-    tip_factor = 0.25 if layer_state.vector_arrowhead else 0
+    if layer_state.vector_origin == "tip":
+        offset += tip_height
 
     barr = bytearray()
     triangles = cylinder_triangles(theta_resolution=shaft_resolution)
@@ -282,6 +286,7 @@ def add_vectors_gltf(builder: GLTFBuilder,
     )
     triangles_accessor = builder.accessor_count - 1
 
+
     point_mins = None
     point_maxes = None
     for pt, v in zip(data, vector_data):
@@ -293,7 +298,7 @@ def add_vectors_gltf(builder: GLTFBuilder,
         adjusted_v = list(reversed(adjusted_v))
         adjusted_pt = [c + offset * vc for c, vc in zip(pt, adjusted_v)]
         points = cylinder_points(center=adjusted_pt,
-                                 radius=0.002,
+                                 radius=shaft_radius,
                                  length=length,
                                  central_axis=adjusted_v,
                                  theta_resolution=shaft_resolution)
@@ -302,16 +307,12 @@ def add_vectors_gltf(builder: GLTFBuilder,
         point_mins = index_mins(points)
         point_maxes = index_maxes(points)
 
-        print(points)
-
-        if tip_factor:
+        if layer_state.vector_arrowhead:
             normalized_v = normalize(adjusted_v)
             tip_center_base = [p + half_length * v for p, v in zip(adjusted_pt, normalized_v)]
-            print(tip_center_base)
-            print("======")
             tip_points = cone_points(base_center=tip_center_base,
-                                     radius=0.01,
-                                     height=tip_factor * length,
+                                     radius=tip_radius,
+                                     height=tip_height,
                                      central_axis=adjusted_v,
                                      theta_resolution=tip_resolution)
             add_points_to_bytearray(barr, tip_points)
@@ -407,13 +408,13 @@ def add_error_bars_gltf(builder: GLTFBuilder,
     builder.add_file_resource(errors_bin, data=barr)
 
 
-def add_scatter_layer_gltf(builder,
-                           viewer_state,
-                           layer_state,
-                           theta_resolution=8,
-                           phi_resolution=8,
-                           clip_to_bounds=True,
-                           scaled=True):
+def add_scatter_layer_gltf(builder: GLTFBuilder,
+                           viewer_state: Vispy3DScatterViewerState,
+                           layer_state: ScatterLayerState,
+                           theta_resolution: int=8,
+                           phi_resolution: int=8,
+                           clip_to_bounds: bool=True,
+                           scaled: bool=True):
     bounds = xyz_bounds(viewer_state)
     if clip_to_bounds:
         mask = mask_for_bounds(viewer_state, layer_state, bounds)
@@ -433,8 +434,11 @@ def add_scatter_layer_gltf(builder,
     data = data[:, [1, 2, 0]]
     factor = max((abs(b[1] - b[0]) for b in bounds))
     fixed_size = layer_state.size_mode == "Fixed"
+
+    # We calculate this even if we aren't using fixed size as we might also use this for vectors
+    radius = layer_state.size_scaling * sqrt(layer_state.size) / (10 * factor)
+    # TODO: Remove the fixed_size condition
     if fixed_size:
-        radius = layer_state.size_scaling * sqrt(layer_state.size) / (10 * factor)
         radius = 0.01
     else:
          # The specific size calculation is taken from the scatter layer artist
@@ -534,12 +538,18 @@ def add_scatter_layer_gltf(builder,
             )
 
     if layer_state.vector_visible:
+        tip_height = radius / 2
+        shaft_radius = radius / 8
+        tip_radius = tip_height / 2
         add_vectors_gltf(
             builder=builder,
             viewer_state=viewer_state,
             layer_state=layer_state,
             data=data,
             bounds=bounds,
+            tip_height=tip_height,
+            shaft_radius=shaft_radius,
+            tip_radius=tip_radius,
             shaft_resolution=10,
             tip_resolution=10,
             mask=mask,

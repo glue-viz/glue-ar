@@ -165,7 +165,7 @@ def cone_points(base_center: Iterable[float],
                 height: float,
                 central_axis: Iterable[float],
                 theta_resolution: int=5
-) -> Iterable[Tuple[float]]:
+) -> List[Tuple[float]]:
 
     central_axis = normalize(central_axis)
     orthog_1, orthog_2 = orthogonal_basis(central_axis)
