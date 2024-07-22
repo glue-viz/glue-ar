@@ -1,6 +1,5 @@
 from mcubes import marching_cubes
 from numpy import isfinite, linspace, transpose
-from uuid import uuid4
 from typing import Iterable
 
 from gltflib import AccessorType, BufferTarget, ComponentType
@@ -11,14 +10,15 @@ from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from glue_ar.common.export import compress_gl
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
-from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, data_for_layer, frb_for_layer, hex_to_components, index_maxes, index_mins, isomin_for_layer, isomax_for_layer, layer_color, unique_id
+from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, \
+                          frb_for_layer, hex_to_components, index_maxes, index_mins, \
+                          isomin_for_layer, isomax_for_layer, layer_color
 from glue_ar.gltf_utils import *
 
 
 def create_marching_cubes_gltf(
     viewer_state: Vispy3DVolumeViewerState,
-    layer_states: Iterable[VolumeLayerState],
-):
+    layer_states: Iterable[VolumeLayerState]):
 
     resolution = int(viewer_state.resolution)
     bounds = [
@@ -62,7 +62,7 @@ def create_marching_cubes_gltf(
             pt_maxes = index_maxes(points)
             tri_mins = [int(min(idx for tri in triangles for idx in tri))]
             tri_maxes = [int(max(idx for tri in triangles for idx in tri))]
-           
+
             builder.add_buffer(byte_length=len(barr), uri=level_bin)
 
             buffer = builder.buffer_count - 1
@@ -125,7 +125,7 @@ def create_marching_cubes_usd(
     builder = USDBuilder()
     output_filename = "marching_cubes.usdc"
     output_filepath = output_filename
-    
+
     isosurface_count = 75
 
     for layer_state in layer_states:
@@ -134,8 +134,8 @@ def create_marching_cubes_usd(
         # shape = (resolution, resolution, resolution)
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
-        isomin = isomin_for_layer(viewer_state, layer_state) 
-        isomax = isomax_for_layer(viewer_state, layer_state) 
+        isomin = isomin_for_layer(viewer_state, layer_state)
+        isomax = isomax_for_layer(viewer_state, layer_state)
 
         data[~isfinite(data)] = isomin - 10
 

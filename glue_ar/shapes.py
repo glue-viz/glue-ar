@@ -26,7 +26,7 @@ def rectangular_prism_points(center: Iterable[float], sides: Iterable[float]) ->
     return points
 
 
-def rectangular_prism_triangulation(start_index: int=0) -> List[Tuple[int, int, int]]:
+def rectangular_prism_triangulation(start_index: int = 0) -> List[Tuple[int, int, int]]:
     triangles = [
         # side
         (start_index + 0, start_index + 2, start_index + 1),
@@ -55,6 +55,7 @@ def rectangular_prism_triangulation(start_index: int=0) -> List[Tuple[int, int, 
 
     return triangles
 
+
 def sphere_mesh_index(row: int, column: int, theta_resolution: int, phi_resolution: int) -> int:
     if row == 0:
         return 0
@@ -65,11 +66,11 @@ def sphere_mesh_index(row: int, column: int, theta_resolution: int, phi_resoluti
         return phi_resolution * (row - 1) + column + 1
 
 
-def sphere_points(
-    center: Union[List[float], Tuple[float, float, float]],
-    radius: float,
-    theta_resolution: int=5,
-    phi_resolution: int=5) -> List[Tuple[float, float, float]]:
+def sphere_points(center: Union[List[float], Tuple[float, float, float]],
+                  radius: float,
+                  theta_resolution: int = 5,
+                  phi_resolution: int = 5) -> List[Tuple[float, float, float]]:
+
     # Number of points: phi_resolution * (theta_resolution - 2) + 2
     nonpole_thetas = [i * math.pi / theta_resolution for i in range(1, theta_resolution-1)]
     phis = [i * 2 * math.pi / phi_resolution for i in range(phi_resolution)]
@@ -83,7 +84,7 @@ def sphere_points(
     return points
 
 
-def sphere_triangles(theta_resolution: int=5, phi_resolution: int=5) -> List[Tuple[int, int, int]]:
+def sphere_triangles(theta_resolution: int = 5, phi_resolution: int = 5) -> List[Tuple[int, int, int]]:
     triangles = [(int(0), i + 1, i) for i in range(1, phi_resolution)]
     tr, pr = theta_resolution, phi_resolution
     triangles.append((0, 1, theta_resolution))
@@ -118,9 +119,8 @@ def cylinder_points(center: Iterable[float],
                     radius: float,
                     length: float,
                     central_axis: Iterable[float],
-                    theta_resolution: int=5
-) -> List[Tuple[float, float, float]]:
-    
+                    theta_resolution: int = 5) -> List[Tuple[float, float, float]]:
+
     central_axis = normalize(central_axis)
     half_length = length / 2
     endcap_centers = (
@@ -141,7 +141,7 @@ def cylinder_points(center: Iterable[float],
     ]
 
 
-def cylinder_triangles(theta_resolution: int=5, start_index: int=0) -> List[Tuple[int, int, int]]:
+def cylinder_triangles(theta_resolution: int = 5, start_index: int = 0) -> List[Tuple[int, int, int]]:
     bottom = [
         (0, i + 1, i) for i in range(1, theta_resolution-1)
     ]
@@ -153,7 +153,7 @@ def cylinder_triangles(theta_resolution: int=5, start_index: int=0) -> List[Tupl
     ]
     top_based_sides = [
         (i + theta_resolution, (i + 1) % theta_resolution, (i + 1) % theta_resolution + theta_resolution)
-         for i in range(theta_resolution)
+        for i in range(theta_resolution)
     ]
     if start_index > 0:
         bottom = offset_triangles(bottom, start_index)
@@ -168,8 +168,7 @@ def cone_points(base_center: Iterable[float],
                 radius: float,
                 height: float,
                 central_axis: Iterable[float],
-                theta_resolution: int=5
-) -> List[Tuple[float]]:
+                theta_resolution: int = 5) -> List[Tuple[float]]:
 
     central_axis = normalize(central_axis)
     orthog_1, orthog_2 = orthogonal_basis(central_axis)
@@ -185,8 +184,9 @@ def cone_points(base_center: Iterable[float],
     ]
 
 
-def cone_triangles(theta_resolution: int=5, start_index: int=0) -> List[Tuple[int, int, int]]:
-    sides = [(start_index, start_index + i, start_index + 1 + (i % theta_resolution)) for i in range(1, theta_resolution + 1)]
+def cone_triangles(theta_resolution: int = 5, start_index: int = 0) -> List[Tuple[int, int, int]]:
+    sides = [(start_index, start_index + i, start_index + 1 + (i % theta_resolution))
+             for i in range(1, theta_resolution + 1)]
     bottom = [
         (start_index + i, start_index + 1, 1 + start_index + (i % theta_resolution))
         for i in range(2, theta_resolution)

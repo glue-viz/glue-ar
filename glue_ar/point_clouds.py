@@ -1,11 +1,10 @@
 from numpy import isfinite, linspace, transpose
-import operator
 import struct
 
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 
-from glue_ar.utils import hex_to_components, isomin_for_layer, isomax_for_layer, layer_color
+from glue_ar.utils import isomin_for_layer, isomax_for_layer
 
 
 def create_points_export(

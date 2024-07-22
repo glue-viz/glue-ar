@@ -9,8 +9,11 @@ import pyvista as pv
 from typing import Literal, Optional
 
 from glue.utils import ensure_numerical
-from glue_ar.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, normalize, sphere_points, sphere_triangles
-from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, iterable_has_nan, hex_to_components, index_mins, index_maxes, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer, Bounds
+from glue_ar.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
+                           normalize, sphere_points, sphere_triangles
+from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, iterable_has_nan, \
+                          hex_to_components, index_mins, index_maxes, layer_color, mask_for_bounds, \
+                          unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
 
@@ -236,9 +239,9 @@ def add_vectors_gltf(builder: GLTFBuilder,
                      tip_height: float,
                      shaft_radius: float,
                      tip_radius: float,
-                     tip_resolution: int=10,
-                     shaft_resolution: int=10,
-                     mask: Optional[ndarray]=None):
+                     tip_resolution: int = 10,
+                     shaft_resolution: int = 10,
+                     mask: Optional[ndarray] = None):
 
     atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
     vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
@@ -353,7 +356,7 @@ def add_error_bars_gltf(builder: GLTFBuilder,
                         axis: Literal["x", "y", "z"],
                         data: ndarray,
                         bounds: Bounds,
-                        mask: Optional[ndarray]=None):
+                        mask: Optional[ndarray] = None):
     att = getattr(layer_state, f"{axis}err_attribute")
     err_values = layer_state.layer[att].ravel()[mask]
     err_values[~isfinite(err_values)] = 0
@@ -381,7 +384,7 @@ def add_error_bars_gltf(builder: GLTFBuilder,
         points.extend(line_points)
 
         add_points_to_bytearray(barr, line_points)
-    
+
     pt_mins = index_mins(points)
     pt_maxes = index_maxes(points)
 
@@ -412,10 +415,10 @@ def add_error_bars_gltf(builder: GLTFBuilder,
 def add_scatter_layer_gltf(builder: GLTFBuilder,
                            viewer_state: Vispy3DScatterViewerState,
                            layer_state: ScatterLayerState,
-                           theta_resolution: int=8,
-                           phi_resolution: int=8,
-                           clip_to_bounds: bool=True,
-                           scaled: bool=True):
+                           theta_resolution: int = 8,
+                           phi_resolution: int = 8,
+                           clip_to_bounds: bool = True,
+                           scaled: bool = True):
     bounds = xyz_bounds(viewer_state)
     if clip_to_bounds:
         mask = mask_for_bounds(viewer_state, layer_state, bounds)
@@ -437,7 +440,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     if fixed_size:
         radius = 0.01
     else:
-         # The specific size calculation is taken from the scatter layer artist
+        # The specific size calculation is taken from the scatter layer artist
         size_data = ensure_numerical(layer_state.layer[layer_state.size_attribute][mask].ravel())
         size_data = clip(size_data, layer_state.size_vmin, layer_state.size_vmax)
         if layer_state.size_vmax == layer_state.size_vmin:
@@ -447,7 +450,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                          (layer_state.size_vmax - layer_state.size_vmin)))
         sizes *= (layer_state.size_scaling / (2 * factor))
         sizes[isnan(sizes)] = 0.
-        
+
     barr = bytearray()
     triangles = sphere_triangles(theta_resolution=theta_resolution, phi_resolution=phi_resolution)
     add_triangles_to_bytearray(barr, triangles)
@@ -505,15 +508,15 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             mins=point_mins,
             maxes=point_maxes,
         )
-       
+
         if not fixed_color:
             cval = cmap_vals[i]
             normalized = (cval - layer_state.cmap_vmin) / crange
             cindex = int(normalized * 256)
             color = cmap.colors[cindex]
             builder.add_material(color, layer_state.alpha)
-        
-        material_index = builder.material_count -1
+
+        material_index = builder.material_count - 1
         builder.add_mesh(
             position_accessor=builder.accessor_count-1,
             indices_accessor=sphere_triangles_accessor,
@@ -531,7 +534,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                 layer_state=layer_state,
                 axis=axis,
                 data=data,
-                bounds=bounds, 
+                bounds=bounds,
                 mask=mask,
             )
 
@@ -558,10 +561,10 @@ def add_scatter_layer_usd(
     builder: USDBuilder,
     viewer_state: Vispy3DScatterViewerState,
     layer_state: ScatterLayerState,
-    theta_resolution: int=8,
-    phi_resolution: int=8,
-    clip_to_bounds: bool=True,
-    scaled: bool=True
+    theta_resolution: int = 8,
+    phi_resolution: int = 8,
+    clip_to_bounds: bool = True,
+    scaled: bool = True
 ):
 
     bounds = xyz_bounds(viewer_state)
@@ -587,7 +590,7 @@ def add_scatter_layer_usd(
     if fixed_size:
         radius = 0.01
     else:
-         # The specific size calculation is taken from the scatter layer artist
+        # The specific size calculation is taken from the scatter layer artist
         size_data = ensure_numerical(layer_state.layer[layer_state.size_attribute][mask].ravel())
         size_data = clip(size_data, layer_state.size_vmin, layer_state.size_vmax)
         if layer_state.size_vmax == layer_state.size_vmin:

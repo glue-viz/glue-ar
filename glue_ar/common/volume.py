@@ -1,4 +1,3 @@
-from glue_vispy_viewers.common.layer_state import LayerState
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
 from mcubes import marching_cubes
@@ -11,7 +10,9 @@ from gltflib import AccessorType, BufferTarget, ComponentType
 
 from glue.core.subset_group import GroupedSubset
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.utils import BoundsWithResolution, add_points_to_bytearray, add_triangles_to_bytearray, frb_for_layer, hex_to_components, index_mins, index_maxes, isomin_for_layer, isomax_for_layer, layer_color, Bounds
+from glue_ar.utils import BoundsWithResolution, add_points_to_bytearray, add_triangles_to_bytearray, \
+                          frb_for_layer, hex_to_components, index_mins, index_maxes, isomin_for_layer, \
+                          isomax_for_layer, layer_color
 
 
 # Trying to export each layer individually, rather than doing all the meshes
@@ -117,8 +118,7 @@ def bounds_3d(viewer_state: Vispy3DViewerState) -> BoundsWithResolution:
 
 def add_volume_layer_gltf(builder: GLTFBuilder,
                           viewer_state: Vispy3DViewerState,
-                          layer_state: VolumeLayerState, 
-):
+                          layer_state: VolumeLayerState):
     bounds = bounds_3d(viewer_state)
     data = frb_for_layer(viewer_state, layer_state, bounds)
 
@@ -136,7 +136,7 @@ def add_volume_layer_gltf(builder: GLTFBuilder,
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
     builder.add_material(color_components, opacity=opacity)
-   
+
     for level in levels[1:]:
         barr = bytearray()
         level_bin = f"layer_{layer_state.layer.uuid}_level_{level}.bin"
@@ -154,15 +154,15 @@ def add_volume_layer_gltf(builder: GLTFBuilder,
         tri_maxes = [int(max(idx for tri in triangles for idx in tri))]
 
         builder.add_buffer(byte_length=len(barr), uri=level_bin)
-        
+
         buffer = builder.buffer_count - 1
-        builder.add_buffer_view( 
+        builder.add_buffer_view(
             buffer=buffer,
             byte_length=point_len,
             byte_offset=0,
             target=BufferTarget.ARRAY_BUFFER,
-        ) 
-        builder.add_accessor( 
+        )
+        builder.add_accessor(
             buffer_view=builder.buffer_view_count-1,
             component_type=ComponentType.FLOAT,
             count=len(points),
@@ -170,7 +170,7 @@ def add_volume_layer_gltf(builder: GLTFBuilder,
             mins=pt_mins,
             maxes=pt_maxes,
         )
-        builder.add_buffer_view( 
+        builder.add_buffer_view(
             buffer=buffer,
             byte_length=triangle_len,
             byte_offset=point_len,
@@ -189,7 +189,6 @@ def add_volume_layer_gltf(builder: GLTFBuilder,
             indices_accessor=builder.accessor_count-1,
             material=builder.material_count-1,
         )
-        
         builder.add_file_resource(level_bin, data=barr)
 
 

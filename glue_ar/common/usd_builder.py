@@ -4,8 +4,6 @@ from typing import Iterable, Tuple
 
 from glue_ar.utils import unique_id
 
-from typing import Self
-
 
 class USDBuilder:
 
@@ -64,10 +62,10 @@ class USDBuilder:
         """
         This returns the generated mesh rather than the builder instance.
         This breaks the builder pattern but we'll potentially want this reference to it
-        for other meshes that we create 
+        for other meshes that we create.
         """
         xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
-        xform = UsdGeom.Xform.Define(self.stage, xform_key)
+        UsdGeom.Xform.Define(self.stage, xform_key)
         mesh_key = f"{xform_key}/level_{unique_id()}"
         mesh = UsdGeom.Mesh.Define(self.stage, mesh_key)
         mesh.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
@@ -87,7 +85,6 @@ class USDBuilder:
         target = relationship.GetTargets()[0]
         material_prim = prim.GetStage().GetPrimAtPath(target)
         return UsdShade.Material(material_prim)
-
 
     def add_translated_reference(self, mesh, translation):
         prim = mesh.GetPrim()
