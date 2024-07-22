@@ -1,4 +1,5 @@
 from pxr import Sdf, Usd, UsdGeom, UsdLux, UsdShade
+from tempfile import NamedTemporaryFile
 from typing import Iterable, Tuple
 
 from glue_ar.utils import unique_id
@@ -12,8 +13,12 @@ class USDBuilder:
         self._create_stage()
         self._material_map = {}
 
+    def __del__(self):
+        self.tmpfile.close()
+
     def _create_stage(self):
-        self.stage = Usd.Stage.CreateNew("export.usdc")
+        self.tmpfile = NamedTemporaryFile(suffix=".usdc")
+        self.stage = Usd.Stage.CreateNew(self.tmpfile.name)
 
         # TODO: Do we want to make changing this an option?
         UsdGeom.SetStageUpAxis(self.stage, UsdGeom.Tokens.y)
@@ -62,7 +67,7 @@ class USDBuilder:
         for other meshes that we create 
         """
         xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
-        UsdGeom.Xform.Define(self.stage, xform_key)
+        xform = UsdGeom.Xform.Define(self.stage, xform_key)
         mesh_key = f"{xform_key}/level_{unique_id()}"
         mesh = UsdGeom.Mesh.Define(self.stage, mesh_key)
         mesh.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
@@ -76,16 +81,31 @@ class USDBuilder:
 
         return mesh
 
-    def add_translated_reference(self, prim, translation):
+    def _material_for_mesh(self, mesh):
+        prim = mesh.GetPrim()
+        relationship = prim.GetRelationship("material:binding")
+        target = relationship.GetTargets()[0]
+        material_prim = prim.GetStage().GetPrimAtPath(target)
+        return UsdShade.Material(material_prim)
+
+
+    def add_translated_reference(self, mesh, translation):
+        prim = mesh.GetPrim()
         xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
         UsdGeom.Xform.Define(self.stage, xform_key)
-        mesh_key = f"{xform_key}/level_{unique_id()}"
-        mesh = UsdGeom.Mesh.Define(self.stage, mesh_key)
-        references = mesh.GetReferences()
+        new_mesh_key = f"{xform_key}/level_{unique_id()}"
+        new_mesh = UsdGeom.Mesh.Define(self.stage, new_mesh_key)
+        new_prim = new_mesh.GetPrim()
+
+        references = new_prim.GetReferences()
         references.AddInternalReference(prim.GetPrimPath())
 
-        translation = mesh.AddTranslateOp()
-        translation.set(value=translation)
+        material = self._material_for_mesh(mesh)
+        new_mesh.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
+        UsdShade.MaterialBindingAPI(new_mesh).Bind(material)
+
+        translate_op = new_mesh.AddTranslateOp()
+        translate_op.Set(value=translation)
 
         return mesh
 
