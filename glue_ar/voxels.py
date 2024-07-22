@@ -1,4 +1,3 @@
-from math import floor
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from numpy import isfinite, argwhere, transpose
 from os.path import join
@@ -10,9 +9,10 @@ from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_ar.common.export import compress_gl
 
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, alpha_composite, data_for_layer, frb_for_layer, hex_to_components, isomin_for_layer, isomax_for_layer, layer_color, layers_to_export
+from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, alpha_composite, \
+                          frb_for_layer, hex_to_components, isomin_for_layer, isomax_for_layer, layer_color
 
-from glue_ar.gltf_utils import *
+from glue_ar.gltf_utils import clip_linear_transformations
 from glue_ar.shapes import rectangular_prism_points, rectangular_prism_triangulation
 
 from gltflib import Accessor, AccessorType, Asset, BufferTarget, BufferView, Primitive, \
@@ -24,15 +24,12 @@ from gltflib.gltf_resource import FileResource
 def create_voxel_export(
     viewer_state: Vispy3DVolumeViewerState,
     layer_states: Iterable[VolumeLayerState],
-    precomputed_frbs=None
 ):
 
     builder = GLTFBuilder()
 
-    n_opacities = 100
-
     # resolution = int(viewer_state.resolution)
-    resolution = 200 
+    resolution = 200
     bounds = [
         (viewer_state.z_min, viewer_state.z_max, resolution),
         (viewer_state.y_min, viewer_state.y_max, resolution),
@@ -52,7 +49,6 @@ def create_voxel_export(
         (viewer_state.x_min, viewer_state.x_max),
         (viewer_state.y_min, viewer_state.y_max),
     )
-    # world_positions = [linspace(bds[0], bds[1], resolution) for bds in world_bounds]
     clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
     clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
 
@@ -84,19 +80,19 @@ def create_voxel_export(
 
     opacity_cutoff = 0.1
     opacity_factor = 0.75
-    
+
     occupied_voxels = {}
 
     for layer_state in layer_states:
         data = frb_for_layer(viewer_state, layer_state, bounds)
-    
-        isomin = isomin_for_layer(viewer_state, layer_state) 
-        isomax = isomax_for_layer(viewer_state, layer_state) 
+
+        isomin = isomin_for_layer(viewer_state, layer_state)
+        isomax = isomax_for_layer(viewer_state, layer_state)
 
         data[~isfinite(data)] = isomin - 1
-    
+
         data = transpose(data, (1, 0, 2))
-    
+
         isorange = isomax - isomin
         nonempty_indices = argwhere(data - isomin > 0)
 
@@ -189,31 +185,42 @@ def test_prism_mesh():
     triangles = rectangular_prism_triangulation()
     point_mins = [min([operator.itemgetter(i)(point) for point in points]) for i in range(3)]
     point_maxes = [max([operator.itemgetter(i)(point) for point in points]) for i in range(3)]
-    
+
     output_directory = "out"
-    
+
     N_POINTS = 8
     arr = bytearray()
     for point in points:
         for coord in point:
             arr.extend(struct.pack('f', coord))
-    
+
     triangles_offset = len(arr)
     for triangle in triangles:
         for index in triangle:
             arr.extend(struct.pack('I', index))
-    
+
     buffer = Buffer(byteLength=len(arr), uri="buf.bin")
     buffer_views = [
-        BufferView(buffer=0, byteLength=triangles_offset, target=BufferTarget.ARRAY_BUFFER.value),
-        BufferView(buffer=0, byteOffset=triangles_offset, byteLength=len(arr)-triangles_offset, target=BufferTarget.ELEMENT_ARRAY_BUFFER.value)
+        BufferView(
+            buffer=0,
+            byteLength=triangles_offset,
+            target=BufferTarget.ARRAY_BUFFER.value
+        ),
+        BufferView(
+            buffer=0,
+            byteOffset=triangles_offset,
+            byteLength=len(arr)-triangles_offset,
+            target=BufferTarget.ELEMENT_ARRAY_BUFFER.value
+        ),
     ]
     accessors = [
-        Accessor(bufferView=0, componentType=ComponentType.FLOAT.value, count=N_POINTS, type=AccessorType.VEC3.value, min=point_mins, max=point_maxes),
-        Accessor(bufferView=1, componentType=ComponentType.UNSIGNED_INT.value, count=len(triangles) * 3, type=AccessorType.SCALAR.value, min=[0], max=[N_POINTS-1])
+        Accessor(bufferView=0, componentType=ComponentType.FLOAT.value,
+                 count=N_POINTS, type=AccessorType.VEC3.value, min=point_mins, max=point_maxes),
+        Accessor(bufferView=1, componentType=ComponentType.UNSIGNED_INT.value,
+                 count=len(triangles) * 3, type=AccessorType.SCALAR.value, min=[0], max=[N_POINTS-1])
     ]
     file_resources = [FileResource("buf.bin", data=arr)]
-    
+
     model = GLTFModel(
         asset=Asset(version='2.0'),
         scenes=[Scene(nodes=[0])],

@@ -75,7 +75,7 @@ def layer_color(layer_state: LayerState) -> str:
     return layer_color
 
 
-def bring_into_clip(data, bounds: Bounds, preserve_aspect: bool=True):
+def bring_into_clip(data, bounds: Bounds, preserve_aspect: bool = True):
     if preserve_aspect:
         ranges = [abs(bds[1] - bds[0]) for bds in bounds]
         max_range = max(ranges)
@@ -107,9 +107,9 @@ def mask_for_bounds(viewer_state: Vispy3DViewerState, layer_state: LayerState, b
 # and just generally make this better
 def xyz_for_layer(viewer_state: Vispy3DViewerState,
                   layer_state: LayerState,
-                  scaled: bool=False,
-                  preserve_aspect: bool=True,
-                  mask: Optional[ndarray]=None) -> ndarray:
+                  scaled: bool = False,
+                  preserve_aspect: bool = True,
+                  mask: Optional[ndarray] = None) -> ndarray:
     xs = layer_state.layer[viewer_state.x_att][mask]
     ys = layer_state.layer[viewer_state.y_att][mask]
     zs = layer_state.layer[viewer_state.z_att][mask]
@@ -157,11 +157,12 @@ def add_triangles_to_bytearray(arr: bytearray, triangles: Iterable[Iterable[int]
 
 
 T = TypeVar("T", bound=Union[int, float])
+
+
 def index_extrema(items: List[List[T]],
                   extremum: Callable[[T, T], T],
-                  previous: Optional[List[List[T]]]=None,
-                  type: Type[T]=float
-) -> List[List[T]]:
+                  previous: Optional[List[List[T]]] = None,
+                  type: Type[T] = float) -> List[List[T]]:
     size = len(items[0])
     extrema = [type(extremum([operator.itemgetter(i)(item) for item in items])) for i in range(size)]
     if previous is not None:
@@ -169,11 +170,11 @@ def index_extrema(items: List[List[T]],
     return extrema
 
 
-def index_mins(items, previous=None, type: Type[T]=float) -> List[List[T]]:
+def index_mins(items, previous=None, type: Type[T] = float) -> List[List[T]]:
     return index_extrema(items, extremum=min, type=type, previous=previous)
 
 
-def index_maxes(items, previous=None, type: Type[T]=float) -> List[List[T]]:
+def index_maxes(items, previous=None, type: Type[T] = float) -> List[List[T]]:
     return index_extrema(items, extremum=max, type=type, previous=previous)
 
 
@@ -186,8 +187,7 @@ def data_for_layer(layer_or_state: Union[LayerArtist, LayerState]) -> BaseData:
 
 def frb_for_layer(viewer_state: ViewerState,
                   layer_or_state: Union[LayerArtist, LayerState],
-                  bounds: BoundsWithResolution
-) -> ndarray:
+                  bounds: BoundsWithResolution) -> ndarray:
 
     data = data_for_layer(layer_or_state)
     layer_state = layer_or_state if isinstance(layer_or_state, LayerState) else layer_or_state.state
