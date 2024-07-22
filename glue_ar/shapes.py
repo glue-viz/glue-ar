@@ -1,6 +1,6 @@
 from itertools import product
 import math
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, Union
 
 from numpy import cross, pi
 
@@ -65,7 +65,11 @@ def sphere_mesh_index(row: int, column: int, theta_resolution: int, phi_resoluti
         return phi_resolution * (row - 1) + column + 1
 
 
-def sphere_points(center: List[float], radius: float, theta_resolution: int=5, phi_resolution: int=5) -> List[Tuple[float, float, float]]:
+def sphere_points(
+    center: Union[List[float], Tuple[float, float, float]],
+    radius: float,
+    theta_resolution: int=5,
+    phi_resolution: int=5) -> List[Tuple[float, float, float]]:
     # Number of points: phi_resolution * (theta_resolution - 2) + 2
     nonpole_thetas = [i * math.pi / theta_resolution for i in range(1, theta_resolution-1)]
     phis = [i * 2 * math.pi / phi_resolution for i in range(phi_resolution)]

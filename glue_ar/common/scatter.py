@@ -12,6 +12,7 @@ from glue.utils import ensure_numerical
 from glue_ar.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, normalize, sphere_points, sphere_triangles
 from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, iterable_has_nan, hex_to_components, index_mins, index_maxes, layer_color, mask_for_bounds, unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
+from glue_ar.common.usd_builder import USDBuilder
 
 
 # For the 3D scatter viewer
@@ -421,11 +422,6 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     else:
         mask = None
 
-    color = layer_color(layer_state)
-    color_components = hex_to_components(color)
-
-    theta_resolution = int(theta_resolution)
-    phi_resolution = int(phi_resolution)
     fixed_color = layer_state.color_mode == "Fixed"
     data = xyz_for_layer(viewer_state, layer_state,
                          preserve_aspect=viewer_state.native_aspect,
@@ -476,6 +472,8 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     sphere_triangles_accessor = builder.accessor_count - 1
 
     if fixed_color:
+        color = layer_color(layer_state)
+        color_components = hex_to_components(color)
         builder.add_material(color=color_components, opacity=layer_state.alpha)
 
     buffer = builder.buffer_count
@@ -554,3 +552,56 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             tip_resolution=10,
             mask=mask,
         )
+
+
+def add_scatter_layer_usd(
+    builder: USDBuilder,
+    viewer_state: Vispy3DScatterViewerState,
+    layer_state: ScatterLayerState,
+    theta_resolution: int=8,
+    phi_resolution: int=8,
+    clip_to_bounds: bool=True,
+    scaled: bool=True
+):
+
+    bounds = xyz_bounds(viewer_state)
+    if clip_to_bounds:
+        mask = mask_for_bounds(viewer_state, layer_state, bounds)
+    else:
+        mask = None
+
+    fixed_color = layer_state.color_mode == "Fixed"
+    data = xyz_for_layer(viewer_state, layer_state,
+                         preserve_aspect=viewer_state.native_aspect,
+                         mask=mask,
+                         scaled=scaled)
+    data = data[:, [1, 2, 0]]
+    factor = max((abs(b[1] - b[0]) for b in bounds))
+    fixed_size = layer_state.size_mode == "Fixed"
+    color = layer_color(layer_state)
+    color_components = tuple(hex_to_components(color))
+
+    # We calculate this even if we aren't using fixed size as we might also use this for vectors
+    radius = layer_state.size_scaling * sqrt(layer_state.size) / (10 * factor)
+    # TODO: Remove the fixed_size condition
+    if fixed_size:
+        radius = 0.01
+    else:
+         # The specific size calculation is taken from the scatter layer artist
+        size_data = ensure_numerical(layer_state.layer[layer_state.size_attribute][mask].ravel())
+        size_data = clip(size_data, layer_state.size_vmin, layer_state.size_vmax)
+        if layer_state.size_vmax == layer_state.size_vmin:
+            sizes = sqrt(ones(size_data.shape) * 10)
+        else:
+            sizes = sqrt(((size_data - layer_state.size_vmin) /
+                         (layer_state.size_vmax - layer_state.size_vmin)))
+        sizes *= (layer_state.size_scaling / (2 * factor))
+        sizes[isnan(sizes)] = 0.
+
+    triangles = sphere_triangles(theta_resolution=theta_resolution, phi_resolution=phi_resolution)
+
+    points = sphere_points(center=[0, 0, 0], radius=radius,
+                           theta_resolution=theta_resolution,
+                           phi_resolution=phi_resolution)
+    sphere_mesh = builder.add_shape(points, triangles, color=color_components, opacity=layer_state.alpha)
+

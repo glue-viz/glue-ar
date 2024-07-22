@@ -24,9 +24,10 @@ class USDBuilder:
         light = UsdLux.RectLight.Define(self.stage, "/light")
         light.CreateHeightAttr(-1)
 
-    def _material_for_color(self,
-                            color: Tuple[int, int, int],
-                            opacity: float
+    def _material_for_color(
+        self,
+        color: Tuple[int, int, int],
+        opacity: float,
     ) -> UsdShade.Shader:
 
         rgba_tpl = (*color, opacity)
@@ -48,26 +49,45 @@ class USDBuilder:
         self._material_map[rgba_tpl] = material
         return material
 
-    def add_shape(self,
-                   points: Iterable[Iterable[float]],
-                   triangles: Iterable[Iterable[int]],
-                   color: Tuple[int, int, int],
-                   opacity: float
-    ) -> Self:
-       xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
-       UsdGeom.Xform.Define(self.stage, xform_key)
-       surface_key = f"{xform_key}/level_{unique_id()}"
-       surface = UsdGeom.Mesh.Define(self.stage, surface_key)
-       surface.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
-       surface.CreatePointsAttr(points)
-       surface.CreateFaceVertexCountsAttr([3] * len(triangles))
-       surface.CreateFaceVertexIndicesAttr([int(idx) for tri in triangles for idx in tri])
+    def add_shape(
+        self,
+        points: Iterable[Iterable[float]],
+        triangles: Iterable[Iterable[int]],
+        color: Tuple[int, int, int],
+        opacity: float,
+    ):
+        """
+        This returns the generated mesh rather than the builder instance.
+        This breaks the builder pattern but we'll potentially want this reference to it
+        for other meshes that we create 
+        """
+        xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
+        UsdGeom.Xform.Define(self.stage, xform_key)
+        mesh_key = f"{xform_key}/level_{unique_id()}"
+        mesh = UsdGeom.Mesh.Define(self.stage, mesh_key)
+        mesh.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
+        mesh.CreatePointsAttr(points)
+        mesh.CreateFaceVertexCountsAttr([3] * len(triangles))
+        mesh.CreateFaceVertexIndicesAttr([int(idx) for tri in triangles for idx in tri])
 
-       material = self._material_for_color(color, opacity)
-       surface.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
-       UsdShade.MaterialBindingAPI(surface).Bind(material)
+        material = self._material_for_color(color, opacity)
+        mesh.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
+        UsdShade.MaterialBindingAPI(mesh).Bind(material)
 
-       return self
+        return mesh
 
-   def export(self, filepath):
+    def add_translated_reference(self, prim, translation):
+        xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
+        UsdGeom.Xform.Define(self.stage, xform_key)
+        mesh_key = f"{xform_key}/level_{unique_id()}"
+        mesh = UsdGeom.Mesh.Define(self.stage, mesh_key)
+        references = mesh.GetReferences()
+        references.AddInternalReference(prim.GetPrimPath())
+
+        translation = mesh.AddTranslateOp()
+        translation.set(value=translation)
+
+        return mesh
+
+    def export(self, filepath):
         self.stage.GetRootLayer().Export(filepath)

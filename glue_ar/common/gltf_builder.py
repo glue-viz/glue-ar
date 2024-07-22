@@ -3,7 +3,7 @@ from gltflib import Accessor, AccessorType, AlphaMode, Asset, Attributes, Buffer
 from gltflib.gltf import GLTF 
 from gltflib.gltf_resource import FileResource
 
-from typing import List, Optional, Self, Union
+from typing import Iterable, List, Optional, Self, Union
 
 
 class GLTFBuilder:
@@ -17,7 +17,7 @@ class GLTFBuilder:
         self.file_resources: List[FileResource] = []
 
     def add_material(self,
-                     color: List[float],
+                     color: Iterable[float],
                      opacity: float=1,
                      roughness_factor: float=1,
                      metallic_factor: float=0,
