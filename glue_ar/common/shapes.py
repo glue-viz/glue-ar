@@ -73,6 +73,7 @@ def sphere_points(center: Union[List[float], Tuple[float, float, float]],
 
     # Number of points: phi_resolution * (theta_resolution - 2) + 2
     nonpole_thetas = [i * math.pi / theta_resolution for i in range(1, theta_resolution-1)]
+    print(nonpole_thetas)
     phis = [i * 2 * math.pi / phi_resolution for i in range(phi_resolution)]
     points = [(
         center[0] + radius * math.cos(phi) * math.sin(theta),

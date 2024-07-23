@@ -10,9 +10,9 @@ from gltflib import AccessorType, BufferTarget, ComponentType
 
 from glue.core.subset_group import GroupedSubset
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.utils import BoundsWithResolution, add_points_to_bytearray, add_triangles_to_bytearray, \
-                          frb_for_layer, hex_to_components, index_mins, index_maxes, isomin_for_layer, \
-                          isomax_for_layer, layer_color
+from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
+from glue_ar.utils import BoundsWithResolution, frb_for_layer, hex_to_components, isomin_for_layer, \
+                          isomax_for_layer, layer_color, xyz_bounds
 
 
 # Trying to export each layer individually, rather than doing all the meshes
@@ -110,16 +110,10 @@ def meshes_for_volume_layer(viewer_state, layer_state, bounds,
     }]
 
 
-def bounds_3d(viewer_state: Vispy3DViewerState) -> BoundsWithResolution:
-    return [(viewer_state.z_min, viewer_state.z_max, viewer_state.resolution),
-            (viewer_state.y_min, viewer_state.y_max, viewer_state.resolution),
-            (viewer_state.x_min, viewer_state.x_max, viewer_state.resolution)]
-
-
 def add_volume_layer_gltf(builder: GLTFBuilder,
                           viewer_state: Vispy3DViewerState,
                           layer_state: VolumeLayerState):
-    bounds = bounds_3d(viewer_state)
+    bounds = xyz_bounds(viewer_state, with_resolution=True)
     data = frb_for_layer(viewer_state, layer_state, bounds)
 
     isomin = isomin_for_layer(viewer_state, layer_state)

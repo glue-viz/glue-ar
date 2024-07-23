@@ -1,6 +1,6 @@
 from pxr import Sdf, Usd, UsdGeom, UsdLux, UsdShade
 from tempfile import NamedTemporaryFile
-from typing import Iterable, Tuple
+from typing import Dict, Iterable, Tuple
 
 from glue_ar.utils import unique_id
 
@@ -9,7 +9,7 @@ class USDBuilder:
 
     def __init__(self):
         self._create_stage()
-        self._material_map = {}
+        self._material_map: Dict[Tuple[int,int,int,float], UsdShade.Shader] = {}
 
     def __del__(self):
         self.tmpfile.close()
@@ -27,11 +27,9 @@ class USDBuilder:
         light = UsdLux.RectLight.Define(self.stage, "/light")
         light.CreateHeightAttr(-1)
 
-    def _material_for_color(
-        self,
-        color: Tuple[int, int, int],
-        opacity: float,
-    ) -> UsdShade.Shader:
+    def _material_for_color(self,
+                            color: Tuple[int, int, int],
+                            opacity: float) -> UsdShade.Shader:
 
         rgba_tpl = (*color, opacity)
         material = self._material_map.get(rgba_tpl, None)
@@ -52,13 +50,11 @@ class USDBuilder:
         self._material_map[rgba_tpl] = material
         return material
 
-    def add_shape(
-        self,
-        points: Iterable[Iterable[float]],
-        triangles: Iterable[Iterable[int]],
-        color: Tuple[int, int, int],
-        opacity: float,
-    ):
+    def add_shape(self,
+                  points: Iterable[Iterable[float]],
+                  triangles: Iterable[Iterable[int]],
+                  color: Tuple[int, int, int],
+                  opacity: float) -> UsdGeom.Mesh:
         """
         This returns the generated mesh rather than the builder instance.
         This breaks the builder pattern but we'll potentially want this reference to it
@@ -79,14 +75,14 @@ class USDBuilder:
 
         return mesh
 
-    def _material_for_mesh(self, mesh):
+    def _material_for_mesh(self, mesh) -> UsdShade.Material:
         prim = mesh.GetPrim()
         relationship = prim.GetRelationship("material:binding")
         target = relationship.GetTargets()[0]
         material_prim = prim.GetStage().GetPrimAtPath(target)
         return UsdShade.Material(material_prim)
 
-    def add_translated_reference(self, mesh, translation):
+    def add_translated_reference(self, mesh, translation) -> UsdGeom.Mesh:
         prim = mesh.GetPrim()
         xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
         UsdGeom.Xform.Define(self.stage, xform_key)

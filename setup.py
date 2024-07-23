@@ -51,6 +51,7 @@ setup_args = dict(
         "glue-vispy-viewers",
         "pillow",
         "pyvista",
+        "usd-core",
     ],
     extras_require={
         "test": [

@@ -9,10 +9,10 @@ import pyvista as pv
 from typing import Literal, Optional
 
 from glue.utils import ensure_numerical
-from glue_ar.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
+from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                            normalize, sphere_points, sphere_triangles
-from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, iterable_has_nan, \
-                          hex_to_components, index_mins, index_maxes, layer_color, mask_for_bounds, \
+from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
+from glue_ar.utils import iterable_has_nan, hex_to_components, layer_color, mask_for_bounds, \
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder

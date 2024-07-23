@@ -1,35 +1,27 @@
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from numpy import isfinite, argwhere, transpose
-from os.path import join
-import operator
-import struct
 from typing import Iterable
 
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
-from glue_ar.common.export import compress_gl
 
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, alpha_composite, \
-                          frb_for_layer, hex_to_components, isomin_for_layer, isomax_for_layer, layer_color
+                          frb_for_layer, hex_to_components, index_maxes, index_mins, isomin_for_layer, isomax_for_layer, layer_color
 
 from glue_ar.gltf_utils import clip_linear_transformations
 from glue_ar.shapes import rectangular_prism_points, rectangular_prism_triangulation
 
-from gltflib import Accessor, AccessorType, Asset, BufferTarget, BufferView, Primitive, \
-    ComponentType, GLTFModel, Node, Scene, Attributes, Mesh, Buffer
+from gltflib import AccessorType, BufferTarget, ComponentType
 from gltflib.gltf import GLTF
-from gltflib.gltf_resource import FileResource
 
 
-def create_voxel_export(
+def create_voxel_gltf(
     viewer_state: Vispy3DVolumeViewerState,
-    layer_states: Iterable[VolumeLayerState],
-):
+    layer_states: Iterable[VolumeLayerState]) -> GLTF:
 
     builder = GLTFBuilder()
 
-    # resolution = int(viewer_state.resolution)
-    resolution = 200
+    resolution = int(viewer_state.resolution)
     bounds = [
         (viewer_state.z_min, viewer_state.z_max, resolution),
         (viewer_state.y_min, viewer_state.y_max, resolution),
@@ -126,8 +118,8 @@ def create_voxel_export(
         add_points_to_bytearray(points_barr, pts)
         ptbarr_len = len(points_barr)
 
-        pt_mins = [min([operator.itemgetter(i)(pt) for pt in pts]) for i in range(3)]
-        pt_maxes = [max([operator.itemgetter(i)(pt) for pt in pts]) for i in range(3)]
+        pt_mins = index_mins(pts)
+        pt_maxes = index_maxes(pts)
 
         # We're going to use two buffers
         # The first one (index 0) for the points
@@ -168,72 +160,4 @@ def create_voxel_export(
     builder.add_file_resource(points_bin, data=points_barr)
     builder.add_file_resource(triangles_bin, data=triangles_barr)
 
-    gltf = builder.build()
-    gltf_filepath = "voxel_test.gltf"
-    glb_filepath = "voxel_test.glb"
-    gltf.export(gltf_filepath)
-    gltf.export(glb_filepath)
-    print("About to compress")
-    compress_gl(glb_filepath)
-
-
-def test_prism_mesh():
-
-    center = (0, 0, 0)
-    sides = (1, 1, 3)
-    points = rectangular_prism_points(center, sides)
-    triangles = rectangular_prism_triangulation()
-    point_mins = [min([operator.itemgetter(i)(point) for point in points]) for i in range(3)]
-    point_maxes = [max([operator.itemgetter(i)(point) for point in points]) for i in range(3)]
-
-    output_directory = "out"
-
-    N_POINTS = 8
-    arr = bytearray()
-    for point in points:
-        for coord in point:
-            arr.extend(struct.pack('f', coord))
-
-    triangles_offset = len(arr)
-    for triangle in triangles:
-        for index in triangle:
-            arr.extend(struct.pack('I', index))
-
-    buffer = Buffer(byteLength=len(arr), uri="buf.bin")
-    buffer_views = [
-        BufferView(
-            buffer=0,
-            byteLength=triangles_offset,
-            target=BufferTarget.ARRAY_BUFFER.value
-        ),
-        BufferView(
-            buffer=0,
-            byteOffset=triangles_offset,
-            byteLength=len(arr)-triangles_offset,
-            target=BufferTarget.ELEMENT_ARRAY_BUFFER.value
-        ),
-    ]
-    accessors = [
-        Accessor(bufferView=0, componentType=ComponentType.FLOAT.value,
-                 count=N_POINTS, type=AccessorType.VEC3.value, min=point_mins, max=point_maxes),
-        Accessor(bufferView=1, componentType=ComponentType.UNSIGNED_INT.value,
-                 count=len(triangles) * 3, type=AccessorType.SCALAR.value, min=[0], max=[N_POINTS-1])
-    ]
-    file_resources = [FileResource("buf.bin", data=arr)]
-
-    model = GLTFModel(
-        asset=Asset(version='2.0'),
-        scenes=[Scene(nodes=[0])],
-        nodes=[Node(mesh=0)],
-        meshes=[Mesh(primitives=[Primitive(attributes=Attributes(POSITION=0), indices=1)])],
-        buffers=[buffer],
-        bufferViews=buffer_views,
-        accessors=accessors
-    )
-    gltf = GLTF(model=model, resources=file_resources)
-    gltf.export(join(output_directory, "prism.gltf"))
-    gltf.export(join(output_directory, "prism.glb"))
-
-
-if __name__ == "__main__":
-    test_prism_mesh()
+    return builder.build()

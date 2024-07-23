@@ -8,10 +8,8 @@ from glue_vispy_viewers.common.layer_state import LayerState, VispyLayerState
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
 from numpy import array, inf, isnan, ndarray
-import operator
-import struct
 
-from typing import Callable, Iterable, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Literal, overload, Iterable, List, Optional, Tuple, Union
 
 
 AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
@@ -41,11 +39,21 @@ def isomax_for_layer(viewer_state: ViewerState, layer_state: VolumeLayerState) -
 
     return layer_state.vmax
 
+@overload
+def xyz_bounds(viewer_state: Vispy3DViewerState, with_resolution: Literal[False]) -> Bounds: ...
 
-def xyz_bounds(viewer_state: Vispy3DViewerState) -> Bounds:
-    return [(viewer_state.x_min, viewer_state.x_max),
-            (viewer_state.y_min, viewer_state.y_max),
-            (viewer_state.z_min, viewer_state.z_max)]
+@overload
+def xyz_bounds(viewer_state: Vispy3DViewerState, with_resolution: Literal[True]) -> BoundsWithResolution: ...
+
+
+def xyz_bounds(viewer_state: Vispy3DViewerState, with_resolution: bool) -> Union[Bounds, BoundsWithResolution]:
+    bounds: Bounds = [(viewer_state.x_min, viewer_state.x_max),
+                      (viewer_state.y_min, viewer_state.y_max),
+                      (viewer_state.z_min, viewer_state.z_max)]
+    if with_resolution:
+        return [(*b, viewer_state.resolution) for b in bounds]
+    
+    return bounds
 
 
 def bounds_3d_from_layers(viewer_state: Vispy3DViewerState, layer_states: Iterable[VispyLayerState]) -> Bounds:
@@ -63,7 +71,6 @@ def slope_intercept_between(a: List[float], b: List[float]) -> Tuple[float, floa
     slope = (b[1] - a[1]) / (b[0] - a[0])
     intercept = b[1] - slope * b[0]
     return slope, intercept
-
 
 # TODO: Make this better?
 # glue-plotly has had to deal with similar issues,
@@ -142,40 +149,6 @@ def alpha_composite(over: List[float], under: List[float]) -> List[float]:
     ]
     rgba_new.append(alpha_new)
     return rgba_new
-
-
-def add_points_to_bytearray(arr: bytearray, points: Iterable[Iterable[Union[int, float]]]):
-    for point in points:
-        for coordinate in point:
-            arr.extend(struct.pack('f', coordinate))
-
-
-def add_triangles_to_bytearray(arr: bytearray, triangles: Iterable[Iterable[int]]):
-    for triangle in triangles:
-        for index in triangle:
-            arr.extend(struct.pack('I', index))
-
-
-T = TypeVar("T", bound=Union[int, float])
-
-
-def index_extrema(items: List[List[T]],
-                  extremum: Callable[[T, T], T],
-                  previous: Optional[List[List[T]]] = None,
-                  type: Type[T] = float) -> List[List[T]]:
-    size = len(items[0])
-    extrema = [type(extremum([operator.itemgetter(i)(item) for item in items])) for i in range(size)]
-    if previous is not None:
-        extrema = [extremum(x, p) for x, p in zip(extrema, previous)]
-    return extrema
-
-
-def index_mins(items, previous=None, type: Type[T] = float) -> List[List[T]]:
-    return index_extrema(items, extremum=min, type=type, previous=previous)
-
-
-def index_maxes(items, previous=None, type: Type[T] = float) -> List[List[T]]:
-    return index_extrema(items, extremum=max, type=type, previous=previous)
 
 
 def data_for_layer(layer_or_state: Union[LayerArtist, LayerState]) -> BaseData:
