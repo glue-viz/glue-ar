@@ -1,6 +1,7 @@
 from pxr import Sdf, Usd, UsdGeom, UsdLux, UsdShade
 from tempfile import NamedTemporaryFile
 from typing import Dict, Iterable, Tuple
+from glue_ar.usd_utils import material_for_color
 
 from glue_ar.utils import unique_id
 
@@ -36,17 +37,7 @@ class USDBuilder:
         if material is not None:
             return material
 
-        material_key = f"/material_{unique_id()}"
-        material = UsdShade.Material.Define(self.stage, material_key)
-        shader_key = f"{material_key}/PBRShader"
-        pbr_shader = UsdShade.Shader.Define(self.stage, shader_key)
-        pbr_shader.CreateIdAttr("UsdPreviewSurface")
-        pbr_shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.4)
-        pbr_shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.1)
-        pbr_shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(tuple(c / 255 for c in color))
-        pbr_shader.CreateInput("opacity", Sdf.ValueTypeNames.Float).Set(opacity)
-        material.CreateSurfaceOutput().ConnectToSource(pbr_shader.ConnectableAPI(), "surface")
-
+        material = material_for_color(self.stage, color, opacity)
         self._material_map[rgba_tpl] = material
         return material
 
@@ -82,7 +73,7 @@ class USDBuilder:
         material_prim = prim.GetStage().GetPrimAtPath(target)
         return UsdShade.Material(material_prim)
 
-    def add_translated_reference(self, mesh, translation) -> UsdGeom.Mesh:
+    def add_translated_reference(self, mesh, translation, material=None) -> UsdGeom.Mesh:
         prim = mesh.GetPrim()
         xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
         UsdGeom.Xform.Define(self.stage, xform_key)
@@ -93,7 +84,8 @@ class USDBuilder:
         references = new_prim.GetReferences()
         references.AddInternalReference(prim.GetPrimPath())
 
-        material = self._material_for_mesh(mesh)
+        if material is None:
+            material = self._material_for_mesh(mesh)
         new_mesh.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
         UsdShade.MaterialBindingAPI(new_mesh).Bind(material)
 

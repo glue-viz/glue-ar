@@ -12,6 +12,7 @@ from glue.utils import ensure_numerical
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                            normalize, sphere_points, sphere_triangles
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
+from glue_ar.usd_utils import material_for_color
 from glue_ar.utils import iterable_has_nan, hex_to_components, layer_color, mask_for_bounds, \
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
@@ -511,8 +512,8 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
         if not fixed_color:
             cval = cmap_vals[i]
-            normalized = (cval - layer_state.cmap_vmin) / crange
-            cindex = int(normalized * 256)
+            normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+            cindex = int(normalized * 255)
             color = cmap.colors[cindex]
             builder.add_material(color, layer_state.alpha)
 
@@ -567,7 +568,7 @@ def add_scatter_layer_usd(
     scaled: bool = True
 ):
 
-    bounds = xyz_bounds(viewer_state)
+    bounds = xyz_bounds(viewer_state, with_resolution=False)
     if clip_to_bounds:
         mask = mask_for_bounds(viewer_state, layer_state, bounds)
     else:
@@ -579,6 +580,7 @@ def add_scatter_layer_usd(
                          mask=mask,
                          scaled=scaled)
     data = data[:, [1, 2, 0]]
+    print(mask)
     factor = max((abs(b[1] - b[0]) for b in bounds))
     fixed_size = layer_state.size_mode == "Fixed"
     color = layer_color(layer_state)
@@ -603,8 +605,50 @@ def add_scatter_layer_usd(
 
     triangles = sphere_triangles(theta_resolution=theta_resolution, phi_resolution=phi_resolution)
 
-    points = sphere_points(center=[0, 0, 0], radius=radius,
-                           theta_resolution=theta_resolution,
-                           phi_resolution=phi_resolution)
-    sphere_mesh = builder.add_shape(points, triangles, color=color_components, opacity=layer_state.alpha)
+    if not fixed_color:
+        cmap = layer_state.cmap
+        cmap_att = layer_state.cmap_attribute
+        cmap_vals = layer_state.layer[cmap_att][mask]
+        crange = layer_state.cmap_vmax - layer_state.cmap_vmin
 
+    # If we're in fixed-size mode, we can reuse the same prim and translate it
+    if fixed_size:
+        first_point = data[0]
+        points = sphere_points(center=first_point, radius=radius,
+                               theta_resolution=theta_resolution,
+                               phi_resolution=phi_resolution)
+        sphere_mesh = builder.add_shape(points, triangles, color=color_components, opacity=layer_state.alpha)
+
+        for i in range(1, len(data)):
+            point = data[i]
+            translation = tuple(p - fp for p, fp in zip(point, first_point))
+            if fixed_color:
+                material = None
+            else:
+                material = material_for_color(builder.stage, color_components, layer_state.alpha)
+            builder.add_translated_reference(sphere_mesh, translation, material=material)
+
+    else:
+        for i, point in enumerate(data):
+            points = sphere_points(center=point, radius=sizes[i],
+                                   theta_resolution=theta_resolution,
+                                   phi_resolution=phi_resolution)
+            color = color_components
+            if not fixed_color:
+                cval = cmap_vals[i]
+                normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+                cindex = int(normalized * 255)
+                color = tuple(int(256 * c) for c in cmap.colors[cindex])
+            builder.add_shape(points, triangles, color=color, opacity=layer_state.alpha)
+        
+
+    for axis in ("x", "y", "z"):
+        if getattr(layer_state, f"{axis}err_visible", False):
+            # TODO: Add error bars here
+            pass
+
+    if layer_state.vector_visible:
+        tip_height = radius / 2
+        shaft_radius = radius / 8
+        tip_radius = tip_height / 2
+        # TODO: Add vectors here

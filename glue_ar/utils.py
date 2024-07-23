@@ -99,7 +99,7 @@ def bring_into_clip(data, bounds: Bounds, preserve_aspect: bool = True):
     return scaled
 
 
-def mask_for_bounds(viewer_state: Vispy3DViewerState, layer_state: LayerState, bounds: BoundsWithResolution):
+def mask_for_bounds(viewer_state: Vispy3DViewerState, layer_state: LayerState, bounds: Union[Bounds, BoundsWithResolution]):
     data = layer_state.layer
     bounds = [(min(b), max(b)) for b in bounds]
     return (data[viewer_state.x_att] >= bounds[0][0]) & \
@@ -123,7 +123,7 @@ def xyz_for_layer(viewer_state: Vispy3DViewerState,
     vals = [xs, ys, zs]
 
     if scaled:
-        bounds = xyz_bounds(viewer_state)
+        bounds = xyz_bounds(viewer_state, with_resolution=False)
         vals = bring_into_clip(vals, bounds, preserve_aspect=preserve_aspect)
 
     return array(list(zip(*vals)))
