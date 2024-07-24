@@ -10,7 +10,7 @@ class USDBuilder:
 
     def __init__(self):
         self._create_stage()
-        self._material_map: Dict[Tuple[int,int,int,float], UsdShade.Shader] = {}
+        self._material_map: Dict[Tuple[int,int,int,float,float,float], UsdShade.Shader] = {}
 
     def __del__(self):
         self.tmpfile.close()
@@ -30,22 +30,26 @@ class USDBuilder:
 
     def _material_for_color(self,
                             color: Tuple[int, int, int],
-                            opacity: float) -> UsdShade.Shader:
+                            opacity: float,
+                            metallic: float,
+                            roughness: float) -> UsdShade.Shader:
 
-        rgba_tpl = (*color, opacity)
-        material = self._material_map.get(rgba_tpl, None)
+        color_key = (*color, opacity, metallic, roughness)
+        material = self._material_map.get(color_key, None)
         if material is not None:
             return material
 
         material = material_for_color(self.stage, color, opacity)
-        self._material_map[rgba_tpl] = material
+        self._material_map[color_key] = material
         return material
 
-    def add_shape(self,
+    def add_mesh(self,
                   points: Iterable[Iterable[float]],
                   triangles: Iterable[Iterable[int]],
                   color: Tuple[int, int, int],
-                  opacity: float) -> UsdGeom.Mesh:
+                  opacity: float,
+                  metallic: float = 0.1,
+                  roughness: float = 0.4) -> UsdGeom.Mesh:
         """
         This returns the generated mesh rather than the builder instance.
         This breaks the builder pattern but we'll potentially want this reference to it
@@ -60,7 +64,7 @@ class USDBuilder:
         mesh.CreateFaceVertexCountsAttr([3] * len(triangles))
         mesh.CreateFaceVertexIndicesAttr([int(idx) for tri in triangles for idx in tri])
 
-        material = self._material_for_color(color, opacity)
+        material = self._material_for_color(color, opacity, metallic=metallic, roughness=roughness)
         mesh.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
         UsdShade.MaterialBindingAPI(mesh).Bind(material)
 

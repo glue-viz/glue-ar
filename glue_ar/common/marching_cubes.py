@@ -129,7 +129,7 @@ def add_marching_cubes_layer_usd(
     for i, level in enumerate(levels[1:]):
         alpha = (3 * i + isosurface_count) / (4 * isosurface_count) * opacity
         points, triangles = marching_cubes(data, level)
-        builder.add_shape(points, triangles, color_components, alpha)
+        builder.add_mesh(points, triangles, color_components, alpha)
 
 
 def create_marching_cubes_usd(

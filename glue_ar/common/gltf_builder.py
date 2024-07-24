@@ -28,7 +28,7 @@ class GLTFBuilder:
         self.materials.append(
             Material(
                 pbrMetallicRoughness=PBRMetallicRoughness(
-                    baseColorFactor=color + [opacity],
+                    baseColorFactor=list(color[:3]) + [opacity],
                     roughnessFactor=roughness_factor,
                     metallicFactor=metallic_factor
                 ),

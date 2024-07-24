@@ -420,7 +420,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                            phi_resolution: int = 8,
                            clip_to_bounds: bool = True,
                            scaled: bool = True):
-    bounds = xyz_bounds(viewer_state)
+    bounds = xyz_bounds(viewer_state, with_resolution=False)
     if clip_to_bounds:
         mask = mask_for_bounds(viewer_state, layer_state, bounds)
     else:
@@ -487,6 +487,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     crange = layer_state.cmap_vmax - layer_state.cmap_vmin
     uri = f"layer_{unique_id()}.bin"
     for i, point in enumerate(data):
+
         prev_len = len(barr)
         r = radius if fixed_size else sizes[i]
         pts = sphere_points(center=point, radius=r,
@@ -495,6 +496,16 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         add_points_to_bytearray(barr, pts)
         point_mins = index_mins(pts)
         point_maxes = index_maxes(pts)
+
+        if not fixed_color:
+            cval = cmap_vals[i]
+            if not isfinite(cval):
+                continue
+            normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+            cindex = int(normalized * 255)
+            color = cmap(cindex)
+            builder.add_material(color, layer_state.alpha)
+
         builder.add_buffer_view(
             buffer=buffer,
             byte_length=len(barr)-prev_len,
@@ -510,12 +521,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             maxes=point_maxes,
         )
 
-        if not fixed_color:
-            cval = cmap_vals[i]
-            normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
-            cindex = int(normalized * 255)
-            color = cmap.colors[cindex]
-            builder.add_material(color, layer_state.alpha)
+
 
         material_index = builder.material_count - 1
         builder.add_mesh(
@@ -558,6 +564,53 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         )
 
 
+def add_vectors_usd(builder: USDBuilder,
+                    viewer_state: Vispy3DScatterViewerState,
+                    layer_state: ScatterLayerState,
+                    data: ndarray,
+                    bounds: Bounds,
+                    tip_height: float,
+                    shaft_radius: float,
+                    tip_radius: float,
+                    tip_resolution: int = 10,
+                    shaft_resolution: int = 10,
+                    mask: Optional[ndarray] = None):
+
+    atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
+    vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
+
+    if viewer_state.native_aspect:
+        factor = max((abs(b[1] - b[0]) for b in bounds))
+        vector_data = [[0.5 * t / factor for t in v] for v in vector_data]
+    else:
+        bound_factors = [abs(b[1] - b[0]) for b in bounds]
+        vector_data = [[0.5 * t / b for t in v] for v, b in zip(vector_data, bound_factors)]
+    vector_data = array(list(zip(*vector_data)))
+
+    offset = _VECTOR_OFFSETS_GLTF[layer_state.vector_origin]
+    if layer_state.vector_origin == "tip":
+        offset += tip_height
+
+    triangles = cylinder_triangles(theta_resolution=shaft_resolution)
+    if layer_state.vector_arrowhead:
+        tip_triangles = cone_triangles(theta_resolution=tip_resolution)
+
+    for pt, v in zip(data, vector_data):
+        if iterable_has_nan(v):
+            continue
+        adjusted_v = v * layer_state.vector_scaling
+        length = norm(adjusted_v)
+        half_length = 0.5 * length
+
+        adjusted_v = [adjusted_v[i] for i in (1, 2, 0)]
+        adjusted_pt = [c + offset * vc for c, vc in zip(pt, adjusted_v)]
+        points = cylinder_points(center=adjusted_pt,
+                                 radius=shaft_radius,
+                                 length=length,
+                                 central_axis=adjusted_v,
+                                 theta_resolution=shaft_resolution)
+
+
 def add_scatter_layer_usd(
     builder: USDBuilder,
     viewer_state: Vispy3DScatterViewerState,
@@ -574,15 +627,14 @@ def add_scatter_layer_usd(
     else:
         mask = None
 
-    fixed_color = layer_state.color_mode == "Fixed"
     data = xyz_for_layer(viewer_state, layer_state,
                          preserve_aspect=viewer_state.native_aspect,
                          mask=mask,
                          scaled=scaled)
     data = data[:, [1, 2, 0]]
-    print(mask)
     factor = max((abs(b[1] - b[0]) for b in bounds))
     fixed_size = layer_state.size_mode == "Fixed"
+    fixed_color = layer_state.color_mode == "Fixed"
     color = layer_color(layer_state)
     color_components = tuple(hex_to_components(color))
 
@@ -617,7 +669,7 @@ def add_scatter_layer_usd(
         points = sphere_points(center=first_point, radius=radius,
                                theta_resolution=theta_resolution,
                                phi_resolution=phi_resolution)
-        sphere_mesh = builder.add_shape(points, triangles, color=color_components, opacity=layer_state.alpha)
+        sphere_mesh = builder.add_mesh(points, triangles, color=color_components, opacity=layer_state.alpha)
 
         for i in range(1, len(data)):
             point = data[i]
@@ -625,7 +677,12 @@ def add_scatter_layer_usd(
             if fixed_color:
                 material = None
             else:
-                material = material_for_color(builder.stage, color_components, layer_state.alpha)
+                cval = cmap_vals[i]
+                if not isfinite(cval):
+                    continue
+                normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+                color = tuple(int(256 * c) for c in cmap(normalized)[:3])
+                material = material_for_color(builder.stage, color, layer_state.alpha)
             builder.add_translated_reference(sphere_mesh, translation, material=material)
 
     else:
@@ -637,9 +694,9 @@ def add_scatter_layer_usd(
             if not fixed_color:
                 cval = cmap_vals[i]
                 normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
-                cindex = int(normalized * 255)
-                color = tuple(int(256 * c) for c in cmap.colors[cindex])
-            builder.add_shape(points, triangles, color=color, opacity=layer_state.alpha)
+                color = tuple(int(256 * c) for c in cmap(normalized)[:3])
+            print(color)
+            builder.add_mesh(points, triangles, color=color, opacity=layer_state.alpha)
         
 
     for axis in ("x", "y", "z"):
