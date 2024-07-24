@@ -1,6 +1,6 @@
-from pxr import Sdf, Usd, UsdGeom, UsdLux, UsdShade
+from pxr import Usd, UsdGeom, UsdLux, UsdShade
 from tempfile import NamedTemporaryFile
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, Optional, Tuple
 from glue_ar.usd_utils import material_for_color
 
 from glue_ar.utils import unique_id
@@ -70,14 +70,17 @@ class USDBuilder:
 
         return mesh
 
-    def _material_for_mesh(self, mesh) -> UsdShade.Material:
+    def _material_for_mesh(self, mesh: UsdGeom.Mesh) -> UsdShade.Material:
         prim = mesh.GetPrim()
         relationship = prim.GetRelationship("material:binding")
         target = relationship.GetTargets()[0]
         material_prim = prim.GetStage().GetPrimAtPath(target)
         return UsdShade.Material(material_prim)
 
-    def add_translated_reference(self, mesh, translation, material=None) -> UsdGeom.Mesh:
+    def add_translated_reference(self,
+                                 mesh: UsdGeom.Mesh,
+                                 translation: Tuple[float, float, float],
+                                 material: Optional[UsdShade.Material]=None) -> UsdGeom.Mesh:
         prim = mesh.GetPrim()
         xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
         UsdGeom.Xform.Define(self.stage, xform_key)

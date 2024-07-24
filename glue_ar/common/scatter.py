@@ -6,7 +6,7 @@ from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
 from numpy.linalg import norm
 import pyvista as pv
 
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Tuple
 
 from glue.utils import ensure_numerical
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
@@ -433,10 +433,10 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
     if not fixed_size:
         size_mask = isfinite(layer_state.layer[layer_state.size_attribute])
-        mask &= size_mask
+        mask = size_mask if mask is None else (mask & size_mask)
     if not fixed_color:
         color_mask = isfinite(layer_state.layer[layer_state.cmap_attribute])
-        mask &= color_mask
+        mask = color_mask if mask is None else (mask & color_mask)
 
     data = xyz_for_layer(viewer_state, layer_state,
                          preserve_aspect=viewer_state.native_aspect,
@@ -587,6 +587,7 @@ def add_vectors_usd(builder: USDBuilder,
                     tip_radius: float,
                     tip_resolution: int = 10,
                     shaft_resolution: int = 10,
+                    colors: Optional[List[Tuple[int, int, int]]] = None,
                     mask: Optional[ndarray] = None):
 
     atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
@@ -608,7 +609,7 @@ def add_vectors_usd(builder: USDBuilder,
     if layer_state.vector_arrowhead:
         tip_triangles = cone_triangles(theta_resolution=tip_resolution)
 
-    for pt, v in zip(data, vector_data):
+    for i, (pt, v) in enumerate(zip(data, vector_data)):
         if iterable_has_nan(v):
             continue
         adjusted_v = v * layer_state.vector_scaling
@@ -622,6 +623,22 @@ def add_vectors_usd(builder: USDBuilder,
                                  length=length,
                                  central_axis=adjusted_v,
                                  theta_resolution=shaft_resolution)
+
+        fixed_color = tuple(hex_to_components(layer_color(layer_state)))
+        color = colors[i] if colors is not None else fixed_color
+        builder.add_mesh(points, triangles, color=color, opacity=layer_state.alpha)
+
+        if layer_state.vector_arrowhead:
+            normalized_v = normalize(adjusted_v)
+            tip_center_base = [p + half_length * v for p, v in zip(adjusted_pt, normalized_v)]
+
+            tip_points = cone_points(base_center=tip_center_base,
+                                     radius=tip_radius,
+                                     height=tip_height,
+                                     central_axis=adjusted_v,
+                                     theta_resolution=tip_resolution)
+
+            builder.add_mesh(tip_points, tip_triangles, color=color, opacity=layer_state.alpha)
 
 
 def add_scatter_layer_usd(
@@ -645,10 +662,10 @@ def add_scatter_layer_usd(
 
     if not fixed_size:
         size_mask = isfinite(layer_state.layer[layer_state.size_attribute])
-        mask &= size_mask
+        mask = size_mask if mask is None else (mask & size_mask)
     if not fixed_color:
         color_mask = isfinite(layer_state.layer[layer_state.cmap_attribute])
-        mask &= color_mask
+        mask = color_mask if mask is None else (mask & color_mask)
 
     data = xyz_for_layer(viewer_state, layer_state,
                          preserve_aspect=viewer_state.native_aspect,
