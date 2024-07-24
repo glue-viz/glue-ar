@@ -700,6 +700,8 @@ def add_scatter_layer_usd(
         cmap_att = layer_state.cmap_attribute
         cmap_vals = layer_state.layer[cmap_att][mask]
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
+        normalized = [max(min((cval - layer_state.cmap_vmin) / crange, 1), 0) for cval in cmap_vals]
+        colors = [tuple(int(256 * c) for c in cmap(norm)[:3]) for norm in normalized]
 
     # If we're in fixed-size mode, we can reuse the same prim and translate it
     if fixed_size:
@@ -715,10 +717,7 @@ def add_scatter_layer_usd(
             if fixed_color:
                 material = None
             else:
-                cval = cmap_vals[i]
-                normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
-                color = tuple(int(256 * c) for c in cmap(normalized)[:3])
-                material = material_for_color(builder.stage, color, layer_state.alpha)
+                material = material_for_color(builder.stage, colors[i], layer_state.alpha)
             builder.add_translated_reference(sphere_mesh, translation, material=material)
 
     else:
@@ -743,4 +742,17 @@ def add_scatter_layer_usd(
         tip_height = radius / 2
         shaft_radius = radius / 8
         tip_radius = tip_height / 2
-        # TODO: Add vectors here
+        add_vectors_usd(
+            builder=builder,
+            viewer_state=viewer_state,
+            layer_state=layer_state,
+            data=data,
+            bounds=bounds,
+            tip_height=tip_height,
+            shaft_radius=shaft_radius,
+            tip_radius=tip_radius,
+            shaft_resolution=10,
+            tip_resolution=10,
+            colors=colors if not fixed_color else None,
+            mask=mask,
+        )

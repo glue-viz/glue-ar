@@ -57,7 +57,7 @@ class USDBuilder:
         """
         xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
         UsdGeom.Xform.Define(self.stage, xform_key)
-        mesh_key = f"{xform_key}/level_{unique_id()}"
+        mesh_key = f"{xform_key}/mesh_{unique_id()}"
         mesh = UsdGeom.Mesh.Define(self.stage, mesh_key)
         mesh.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
         mesh.CreatePointsAttr(points)
