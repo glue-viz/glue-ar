@@ -2,6 +2,9 @@ from echo import SelectionCallbackProperty
 from glue.config import DictRegistry
 from glue.core.data_combo_helper import ComboHelper
 from glue.core.state_objects import State
+from glue_vispy_viewers.common.layer_state import VispyLayerState
+
+from typing import Type
 
 
 __all__ = ['ar_layer_export']
@@ -9,7 +12,7 @@ __all__ = ['ar_layer_export']
 
 class ARExportLayerOptionsRegistry(DictRegistry):
 
-    def add(self, layer_state_cls, name, layer_options_state):
+    def add(self, layer_state_cls: Type[VispyLayerState], name: str, layer_options_state: Type[State]):
         if not issubclass(layer_options_state, State):
             raise ValueError("Layer options must be a glue State type")
         if layer_state_cls in self._members:
@@ -17,8 +20,8 @@ class ARExportLayerOptionsRegistry(DictRegistry):
         else:
             self._members[layer_state_cls] = { name: layer_options_state }
 
-    def __call__(self, layer_state_cls, name):
-        def adder(export_state_class):
+    def __call__(self, layer_state_cls: Type[VispyLayerState], name: str):
+        def adder(export_state_class: Type[State]):
             self.add(layer_state_cls, name, export_state_class)
         return adder
 

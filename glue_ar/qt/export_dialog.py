@@ -1,12 +1,16 @@
 import os
+from typing import Dict, List 
 
-from echo import ignore_callback
+from echo import HasCallbackProperties
 from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_float_text
+from glue.core.state_objects import State
 from glue_qt.utils import load_ui
+from glue_vispy_viewers.common.vispy_data_viewer import delay_callback
+from glue_vispy_viewers.scatter.layer_artist import VispyLayerArtist
 
 from glue_ar.common.export_state import ARExportDialogState, ar_layer_export
 
-from qtpy.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QLineEdit
+from qtpy.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QLayout, QLineEdit, QWidget
 from qtpy.QtGui import QIntValidator, QDoubleValidator
 
 
@@ -28,15 +32,15 @@ class ARExportDialog(QDialog):
         self.state = ARExportDialogState(layers)
         self.ui = load_ui('export_dialog.ui', self, directory=os.path.dirname(__file__))
 
-        self._layer_methods = {
-            layer.layer.label: list(ar_layer_export.members[type(layer.state)].keys())
+        self._layer_methods: Dict[str, List[str]] = {
+            layer.layer.label: list(ar_layer_export.members[type(layer.state)].keys())[0]
             for layer in layers
         }
-        self.state_dictionary = {
-            layer.layer.label: ar_layer_export.members[type(layer.state)][self._layer_methods[layer.layer.label][0]]()
+        self.state_dictionary: Dict[str, State] = {
+            layer.layer.label: ar_layer_export.members[type(layer.state)][self._layer_methods[layer.layer.label]]()
             for layer in layers
         }
-        self._update_layer_ui(self.state_dictionary[layers[0].layer.label])
+        self._on_layer_change(layers[0].layer.label)
 
         self._connections = autoconnect_callbacks_to_qt(self.state, self.ui)
         self._layer_connections = []
@@ -48,7 +52,13 @@ class ARExportDialog(QDialog):
         self.state.add_callback('filetype', self._on_filetype_change)
         self.state.add_callback('method', self._on_method_change)
 
-    def _widgets_for_property(self, instance, property, display_name):
+    def _layer_for_label(self, label: str) -> VispyLayerArtist:
+        return next(layer for layer in self.viewer.layers if layer.layer.label == label)
+
+    def _widgets_for_property(self,
+                              instance: HasCallbackProperties,
+                              property: str,
+                              display_name: str) -> List[QWidget]:
         value = getattr(instance, property)
         t = type(value)
         if t is bool:
@@ -70,7 +80,7 @@ class ARExportDialog(QDialog):
         else:
             return []
 
-    def _clear_layout(self, layout):
+    def _clear_layout(self, layout: QLayout):
         if layout is not None:
             while layout.count():
                 item = layout.takeAt(0)
@@ -83,16 +93,23 @@ class ARExportDialog(QDialog):
     def _clear_layer_layout(self):
         self._clear_layout(self.ui.layer_layout)
 
-    def _on_layer_change(self, layer):
-        state = self.state_dictionary[layer]
-        method_options = ar_layer_export.members[type(layer.state)].values()
-        method_names = [option.name for option in method_options]
-        self.state.method = self._layer_methods.get(layer, method_names[0])
-        print(method_names)
-        self.state.method_helper.choices = method_names
-        self._update_layer_ui(state)
+    def _on_layer_change(self, layer_name: str):
+        state = self.state_dictionary[layer_name]
+        layer = self._layer_for_label(layer_name)
+        method_names = list(ar_layer_export.members[type(layer.state)].keys())
 
-    def _update_layer_ui(self, state):
+        with delay_callback(self.state, 'method'):
+            self.state.method_helper.choices = method_names
+            method = self._layer_methods.get(layer_name, method_names[0])
+            method_change = method != self.state.method
+            self.state.method = method
+        multiple_methods = len(method_names) > 1
+        self.ui.label_method.setVisible(multiple_methods)
+        self.ui.combosel_method.setVisible(multiple_methods)
+        if not method_change:
+            self._update_layer_ui(state)
+
+    def _update_layer_ui(self, state: State):
         self._clear_layer_layout()
         self._layer_connections = []
         for property in state.callback_properties():
@@ -103,11 +120,13 @@ class ARExportDialog(QDialog):
                 row.addWidget(widget)
             self.ui.layer_layout.addRow(row)
 
-    def _on_filetype_change(self, filetype):
+    def _on_filetype_change(self, filetype: str):
         gl = filetype.lower() in ["gltf", "glb"]
         self.ui.combosel_compression.setVisible(gl)
+        self.ui.label_compression_message.setVisible(gl)
 
-    def _on_method_change(self, method_name):
+    def _on_method_change(self, method_name: str):
         self._layer_methods[self.state.layer] = method_name
+        print(self._layer_methods)
         state = self.state_dictionary[self.state.layer]
         self._update_layer_ui(state)

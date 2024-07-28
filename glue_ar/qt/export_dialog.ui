@@ -32,7 +32,7 @@
     <widget class="QComboBox" name="combosel_compression"/>
    </item>
    <item row="5" column="0">
-    <widget class="QLabel" name="label_export_method">
+    <widget class="QLabel" name="label_method">
      <property name="text">
       <string>Select the export method</string>
      </property>
