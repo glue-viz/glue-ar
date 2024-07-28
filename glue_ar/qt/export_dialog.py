@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List 
+from typing import Dict, List, Tuple
 
 from echo import HasCallbackProperties
 from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_float_text
@@ -32,13 +32,13 @@ class ARExportDialog(QDialog):
         self.state = ARExportDialogState(layers)
         self.ui = load_ui('export_dialog.ui', self, directory=os.path.dirname(__file__))
 
-        self._layer_methods: Dict[str, List[str]] = {
-            layer.layer.label: list(ar_layer_export.members[type(layer.state)].keys())[0]
+        # TODO: This all feels kinda convoluted
+        self._layer_export_states: Dict[str, Dict[str, State]] = {
+            layer.layer.label: { name: state_cls() for name, state_cls in ar_layer_export.members[type(layer.state)].items() }
             for layer in layers
         }
-        self.state_dictionary: Dict[str, State] = {
-            layer.layer.label: ar_layer_export.members[type(layer.state)][self._layer_methods[layer.layer.label]]()
-            for layer in layers
+        self.state_dictionary = {
+            label: list(states.items())[0] for label, states in self._layer_export_states.items()
         }
         self._on_layer_change(layers[0].layer.label)
 
@@ -94,13 +94,12 @@ class ARExportDialog(QDialog):
         self._clear_layout(self.ui.layer_layout)
 
     def _on_layer_change(self, layer_name: str):
-        state = self.state_dictionary[layer_name]
+        method, state = self.state_dictionary[layer_name]
         layer = self._layer_for_label(layer_name)
         method_names = list(ar_layer_export.members[type(layer.state)].keys())
 
         with delay_callback(self.state, 'method'):
             self.state.method_helper.choices = method_names
-            method = self._layer_methods.get(layer_name, method_names[0])
             method_change = method != self.state.method
             self.state.method = method
         multiple_methods = len(method_names) > 1
@@ -126,7 +125,6 @@ class ARExportDialog(QDialog):
         self.ui.label_compression_message.setVisible(gl)
 
     def _on_method_change(self, method_name: str):
-        self._layer_methods[self.state.layer] = method_name
-        print(self._layer_methods)
-        state = self.state_dictionary[self.state.layer]
+        state = self._layer_export_states[self.state.layer][method_name]
+        self.state_dictionary[self.state.layer] = (method_name, state)
         self._update_layer_ui(state)
