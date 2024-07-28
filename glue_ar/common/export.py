@@ -1,16 +1,20 @@
 from os import remove
 from os.path import abspath, dirname, join, split, splitext
 from subprocess import run
+from typing import Dict
+from glue_vispy_viewers.scatter.scatter_viewer import BaseVispyViewerMixin
+from glue_vispy_viewers.scatter.viewer_state import Vispy3DScatterViewerState
+from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 
 import pyvista as pv
-from gltflib.gltf import GLTF
 
-from glue_vispy_viewers.scatter.scatter_viewer import Vispy3DScatterViewerState
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
+from glue_ar.common.gltf_builder import GLTFBuilder
 
-from glue_ar.common.scatter import scatter_layer_as_multiblock
+from glue_ar.common.scatter import add_scatter_layer_gltf, add_scatter_layer_usd, scatter_layer_as_multiblock
+from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.utils import bounds_3d_from_layers, xyz_bounds
-from glue_ar.common.volume import bounds_3d, meshes_for_volume_layer
+from glue_ar.common.volume import add_volume_layer_gltf, meshes_for_volume_layer
 
 
 NODE_MODULES_DIR = join(abspath(join(dirname(abspath(__file__)), "..")),
@@ -54,42 +58,6 @@ def compress_gl(filepath, method="draco"):
     if compressor is None:
         raise ValueError("Invalid compression method specified")
     compressor(filepath)
-
-
-def export_gl_by_extension(exporter, filepath):
-    _, ext = splitext(filepath)
-    if ext == ".glb":
-        exporter.export_glb(filepath)
-    elif ext == ".gltf":
-        exporter.export_gltf(filepath)
-    else:
-        raise ValueError("File extension should be either .glb or .gltf")
-
-
-# pyvista (well, VTK) doesn't set alphaMode in the exported GLTF
-# which means that our opacity won't necessarily be respected.
-# Maybe we could fix this upstream? But for now, let's just take
-# matters into our own hands.
-# We want alphaMode as BLEND
-# see https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#alpha-coverage
-def export_gl(plotter, filepath, with_alpha=True, compression="draco"):
-    path, ext = splitext(filepath)
-    gltf_path = filepath
-    glb = ext == ".glb"
-    if glb:
-        gltf_path = path + ".gltf"
-
-    plotter.export_gltf(gltf_path)
-
-    gl = GLTF.load_gltf(gltf_path)
-    if with_alpha and gl.model.materials is not None:
-        for material in gl.model.materials:
-            material.alphaMode = "BLEND"
-    export_gl_by_extension(gl, filepath)
-    if compression != "none":
-        compress_gl(filepath, method=compression)
-    if glb:
-        remove(gltf_path)
 
 
 def export_modelviewer(output_path, gltf_path, alt_text):
@@ -197,6 +165,73 @@ def export_modelviewer(output_path, gltf_path, alt_text):
 
     with open(output_path, 'w') as f:
         f.write(html)
+
+
+def export_gl(viewer: BaseVispyViewerMixin,
+              state_dictionary: Dict,
+              filepath: str,
+              compression="draco"):
+
+    builder = GLTFBuilder()
+    layer_states = [layer.state for layer in viewer.layers if layer.enabled and layer.state.visible] 
+    volume_viewer = isinstance(viewer.state, Vispy3DVolumeViewerState)
+    if viewer.state.clip_data:
+        bounds = bounds_3d(viewer.state, with_resolution=volume_viewer)
+    else:
+        bounds = bounds_3d_from_layers(viewer.state, layer_states, with_resolution=volume_viewer)
+
+    for layer_state in layer_states:
+        layer_info = state_dictionary.get(layer_state.layer.label, {})
+        if layer_info:
+            layer_info = layer_info.as_dict()
+        if isinstance(layer_state, VolumeLayerState):
+            add_volume_layer_gltf(builder=builder,
+                                  viewer_state=viewer_state,
+                                  layer_state=layer_state,
+                                  bounds=bounds)
+        else:
+            add_scatter_layer_gltf(builder=builder,
+                                   viewer_state=viewer_state,
+                                   layer_state=layer_state,
+                                   bounds=bounds,
+                                   theta_resolution=state_dictionary.get("theta_resolution", 8),
+                                   phi_resolution=state_dictionary.get("phi_resolution", 8))
+
+    model = builder.build()
+    model.export(filepath)
+    if compression != "none":
+        compress_gl(filepath, method=compression)
+
+
+def export_usd(viewer: BaseVispyViewerMixin,
+               state_dictionary: Dict,
+               filepath: str):
+
+    builder = USDBuilder()
+    layer_states = [layer.state for layer in viewer.layers if layer.enabled and layer.state.visible]
+    volume_viewer = isinstance(viewer.state, Vispy3DVolumeViewerState)
+    if viewer.state.clip_data:
+        bounds = bounds_3d(viewer.state, with_resolution=volume_viewer)
+    else:
+        bounds = bounds_3d_from_layers(viewer.state, layer_states, with_resolution=volume_viewer)
+
+    for layer_state in layer_states:
+        layer_info = state_dictionary.get(layer_state.layer.label, {})
+        if layer_info:
+            layer_info = layer_info.as_dict()
+        if isinstance(layer_state, VolumeLayerState):
+            add_volume_layer_usd(builder=builder,
+                                  viewer_state=viewer_state,
+                                  layer_state=layer_state,
+                                  bounds=bounds)
+        else:
+            add_scatter_layer_usd(builder=builder,
+                                   viewer_state=viewer_state,
+                                   layer_state=layer_state,
+                                   bounds=bounds,
+                                   theta_resolution=state_dictionary.get("theta_resolution", 8),
+                                   phi_resolution=state_dictionary.get("phi_resolution", 8))
+
 
 
 def create_plotter(viewer, state_dictionary):

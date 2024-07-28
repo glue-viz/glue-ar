@@ -1,5 +1,6 @@
 import os
 
+from echo import ignore_callback
 from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_float_text
 from glue_qt.utils import load_ui
 
@@ -27,10 +28,15 @@ class ARExportDialog(QDialog):
         self.state = ARExportDialogState(layers)
         self.ui = load_ui('export_dialog.ui', self, directory=os.path.dirname(__file__))
 
-        self.state_dictionary = {
-            layer.layer.label: ar_layer_export.members[type(layer.state)]()
+        self._layer_methods = {
+            layer.layer.label: list(ar_layer_export.members[type(layer.state)].keys())
             for layer in layers
         }
+        self.state_dictionary = {
+            layer.layer.label: ar_layer_export.members[type(layer.state)][self._layer_methods[layer.layer.label][0]]()
+            for layer in layers
+        }
+        self._update_layer_ui(self.state_dictionary[layers[0].layer.label])
 
         self._connections = autoconnect_callbacks_to_qt(self.state, self.ui)
         self._layer_connections = []
@@ -38,10 +44,9 @@ class ARExportDialog(QDialog):
         self.ui.button_cancel.clicked.connect(self.reject)
         self.ui.button_ok.clicked.connect(self.accept)
 
-        self.state.add_callback('layer', self._update_layer_ui)
+        self.state.add_callback('layer', self._on_layer_change)
         self.state.add_callback('filetype', self._on_filetype_change)
-
-        self._update_layer_ui(self.state.layer)
+        self.state.add_callback('method', self._on_method_change)
 
     def _widgets_for_property(self, instance, property, display_name):
         value = getattr(instance, property)
@@ -78,10 +83,18 @@ class ARExportDialog(QDialog):
     def _clear_layer_layout(self):
         self._clear_layout(self.ui.layer_layout)
 
-    def _update_layer_ui(self, layer):
+    def _on_layer_change(self, layer):
+        state = self.state_dictionary[layer]
+        method_options = ar_layer_export.members[type(layer.state)].values()
+        method_names = [option.name for option in method_options]
+        self.state.method = self._layer_methods.get(layer, method_names[0])
+        print(method_names)
+        self.state.method_helper.choices = method_names
+        self._update_layer_ui(state)
+
+    def _update_layer_ui(self, state):
         self._clear_layer_layout()
         self._layer_connections = []
-        state = self.state_dictionary[layer]
         for property in state.callback_properties():
             row = QHBoxLayout()
             name = display_name(property)
@@ -93,3 +106,8 @@ class ARExportDialog(QDialog):
     def _on_filetype_change(self, filetype):
         gl = filetype.lower() in ["gltf", "glb"]
         self.ui.combosel_compression.setVisible(gl)
+
+    def _on_method_change(self, method_name):
+        self._layer_methods[self.state.layer] = method_name
+        state = self.state_dictionary[self.state.layer]
+        self._update_layer_ui(state)

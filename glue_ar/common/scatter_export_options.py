@@ -6,7 +6,7 @@ from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 __all__ = ["ARScatterExportOptions"]
 
 
-@ar_layer_export(ScatterLayerState)
+@ar_layer_export(ScatterLayerState, "Scatter")
 class ARScatterExportOptions(State):
 
     theta_resolution = CallbackProperty(8)

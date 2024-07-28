@@ -56,7 +56,21 @@ def xyz_bounds(viewer_state: Vispy3DViewerState, with_resolution: bool) -> Union
     return bounds
 
 
-def bounds_3d_from_layers(viewer_state: Vispy3DViewerState, layer_states: Iterable[VispyLayerState]) -> Bounds:
+@overload
+def bounds_3d_from_layers(viewer_state: Vispy3DViewerState,
+                          layer_states: Iterable[VispyLayerState],
+                          with_resolution: Literal[False]) -> Bounds: ...
+
+
+@overload
+def bounds_3d_from_layers(viewer_state: Vispy3DViewerState,
+                          layer_states: Iterable[VispyLayerState],
+                          with_resolution: Literal[True]) -> BoundsWithResolution: ...
+
+
+def bounds_3d_from_layers(viewer_state: Vispy3DViewerState,
+                          layer_states: Iterable[VispyLayerState],
+                          with_resolution: bool) -> Union[Bounds, BoundsWithResolution]:
     mins = [inf, inf, inf]
     maxes = [-inf, -inf, -inf]
     atts = viewer_state.x_att, viewer_state.y_att, viewer_state.z_att
@@ -64,13 +78,18 @@ def bounds_3d_from_layers(viewer_state: Vispy3DViewerState, layer_states: Iterab
         data = state.layer.layer
         mins = [min(min(data[att]), m) for m, att in zip(mins, atts)]
         maxes = [max(max(data[att]), m) for m, att in zip(maxes, atts)]
-    return [(lo, hi) for lo, hi in zip(mins, maxes)]
+    bounds = [(lo, hi) for lo, hi in zip(mins, maxes)]
+    if with_resolution:
+        return [(*b, viewer_state.resolution) for b in bounds]
+
+    return bounds
 
 
 def slope_intercept_between(a: List[float], b: List[float]) -> Tuple[float, float]:
     slope = (b[1] - a[1]) / (b[0] - a[0])
     intercept = b[1] - slope * b[0]
     return slope, intercept
+
 
 # TODO: Make this better?
 # glue-plotly has had to deal with similar issues,

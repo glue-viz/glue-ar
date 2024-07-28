@@ -418,10 +418,10 @@ def add_error_bars_gltf(builder: GLTFBuilder,
 def add_scatter_layer_gltf(builder: GLTFBuilder,
                            viewer_state: Vispy3DScatterViewerState,
                            layer_state: ScatterLayerState,
+                           bounds: Bounds,
                            theta_resolution: int = 8,
                            phi_resolution: int = 8,
-                           clip_to_bounds: bool = True,
-                           scaled: bool = True):
+                           clip_to_bounds: bool = True):
     bounds = xyz_bounds(viewer_state, with_resolution=False)
     if clip_to_bounds:
         mask = mask_for_bounds(viewer_state, layer_state, bounds)
@@ -441,16 +441,13 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     data = xyz_for_layer(viewer_state, layer_state,
                          preserve_aspect=viewer_state.native_aspect,
                          mask=mask,
-                         scaled=scaled)
+                         scaled=True)
     data = data[:, [1, 2, 0]]
     factor = max((abs(b[1] - b[0]) for b in bounds))
 
     # We calculate this even if we aren't using fixed size as we might also use this for vectors
-    radius = layer_state.size_scaling * sqrt(layer_state.size) / (10 * factor)
-    # TODO: Remove the fixed_size condition
-    if fixed_size:
-        radius = 0.01
-    else:
+    radius = max(layer_state.size_scaling * layer_state.size / 480, 30)
+    if not fixed_size:
         # The specific size calculation is taken from the scatter layer artist
         size_data = ensure_numerical(layer_state.layer[layer_state.size_attribute][mask].ravel())
         size_data = clip(size_data, layer_state.size_vmin, layer_state.size_vmax)
@@ -648,7 +645,6 @@ def add_scatter_layer_usd(
     theta_resolution: int = 8,
     phi_resolution: int = 8,
     clip_to_bounds: bool = True,
-    scaled: bool = True
 ):
 
     bounds = xyz_bounds(viewer_state, with_resolution=False)
@@ -670,18 +666,16 @@ def add_scatter_layer_usd(
     data = xyz_for_layer(viewer_state, layer_state,
                          preserve_aspect=viewer_state.native_aspect,
                          mask=mask,
-                         scaled=scaled)
+                         scaled=True)
     data = data[:, [1, 2, 0]]
     factor = max((abs(b[1] - b[0]) for b in bounds))
     color = layer_color(layer_state)
     color_components = tuple(hex_to_components(color))
 
     # We calculate this even if we aren't using fixed size as we might also use this for vectors
-    radius = layer_state.size_scaling * sqrt(layer_state.size) / (10 * factor)
+    radius = max(layer_state.size_scaling * layer_state.size / 480, 30)
     # TODO: Remove the fixed_size condition
-    if fixed_size:
-        radius = 0.01
-    else:
+    if not fixed_size:
         # The specific size calculation is taken from the scatter layer artist
         size_data = ensure_numerical(layer_state.layer[layer_state.size_attribute][mask].ravel())
         size_data = clip(size_data, layer_state.size_vmin, layer_state.size_vmax)

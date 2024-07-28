@@ -5,29 +5,27 @@ from typing import Iterable
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.utils import add_points_to_bytearray, add_triangles_to_bytearray, alpha_composite, \
-                          frb_for_layer, hex_to_components, index_maxes, index_mins, isomin_for_layer, isomax_for_layer, layer_color
+from glue_ar.common.usd_builder import USDBuilder
+from glue_ar.usd_utils import material_for_color
+from glue_ar.utils import alpha_composite, frb_for_layer, hex_to_components, \
+                          isomin_for_layer, isomax_for_layer, layer_color, xyz_bounds
 
-from glue_ar.gltf_utils import clip_linear_transformations
-from glue_ar.shapes import rectangular_prism_points, rectangular_prism_triangulation
+from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, \
+                               clip_linear_transformations, index_mins, index_maxes
+from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation
 
 from gltflib import AccessorType, BufferTarget, ComponentType
 from gltflib.gltf import GLTF
 
 
-def create_voxel_gltf(
-    viewer_state: Vispy3DVolumeViewerState,
-    layer_states: Iterable[VolumeLayerState]) -> GLTF:
+def create_voxel_gltf(viewer_state: Vispy3DVolumeViewerState,
+                      layer_states: Iterable[VolumeLayerState],
+                      opacity_cutoff: float = 0.05) -> GLTF:
 
     builder = GLTFBuilder()
 
-    resolution = int(viewer_state.resolution)
-    bounds = [
-        (viewer_state.z_min, viewer_state.z_max, resolution),
-        (viewer_state.y_min, viewer_state.y_max, resolution),
-        (viewer_state.x_min, viewer_state.x_max, resolution)
-    ]
-
+    resolution = viewer_state.resolution
+    bounds = xyz_bounds(viewer_state, with_resolution=True)
     x_range = viewer_state.x_max - viewer_state.x_min
     y_range = viewer_state.y_max - viewer_state.y_min
     z_range = viewer_state.z_max - viewer_state.z_min
@@ -41,8 +39,11 @@ def create_voxel_gltf(
         (viewer_state.x_min, viewer_state.x_max),
         (viewer_state.y_min, viewer_state.y_max),
     )
-    clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
-    clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
+    if viewer_state.native_aspect:
+        clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
+        clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
+    else:
+        clip_sides = [1 / resolution for _ in range(3)]
 
     point_index = 0
     points_barr = bytearray()
@@ -70,7 +71,6 @@ def create_voxel_gltf(
         maxes=[7],
     )
 
-    opacity_cutoff = 0.1
     opacity_factor = 0.75
 
     occupied_voxels = {}
@@ -92,8 +92,6 @@ def create_voxel_gltf(
         color_components = hex_to_components(color)
 
         for indices in nonempty_indices:
-            center = tuple((index + 0.5) * side for index, side in zip(indices, clip_sides))
-
             value = data[*indices]
             adjusted_opacity = min(max(layer_state.alpha * opacity_factor * (value - isomin) / isorange, 0), 1)
             indices_tpl = tuple(indices)
@@ -161,3 +159,87 @@ def create_voxel_gltf(
     builder.add_file_resource(triangles_bin, data=triangles_barr)
 
     return builder.build()
+
+
+def create_voxel_usd(viewer_state: Vispy3DVolumeViewerState,
+                     layer_states: Iterable[VolumeLayerState]) -> USDBuilder:
+
+    builder = USDBuilder()    
+
+    resolution = viewer_state.resolution
+    bounds = xyz_bounds(viewer_state, with_resolution=True)
+    x_range = viewer_state.x_max - viewer_state.x_min
+    y_range = viewer_state.y_max - viewer_state.y_min
+    z_range = viewer_state.z_max - viewer_state.z_min
+    x_spacing = x_range / resolution
+    y_spacing = y_range / resolution
+    z_spacing = z_range / resolution
+    sides = (z_spacing, x_spacing, y_spacing)
+
+    world_bounds = (
+        (viewer_state.z_min, viewer_state.z_max),
+        (viewer_state.x_min, viewer_state.x_max),
+        (viewer_state.y_min, viewer_state.y_max),
+    )
+    clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
+    clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
+
+    triangles = rectangular_prism_triangulation()
+
+    # TODO: The cutoff should be a parameter
+    opacity_cutoff = 0.1
+    opacity_factor = 0.75
+
+    occupied_voxels = {}
+
+    for layer_state in layer_states:
+        data = frb_for_layer(viewer_state, layer_state, bounds)
+
+        isomin = isomin_for_layer(viewer_state, layer_state)
+        isomax = isomax_for_layer(viewer_state, layer_state)
+
+        data[~isfinite(data)] = isomin - 1
+
+        data = transpose(data, (1, 0, 2))
+
+        isorange = isomax - isomin
+        nonempty_indices = argwhere(data - isomin > 0)
+
+        color = layer_color(layer_state)
+        color_components = hex_to_components(color)
+
+        for indices in nonempty_indices:
+            value = data[*indices]
+            adjusted_opacity = min(max(layer_state.alpha * opacity_factor * (value - isomin) / isorange, 0), 1)
+            indices_tpl = tuple(indices)
+            if indices_tpl in occupied_voxels:
+                current_color = occupied_voxels[indices_tpl]
+                adjusted_a_color = color_components[:3] + [adjusted_opacity]
+                new_color = alpha_composite(adjusted_a_color, current_color)
+                occupied_voxels[indices_tpl] = new_color
+            elif adjusted_opacity >= opacity_cutoff:
+                occupied_voxels[indices_tpl] = color_components[:3] + [adjusted_opacity]
+    materials_map = {}
+    mesh = None
+    first_point = None
+    for indices, rgba in occupied_voxels.items():
+        if rgba[-1] < opacity_cutoff:
+            continue
+
+        center = tuple((index + 0.5) * side for index, side in zip(indices, clip_sides))
+        rgba_tpl = tuple(rgba)
+        if rgba_tpl in materials_map:
+            material = materials_map[rgba_tpl]
+        else:
+            material = material_for_color(builder.stage, rgba[:3], rgba[3])
+            materials_map[rgba_tpl] = material
+
+        points = rectangular_prism_points(center, clip_sides)
+        if mesh is None:
+            mesh = builder.add_mesh(points, triangles, rgba[:3], rgba[3])
+            first_point = center
+        else:
+            translation = tuple(p - fp for p, fp in zip(center, first_point))
+            builder.add_translated_reference(mesh, translation, material)
+
+    return builder
