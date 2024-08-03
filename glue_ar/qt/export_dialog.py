@@ -8,7 +8,8 @@ from glue_qt.utils import load_ui
 from glue_vispy_viewers.common.vispy_data_viewer import delay_callback
 from glue_vispy_viewers.scatter.layer_artist import VispyLayerArtist
 
-from glue_ar.common.export_state import ARExportDialogState, ar_layer_export
+from glue_ar.common.export_options import ar_layer_export 
+from glue_ar.common.export_state import ARExportDialogState 
 
 from qtpy.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QLayout, QLineEdit, QWidget
 from qtpy.QtGui import QIntValidator, QDoubleValidator
@@ -32,12 +33,13 @@ class ARExportDialog(QDialog):
         self.state = ARExportDialogState(layers)
         self.ui = load_ui('export_dialog.ui', self, directory=os.path.dirname(__file__))
 
-        # TODO: This all feels kinda convoluted
         self._layer_export_states: Dict[str, Dict[str, State]] = {
-            layer.layer.label: { name: state_cls() for name, state_cls in ar_layer_export.members[type(layer.state)].items() }
+            layer.layer.label: {
+                name: state_cls() for name, state_cls in ar_layer_export.method_state_types.items()
+            }
             for layer in layers
         }
-        self.state_dictionary = {
+        self.state_dictionary: Dict[str, Tuple[str, State]] = {
             label: list(states.items())[0] for label, states in self._layer_export_states.items()
         }
         self._on_layer_change(layers[0].layer.label)
@@ -96,7 +98,8 @@ class ARExportDialog(QDialog):
     def _on_layer_change(self, layer_name: str):
         method, state = self.state_dictionary[layer_name]
         layer = self._layer_for_label(layer_name)
-        method_names = list(ar_layer_export.members[type(layer.state)].keys())
+        method_names = list(key[1] for key in ar_layer_export.members
+                            if key[0] == type(layer.state))
 
         with delay_callback(self.state, 'method'):
             self.state.method_helper.choices = method_names

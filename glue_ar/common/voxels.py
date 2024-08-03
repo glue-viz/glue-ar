@@ -1,13 +1,15 @@
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from numpy import isfinite, argwhere, transpose
-from typing import Iterable
+from typing import Iterable, Optional
 
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 
+from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
+from glue_ar.common.volume_export_options import ARVoxelExportOptions
 from glue_ar.usd_utils import material_for_color
-from glue_ar.utils import alpha_composite, frb_for_layer, hex_to_components, \
+from glue_ar.utils import BoundsWithResolution, alpha_composite, frb_for_layer, hex_to_components, \
                           isomin_for_layer, isomax_for_layer, layer_color, xyz_bounds
 
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, \
@@ -15,17 +17,17 @@ from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearr
 from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation
 
 from gltflib import AccessorType, BufferTarget, ComponentType
-from gltflib.gltf import GLTF
 
 
-def create_voxel_gltf(viewer_state: Vispy3DVolumeViewerState,
-                      layer_states: Iterable[VolumeLayerState],
-                      opacity_cutoff: float = 0.05) -> GLTF:
-
-    builder = GLTFBuilder()
+@ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ["gltf", "glb"], multiple=True)
+def add_voxel_layers_gltf(builder: GLTFBuilder,
+                          viewer_state: Vispy3DVolumeViewerState,
+                          layer_states: Iterable[VolumeLayerState],
+                          options: Iterable[ARVoxelExportOptions],
+                          bounds: Optional[BoundsWithResolution] = None):
 
     resolution = viewer_state.resolution
-    bounds = xyz_bounds(viewer_state, with_resolution=True)
+    bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
     x_range = viewer_state.x_max - viewer_state.x_min
     y_range = viewer_state.y_max - viewer_state.y_min
     z_range = viewer_state.z_max - viewer_state.z_min
@@ -75,7 +77,8 @@ def create_voxel_gltf(viewer_state: Vispy3DVolumeViewerState,
 
     occupied_voxels = {}
 
-    for layer_state in layer_states:
+    for layer_state, option in zip(layer_states, options):
+        opacity_cutoff = option.opacity_cutoff
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
         isomin = isomin_for_layer(viewer_state, layer_state)
@@ -158,16 +161,16 @@ def create_voxel_gltf(viewer_state: Vispy3DVolumeViewerState,
     builder.add_file_resource(points_bin, data=points_barr)
     builder.add_file_resource(triangles_bin, data=triangles_barr)
 
-    return builder.build()
 
-
-def create_voxel_usd(viewer_state: Vispy3DVolumeViewerState,
-                     layer_states: Iterable[VolumeLayerState]) -> USDBuilder:
-
-    builder = USDBuilder()    
+@ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ["usda", "usdc"], multiple=True)
+def add_voxel_layers_usd(builder: USDBuilder,
+                         viewer_state: Vispy3DVolumeViewerState,
+                         layer_states: Iterable[VolumeLayerState],
+                         options: ARVoxelExportOptions,
+                         bounds: Optional[BoundsWithResolution] = None):
 
     resolution = viewer_state.resolution
-    bounds = xyz_bounds(viewer_state, with_resolution=True)
+    bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
     x_range = viewer_state.x_max - viewer_state.x_min
     y_range = viewer_state.y_max - viewer_state.y_min
     z_range = viewer_state.z_max - viewer_state.z_min
@@ -186,8 +189,7 @@ def create_voxel_usd(viewer_state: Vispy3DVolumeViewerState,
 
     triangles = rectangular_prism_triangulation()
 
-    # TODO: The cutoff should be a parameter
-    opacity_cutoff = 0.1
+    opacity_cutoff = options.opacity_cutoff
     opacity_factor = 0.75
 
     occupied_voxels = {}

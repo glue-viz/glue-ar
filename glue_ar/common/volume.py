@@ -195,10 +195,3 @@ def create_meshes(viewer_state, layer_states, parameters):
 
     return meshes
 
-
-def add_volume_layer_gltf(builder: GLTFBuilder,
-                          viewer_state: Vispy3DVolumeViewerState,
-                          layer_state: VispyLayerState,
-                          bounds: BoundsWithResolution,
-                          type: str = "isosurface"):
-    pass

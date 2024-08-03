@@ -152,3 +152,6 @@ class GLTFBuilder:
     def build(self) -> GLTF:
         model = self.build_model()
         return GLTF(model=model, resources=self.file_resources)
+
+    def build_and_export(self, filepath):
+        self.build().export(filepath)

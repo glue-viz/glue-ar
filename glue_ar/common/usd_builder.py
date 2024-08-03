@@ -103,3 +103,6 @@ class USDBuilder:
 
     def export(self, filepath):
         self.stage.GetRootLayer().Export(filepath)
+
+    def build_and_export(self, filepath):
+        self.export(filepath)

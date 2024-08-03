@@ -1,20 +1,23 @@
-from os import remove
 from os.path import abspath, dirname, join, split, splitext
 from subprocess import run
-from typing import Dict
+from typing import Dict, defaultdict
+from glue.core.state_objects import State
 from glue_vispy_viewers.scatter.scatter_viewer import BaseVispyViewerMixin
-from glue_vispy_viewers.scatter.viewer_state import Vispy3DScatterViewerState
+from glue_vispy_viewers.scatter.viewer_state import Vispy3DScatterViewerState, Vispy3DViewerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
+from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 
 import pyvista as pv
 
-from glue_vispy_viewers.volume.layer_state import VolumeLayerState
-from glue_ar.common.gltf_builder import GLTFBuilder
 
+from glue_ar.common.export_options import ar_layer_export
+from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import add_scatter_layer_gltf, add_scatter_layer_usd, scatter_layer_as_multiblock
 from glue_ar.common.usd_builder import USDBuilder
-from glue_ar.utils import bounds_3d_from_layers, xyz_bounds
-from glue_ar.common.volume import add_volume_layer_gltf, meshes_for_volume_layer
+from glue_ar.common.volume import meshes_for_volume_layer
+from glue_ar.utils import BoundsWithResolution, bounds_3d_from_layers, xyz_bounds
+
+from typing import List, Tuple, Union
 
 
 NODE_MODULES_DIR = join(abspath(join(dirname(abspath(__file__)), "..")),
@@ -25,18 +28,28 @@ GLTF_PIPELINE_FILEPATH = join(NODE_MODULES_DIR, "gltf-pipeline", "bin", "gltf-pi
 GLTFPACK_FILEPATH = join(NODE_MODULES_DIR, "gltfpack", "cli.js")
 
 
-def export_meshes(meshes, output_path):
-    plotter = pv.Plotter()
-    for info in meshes.values():
-        plotter.add_mesh(info["mesh"], color=info["color"], name=info["name"], opacity=info["opacity"])
+def export_viewer(builder: Union[GLTFBuilder, USDBuilder],
+                  viewer_state: Vispy3DViewerState,
+                  layer_states: List[VolumeLayerState],
+                  bounds: BoundsWithResolution,
+                  state_dictionary: Dict[str, Tuple[str, State]],
+                  filepath: str):
 
-    # TODO: What's the correct way to deal with this?
-    if output_path.endswith(".obj"):
-        plotter.export_obj(output_path)
-    elif output_path.endswith(".gltf"):
-        plotter.export_gltf(output_path)
-    else:
-        raise ValueError("Unsupported extension!")
+    ext = splitext(filepath)[1:]
+    layer_groups = defaultdict(list)
+    for layer in layer_states:
+        name, export_state = state_dictionary[layer.layer.label]
+        layer_groups[(type(layer), name)].append(export_state)
+    
+    for (layer_state_cls, name), export_states in layer_groups.items():
+        spec = ar_layer_export.export_spec(layer_state_cls, name, ext)
+        if spec.multiple:
+            spec.export_method(builder, viewer_state, layer_states, export_states, bounds)
+        else:
+            for layer_state, export_state in zip(layer_states, export_states):
+                spec.export_method(builder, viewer_state, layer_state, export_state, bounds)
+        
+    builder.build_and_export(filepath)
 
 
 def compress_gltf_pipeline(filepath):

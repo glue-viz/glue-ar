@@ -1,6 +1,6 @@
 from mcubes import marching_cubes
 from numpy import isfinite, linspace, transpose
-from typing import Iterable
+from typing import Iterable, Optional
 
 from gltflib import AccessorType, BufferTarget, ComponentType
 from gltflib.gltf import GLTF
@@ -8,34 +8,22 @@ from gltflib.gltf import GLTF
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 
+from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
+from glue_ar.common.volume_export_options import ARIsosurfaceExportOptions
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
 from glue_ar.utils import BoundsWithResolution, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color, xyz_bounds
 from glue_ar.gltf_utils import *
 
 
-def create_marching_cubes_gltf(
-    viewer_state: Vispy3DVolumeViewerState,
-    layer_states: Iterable[VolumeLayerState],
-    isosurface_count: int = 75) -> GLTF:
-
-    bounds = xyz_bounds(viewer_state, with_resolution=True)
-
-    builder = GLTFBuilder()
-
-    for layer_state in layer_states:
-        add_marching_cubes_layer_gltf(builder, viewer_state, layer_state, bounds, isosurface_count)
-
-    return builder.build()
-
-
-def add_marching_cubes_layer_gltf(builder: GLTFBuilder,
-                          viewer_state: Vispy3DVolumeViewerState,
-                          layer_state: VolumeLayerState,
-                          bounds: BoundsWithResolution,
-                          isosurface_count: int):
+@ar_layer_export(VolumeLayerState, "Isosurface", ARIsosurfaceExportOptions, ["gltf", "glb"])
+def add_isosurface_layer(builder: GLTFBuilder,
+                         viewer_state: Vispy3DVolumeViewerState,
+                         layer_state: VolumeLayerState,
+                         options: ARIsosurfaceExportOptions,
+                         bounds: BoundsWithResolution):
     data = frb_for_layer(viewer_state, layer_state, bounds)
 
     isomin = isomin_for_layer(viewer_state, layer_state)
@@ -44,7 +32,7 @@ def add_marching_cubes_layer_gltf(builder: GLTFBuilder,
     data[~isfinite(data)] = isomin - 10
     data = transpose(data, (1, 0, 2))
 
-    levels = linspace(isomin, isomax, isosurface_count)
+    levels = linspace(isomin, isomax, options.isosurface_count)
     opacity = 0.25 * layer_state.alpha
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
@@ -105,12 +93,13 @@ def add_marching_cubes_layer_gltf(builder: GLTFBuilder,
         builder.add_file_resource(level_bin, data=barr)
 
 
-def add_marching_cubes_layer_usd(
+@ar_layer_export(VolumeLayerState, "Isosurface", ARIsosurfaceExportOptions, ["usdc", "usda"])
+def add_isosurface_layer_usd(
     builder: USDBuilder,
     viewer_state: Vispy3DVolumeViewerState,
     layer_state: VolumeLayerState,
+    options: ARIsosurfaceExportOptions,
     bounds: BoundsWithResolution,
-    isosurface_count: int,
 ):
 
     data = frb_for_layer(viewer_state, layer_state, bounds)
@@ -121,6 +110,7 @@ def add_marching_cubes_layer_usd(
     data[~isfinite(data)] = isomin - 10
     data = transpose(data, (1, 0, 2))
 
+    isosurface_count: int = options.isosurface_count
     levels = linspace(isomin, isomax, isosurface_count)
     opacity = layer_state.alpha
     color = layer_color(layer_state)
