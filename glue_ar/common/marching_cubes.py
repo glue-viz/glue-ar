@@ -19,11 +19,11 @@ from glue_ar.gltf_utils import *
 
 
 @ar_layer_export(VolumeLayerState, "Isosurface", ARIsosurfaceExportOptions, ["gltf", "glb"])
-def add_isosurface_layer(builder: GLTFBuilder,
-                         viewer_state: Vispy3DVolumeViewerState,
-                         layer_state: VolumeLayerState,
-                         options: ARIsosurfaceExportOptions,
-                         bounds: BoundsWithResolution):
+def add_isosurface_layer_gltf(builder: GLTFBuilder,
+                              viewer_state: Vispy3DVolumeViewerState,
+                              layer_state: VolumeLayerState,
+                              options: ARIsosurfaceExportOptions,
+                              bounds: BoundsWithResolution):
     data = frb_for_layer(viewer_state, layer_state, bounds)
 
     isomin = isomin_for_layer(viewer_state, layer_state)
