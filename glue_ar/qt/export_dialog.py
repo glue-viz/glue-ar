@@ -43,8 +43,6 @@ class ARExportDialog(QDialog):
         self.state_dictionary: Dict[str, Tuple[str, State]] = {
             label: list(states.items())[0] for label, states in self._layer_export_states.items()
         }
-        print(self._layer_export_states)
-        print(self.state_dictionary)
         self._on_layer_change(layers[0].layer.label)
 
         self._connections = autoconnect_callbacks_to_qt(self.state, self.ui)
@@ -102,7 +100,6 @@ class ARExportDialog(QDialog):
         method, state = self.state_dictionary[layer_name]
         layer = self._layer_for_label(layer_name)
         method_names = ar_layer_export.method_names(type(layer.state), self.state.filetype)
-        print(method_names)
 
         with delay_callback(self.state, 'method'):
             self.state.method_helper.choices = method_names
@@ -133,4 +130,5 @@ class ARExportDialog(QDialog):
     def _on_method_change(self, method_name: str):
         state = self._layer_export_states[self.state.layer][method_name]
         self.state_dictionary[self.state.layer] = (method_name, state)
+        print(state)
         self._update_layer_ui(state)

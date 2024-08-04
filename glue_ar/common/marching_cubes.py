@@ -43,6 +43,8 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
         level_bin = f"layer_{layer_state.layer.uuid}_level_{level}.bin"
 
         points, triangles = marching_cubes(data, level)
+        if len(points) == 0:
+            continue
         add_points_to_bytearray(barr, points)
         point_len = len(barr)
 

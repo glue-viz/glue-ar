@@ -27,18 +27,26 @@ NODE_MODULES_DIR = join(abspath(join(dirname(abspath(__file__)), "..")),
 GLTF_PIPELINE_FILEPATH = join(NODE_MODULES_DIR, "gltf-pipeline", "bin", "gltf-pipeline.js")
 GLTFPACK_FILEPATH = join(NODE_MODULES_DIR, "gltfpack", "cli.js")
 
+_BUILDERS = {
+    "gltf": GLTFBuilder,
+    "glb": GLTFBuilder,
+    "usda": USDBuilder,
+    "usdc": USDBuilder
+}
 
-def export_viewer(builder: Union[GLTFBuilder, USDBuilder],
-                  viewer_state: Vispy3DViewerState,
+
+def export_viewer(viewer_state: Vispy3DViewerState,
                   layer_states: List[VolumeLayerState],
                   bounds: BoundsWithResolution,
                   state_dictionary: Dict[str, Tuple[str, State]],
                   filepath: str):
 
-    ext = splitext(filepath)[1:]
+    ext = splitext(filepath)[1][1:]
+    builder = _BUILDERS[ext]()
     layer_groups = defaultdict(list)
     for layer in layer_states:
         name, export_state = state_dictionary[layer.layer.label]
+        print(name, type(export_state))
         layer_groups[(type(layer), name)].append(export_state)
     
     for (layer_state_cls, name), export_states in layer_groups.items():

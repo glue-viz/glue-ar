@@ -7,8 +7,8 @@ from glue.config import viewer_tool
 from glue.viewers.common.tool import SimpleToolMenu, Tool
 from glue_qt.utils.threading import Worker
 
-from glue_ar.utils import AR_ICON
-from glue_ar.common.export import export_to_ar
+from glue_ar.utils import AR_ICON, xyz_bounds
+from glue_ar.common.export import export_viewer 
 from glue_ar.qt.export_dialog import ARExportDialog
 from glue_ar.qt.exporting_dialog import ExportingDialog
 
@@ -16,9 +16,10 @@ from glue_ar.qt.exporting_dialog import ExportingDialog
 __all__ = ["ARToolMenu", "QtARExportTool"]
 
 _FILETYPE_NAMES = {
-    ".obj": "OBJ",
-    ".gltf": "glTF",
-    ".glb": "glB"
+    "gltf": "glTF",
+    "glb": "glB",
+    "usdc": "USDC",
+    "usda": "USDA",
 }
 
 
@@ -51,11 +52,22 @@ class QtARExportTool(Tool):
             return
 
         _, ext = splitext(export_path)
+        ext = ext[1:]
         filetype = _FILETYPE_NAMES.get(ext, None)
-        worker = Worker(export_to_ar, self.viewer, export_path, dialog.state_dictionary,
-                        compression=dialog.state.compression.lower())
-        exporting_dialog = ExportingDialog(parent=self.viewer, filetype=filetype)
-        worker.result.connect(exporting_dialog.close)
-        worker.error.connect(exporting_dialog.close)
-        worker.start()
-        exporting_dialog.exec_()
+
+        # worker = Worker(export_to_ar, self.viewer, export_path, dialog.state_dictionary,
+        #                 compression=dialog.state.compression.lower())
+        # exporting_dialog = ExportingDialog(parent=self.viewer, filetype=filetype)
+        # worker.result.connect(exporting_dialog.close)
+        # worker.error.connect(exporting_dialog.close)
+        # worker.start()
+        # exporting_dialog.exec_()
+
+        layer_states = [layer.state for layer in self.viewer.layers if 
+                        layer.enabled and layer.state.visible]
+        bounds = xyz_bounds(self.viewer.state, with_resolution=True)
+        export_viewer(self.viewer.state,
+                      layer_states,
+                      bounds,
+                      dialog.state_dictionary,
+                      export_path)
