@@ -37,8 +37,19 @@ class ARExportDialog(QDialog):
             layer.layer.label: {}
             for layer in layers
         }
+
         self.state_dictionary: Dict[str, Tuple[str, State]] = {}
         self._on_layer_change(self.state.layer)
+        for layer in layers:
+            label = layer.layer.label
+            if label in self.state_dictionary:
+                _, state = self.state_dictionary[label]
+            else:
+                states = ar_layer_export.export_state_classes(type(layer.state))
+                state_cls = next(t[1] for t in states if t[0] == self.state.method)
+                state = state_cls()
+                self.state_dictionary[label] = (self.state.method, state)
+            self._layer_export_states[label][self.state.method] = state
 
         self._connections = autoconnect_callbacks_to_qt(self.state, self.ui)
         self._layer_connections = []
