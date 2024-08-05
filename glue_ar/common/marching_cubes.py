@@ -11,7 +11,7 @@ from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARIsosurfaceExportOptions
-from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
+from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, clip_linear_transformations, index_mins, index_maxes
 from glue_ar.utils import BoundsWithResolution, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color
 
@@ -35,6 +35,25 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
     color_components = hex_to_components(color)
     builder.add_material(color_components, opacity=opacity)
 
+    world_bounds = (
+        (viewer_state.y_min, viewer_state.y_max),
+        (viewer_state.x_min, viewer_state.x_max),
+        (viewer_state.z_min, viewer_state.z_max),
+    )
+    resolution = viewer_state.resolution
+    x_range = viewer_state.x_max - viewer_state.x_min
+    y_range = viewer_state.y_max - viewer_state.y_min
+    z_range = viewer_state.z_max - viewer_state.z_min
+    x_spacing = x_range / resolution
+    y_spacing = y_range / resolution
+    z_spacing = z_range / resolution
+    sides = (z_spacing, x_spacing, y_spacing)
+    if viewer_state.native_aspect:
+        clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
+        clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
+    else:
+        clip_sides = [2 / resolution for _ in range(3)]
+
     for level in levels[1:]:
         barr = bytearray()
         level_bin = f"layer_{layer_state.layer.uuid}_level_{level}.bin"
@@ -43,8 +62,8 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
         if len(points) == 0:
             continue
 
+        points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, clip_sides)) for pt in points]
         points = [[p[1], p[0], p[2]] for p in points]
-        # points = bring_into_clip(array(points), bounds, preserve_aspect=viewer_state.native_aspect)
         add_points_to_bytearray(barr, points)
         point_len = len(barr)
 
