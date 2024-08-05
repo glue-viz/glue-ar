@@ -13,9 +13,9 @@ from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import add_scatter_layer_gltf, add_scatter_layer_usd
 from glue_ar.common.usd_builder import USDBuilder
-from glue_ar.utils import BoundsWithResolution, bounds_3d_from_layers
+from glue_ar.utils import Bounds, BoundsWithResolution, bounds_3d_from_layers
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 
 NODE_MODULES_DIR = join(abspath(join(dirname(abspath(__file__)), "..")),
@@ -35,7 +35,7 @@ _BUILDERS = {
 
 def export_viewer(viewer_state: Vispy3DViewerState,
                   layer_states: List[VolumeLayerState],
-                  bounds: BoundsWithResolution,
+                  bounds: Union[Bounds, BoundsWithResolution],
                   state_dictionary: Dict[str, Tuple[str, State]],
                   filepath: str):
 

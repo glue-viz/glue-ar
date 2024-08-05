@@ -2,7 +2,7 @@ from glue.config import DictRegistry
 from glue.core.state_objects import State
 from glue_vispy_viewers.common.layer_state import VispyLayerState
 
-from typing import Callable, List, Optional, Tuple, Type
+from typing import Callable, Iterable, List, Optional, Tuple, Type
 
 
 __all__ = ["ar_layer_export"]
@@ -29,7 +29,7 @@ class ARExportLayerOptionsRegistry(DictRegistry):
             layer_state_cls: Type[VispyLayerState],
             name: str,
             layer_options_state: Type[State],
-            extensions: List[str],
+            extensions: Iterable[str],
             multiple: bool,
             export_method: Callable):
         if not issubclass(layer_options_state, State):
@@ -62,7 +62,7 @@ class ARExportLayerOptionsRegistry(DictRegistry):
                  layer_state_cls: Type[VispyLayerState],
                  name: str,
                  layer_options_state: Type[State],
-                 extensions: List[str],
+                 extensions: Iterable[str],
                  multiple: bool = False):
         def adder(export_method: Callable):
             self.add(layer_state_cls, name, layer_options_state, extensions, multiple, export_method)

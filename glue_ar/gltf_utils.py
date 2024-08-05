@@ -29,9 +29,8 @@ def clip_linear_transformations(bounds, clip_size=1):
     line_data = []
     for bds, rg in zip(bounds, ranges):
         frac = rg / max_range
-        half_frac = frac / 2
-        half_target = clip_size * half_frac
-        line_data.append(slope_intercept_between((bds[0], -half_target), (bds[1], half_target)))
+        target = frac * clip_size
+        line_data.append(slope_intercept_between((bds[0], -target), (bds[1], target)))
     return line_data
 
 

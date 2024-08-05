@@ -19,7 +19,7 @@ from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_tr
 from gltflib import AccessorType, BufferTarget, ComponentType
 
 
-@ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ["gltf", "glb"], multiple=True)
+@ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ("gltf", "glb"), multiple=True)
 def add_voxel_layers_gltf(builder: GLTFBuilder,
                           viewer_state: Vispy3DVolumeViewerState,
                           layer_states: Iterable[VolumeLayerState],
@@ -37,15 +37,16 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     sides = (z_spacing, x_spacing, y_spacing)
 
     world_bounds = (
-        (viewer_state.z_min, viewer_state.z_max),
-        (viewer_state.x_min, viewer_state.x_max),
         (viewer_state.y_min, viewer_state.y_max),
+        (viewer_state.x_min, viewer_state.x_max),
+        (viewer_state.z_min, viewer_state.z_max),
     )
     if viewer_state.native_aspect:
         clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
         clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
     else:
-        clip_sides = [1 / resolution for _ in range(3)]
+        clip_sides = [2 / resolution for _ in range(3)]
+    print(clip_sides)
 
     point_index = 0
     points_barr = bytearray()
@@ -75,7 +76,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     )
     indices_accessor = builder.accessor_count - 1
 
-    opacity_factor = 0.75
+    opacity_factor = 1
     occupied_voxels = {}
 
     for layer_state, option in zip(layer_states, options):
@@ -87,10 +88,10 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         data[~isfinite(data)] = isomin - 1
 
-        data = transpose(data, (1, 0, 2))
+        data = transpose(data, (2, 0, 1))
 
         isorange = isomax - isomin
-        nonempty_indices = argwhere(data - isomin > 0)
+        nonempty_indices = argwhere(data > isomin)
 
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
@@ -104,15 +105,16 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                 adjusted_a_color = color_components[:3] + [adjusted_opacity]
                 new_color = alpha_composite(adjusted_a_color, current_color)
                 occupied_voxels[indices_tpl] = new_color
-            elif adjusted_opacity >= opacity_cutoff:
+            else:
                 occupied_voxels[indices_tpl] = color_components[:3] + [adjusted_opacity]
 
     materials_map = {}
     for indices, rgba in occupied_voxels.items():
+        print(indices, rgba)
         if rgba[-1] < opacity_cutoff:
             continue
 
-        center = tuple((index + 0.5) * side for index, side in zip(indices, clip_sides))
+        center = tuple((-1 + (index + 0.5) * side) for index, side in zip(indices, clip_sides))
 
         pts = rectangular_prism_points(center, clip_sides)
         prev_ptbarr_len = len(points_barr)
@@ -163,11 +165,11 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     builder.add_file_resource(triangles_bin, data=triangles_barr)
 
 
-@ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ["usda", "usdc"], multiple=True)
+@ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ("usda", "usdc"), multiple=True)
 def add_voxel_layers_usd(builder: USDBuilder,
                          viewer_state: Vispy3DVolumeViewerState,
                          layer_states: Iterable[VolumeLayerState],
-                         options: ARVoxelExportOptions,
+                         options: Iterable[ARVoxelExportOptions],
                          bounds: Optional[BoundsWithResolution] = None):
 
     resolution = viewer_state.resolution
@@ -185,17 +187,19 @@ def add_voxel_layers_usd(builder: USDBuilder,
         (viewer_state.x_min, viewer_state.x_max),
         (viewer_state.y_min, viewer_state.y_max),
     )
-    clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
-    clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
+    if viewer_state.native_aspect:
+        clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
+        clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
+    else:
+        clip_sides = [2 / resolution for _ in range(3)]
 
     triangles = rectangular_prism_triangulation()
 
-    opacity_cutoff = options.opacity_cutoff
-    opacity_factor = 0.75
-
+    opacity_factor = 1
     occupied_voxels = {}
 
-    for layer_state in layer_states:
+    for layer_state, option in zip(layer_states, options):
+        opacity_cutoff = option.opacity_cutoff
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
         isomin = isomin_for_layer(viewer_state, layer_state)

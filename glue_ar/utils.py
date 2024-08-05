@@ -101,17 +101,16 @@ def layer_color(layer_state: LayerState) -> str:
     return layer_color
 
 
-def bring_into_clip(data, bounds: Bounds, preserve_aspect: bool = True):
+def bring_into_clip(data, bounds: Union[Bounds, BoundsWithResolution], preserve_aspect: bool = True):
     if preserve_aspect:
         ranges = [abs(bds[1] - bds[0]) for bds in bounds]
         max_range = max(ranges)
         line_data = []
         for bds, rg in zip(bounds, ranges):
             frac = rg / max_range
-            half_frac = frac / 2
-            line_data.append(slope_intercept_between((bds[0], -half_frac), (bds[1], half_frac)))
+            line_data.append(slope_intercept_between([bds[0], -frac], [bds[1], frac]))
     else:
-        line_data = [slope_intercept_between((bds[0], -1), (bds[1], 1)) for bds in bounds]
+        line_data = [slope_intercept_between([bds[0], -1], [bds[1], 1]) for bds in bounds]
 
     scaled = [[m * d + b for d in data[idx]] for idx, (m, b) in enumerate(line_data)]
 
@@ -181,6 +180,7 @@ def frb_for_layer(viewer_state: ViewerState,
                   layer_or_state: Union[LayerArtist, LayerState],
                   bounds: BoundsWithResolution) -> ndarray:
 
+    bounds = list(reversed(bounds))
     data = data_for_layer(layer_or_state)
     layer_state = layer_or_state if isinstance(layer_or_state, LayerState) else layer_or_state.state
     is_data_layer = data is layer_or_state.layer

@@ -8,6 +8,8 @@ from numpy.linalg import norm
 from typing import List, Literal, Optional, Tuple
 
 from glue.utils import ensure_numerical
+from glue_ar.common.export_options import ar_layer_export
+from glue_ar.common.scatter_export_options import ARScatterExportOptions
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                            normalize, sphere_points, sphere_triangles
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
@@ -23,6 +25,17 @@ _VECTOR_OFFSETS_GLTF = {
     'middle': 0,
     'tip': -0.5,
 }
+
+
+def radius_for_scatter_layer(layer_state: ScatterLayerState) -> float:
+    # This feels like a bit of a magic calculation, and it kind of is.
+    # The motivation is as follows:
+    # 30 is the largest size that we use in the vispy viewer - if the sizing of
+    # a point would take it above 30, it's clipped to 30.
+    # Looking at the vispy viewer, one can fit about 16 size-30 spheres
+    # across one edge of the cube.
+    # Hence we take the size of the vispy cube for scatter purposes to be 480
+    return min(layer_state.size_scaling * layer_state.size, 30) / 480
 
 
 def add_vectors_gltf(builder: GLTFBuilder,
@@ -208,13 +221,15 @@ def add_error_bars_gltf(builder: GLTFBuilder,
     builder.add_file_resource(errors_bin, data=barr)
 
 
+@ar_layer_export(ScatterLayerState, "Scatter", ARScatterExportOptions, ("gltf", "glb"))
 def add_scatter_layer_gltf(builder: GLTFBuilder,
                            viewer_state: Vispy3DScatterViewerState,
                            layer_state: ScatterLayerState,
+                           options: ARScatterExportOptions,
                            bounds: Bounds,
-                           theta_resolution: int = 8,
-                           phi_resolution: int = 8,
                            clip_to_bounds: bool = True):
+    theta_resolution = options.theta_resolution
+    phi_resolution = options.phi_resolution
     bounds = xyz_bounds(viewer_state, with_resolution=False)
     if clip_to_bounds:
         mask = mask_for_bounds(viewer_state, layer_state, bounds)
@@ -239,7 +254,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     factor = max((abs(b[1] - b[0]) for b in bounds))
 
     # We calculate this even if we aren't using fixed size as we might also use this for vectors
-    radius = max(layer_state.size_scaling * layer_state.size / 480, 30)
+    radius = radius_for_scatter_layer(layer_state)
     if not fixed_size:
         # The specific size calculation is taken from the scatter layer artist
         size_data = ensure_numerical(layer_state.layer[layer_state.size_attribute][mask].ravel())
@@ -431,16 +446,18 @@ def add_vectors_usd(builder: USDBuilder,
             builder.add_mesh(tip_points, tip_triangles, color=color, opacity=layer_state.alpha)
 
 
+@ar_layer_export(ScatterLayerState, "Scatter", ARScatterExportOptions, ("usdc", "usda"))
 def add_scatter_layer_usd(
     builder: USDBuilder,
     viewer_state: Vispy3DScatterViewerState,
     layer_state: ScatterLayerState,
-    theta_resolution: int = 8,
-    phi_resolution: int = 8,
+    options: ARScatterExportOptions,
+    bounds: Bounds,
     clip_to_bounds: bool = True,
 ):
 
-    bounds = xyz_bounds(viewer_state, with_resolution=False)
+    theta_resolution = options.theta_resolution
+    phi_resolution = options.phi_resolution
     if clip_to_bounds:
         mask = mask_for_bounds(viewer_state, layer_state, bounds)
     else:
@@ -466,7 +483,7 @@ def add_scatter_layer_usd(
     color_components = tuple(hex_to_components(color))
 
     # We calculate this even if we aren't using fixed size as we might also use this for vectors
-    radius = max(layer_state.size_scaling * layer_state.size / 480, 30)
+    radius = radius_for_scatter_layer(layer_state)
     # TODO: Remove the fixed_size condition
     if not fixed_size:
         # The specific size calculation is taken from the scatter layer artist

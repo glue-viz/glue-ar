@@ -1,4 +1,5 @@
 from os.path import splitext
+from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
 
 from qtpy import compat
 from qtpy.QtWidgets import QDialog
@@ -65,8 +66,7 @@ class QtARExportTool(Tool):
 
         layer_states = [layer.state for layer in self.viewer.layers if 
                         layer.enabled and layer.state.visible]
-        bounds = xyz_bounds(self.viewer.state, with_resolution=True)
-        print(dialog.state_dictionary)
+        bounds = xyz_bounds(self.viewer.state, with_resolution=isinstance(self.viewer, VispyVolumeViewerMixin))
         export_viewer(self.viewer.state,
                       layer_states,
                       bounds,
