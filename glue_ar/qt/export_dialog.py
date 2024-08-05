@@ -126,7 +126,6 @@ class ARExportDialog(QDialog):
     def _update_layer_ui(self, state: State):
         self._clear_layer_layout()
         self._layer_connections = []
-        print(id(state))
         for property in state.callback_properties():
             row = QHBoxLayout()
             name = display_name(property)
@@ -134,10 +133,6 @@ class ARExportDialog(QDialog):
             for widget in widgets:
                 row.addWidget(widget)
             self.ui.layer_layout.addRow(row)
-
-        print("CONNS")
-        for conn in self._layer_connections:
-            print(id(conn._instance))
 
     def _on_filetype_change(self, filetype: str):
         gl = filetype.lower() in ["gltf", "glb"]

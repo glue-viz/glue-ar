@@ -46,7 +46,6 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
         clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
     else:
         clip_sides = [2 / resolution for _ in range(3)]
-    print(clip_sides)
 
     point_index = 0
     points_barr = bytearray()
@@ -110,7 +109,6 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
     materials_map = {}
     for indices, rgba in occupied_voxels.items():
-        print(indices, rgba)
         if rgba[-1] < opacity_cutoff:
             continue
 
