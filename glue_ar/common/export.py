@@ -1,21 +1,19 @@
+from collections import defaultdict
 from os.path import abspath, dirname, join, split, splitext
 from subprocess import run
-from typing import Dict, defaultdict
+from typing import Dict
 from glue.core.state_objects import State
 from glue_vispy_viewers.scatter.scatter_viewer import BaseVispyViewerMixin
-from glue_vispy_viewers.scatter.viewer_state import Vispy3DScatterViewerState, Vispy3DViewerState
+from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
-
-import pyvista as pv
 
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.common.scatter import add_scatter_layer_gltf, add_scatter_layer_usd, scatter_layer_as_multiblock
+from glue_ar.common.scatter import add_scatter_layer_gltf, add_scatter_layer_usd
 from glue_ar.common.usd_builder import USDBuilder
-from glue_ar.common.volume import meshes_for_volume_layer
-from glue_ar.utils import BoundsWithResolution, bounds_3d_from_layers, xyz_bounds
+from glue_ar.utils import BoundsWithResolution, bounds_3d_from_layers
 
 from typing import List, Tuple
 
@@ -256,40 +254,6 @@ def export_usd(viewer: BaseVispyViewerMixin,
                                    bounds=bounds,
                                    theta_resolution=state_dictionary.get("theta_resolution", 8),
                                    phi_resolution=state_dictionary.get("phi_resolution", 8))
-
-
-
-def create_plotter(viewer, state_dictionary):
-    plotter = pv.Plotter()
-    layer_states = [layer.state for layer in viewer.layers if layer.enabled and layer.state.visible]
-    scatter_viewer = isinstance(viewer.state, Vispy3DScatterViewerState)
-    if scatter_viewer:
-        bounds = xyz_bounds(viewer.state)
-    elif viewer.state.clip_data:
-        bounds = bounds_3d(viewer.state)
-    else:
-        bounds = bounds_3d_from_layers(viewer.state, layer_states)
-    frbs = {}
-    for layer_state in layer_states:
-        layer_info = state_dictionary.get(layer_state.layer.label, {})
-        if layer_info:
-            layer_info = layer_info.as_dict()
-        if isinstance(layer_state, VolumeLayerState):
-            meshes = meshes_for_volume_layer(viewer.state, layer_state,
-                                             bounds=bounds,
-                                             precomputed_frbs=frbs,
-                                             **layer_info)
-        else:
-            meshes = scatter_layer_as_multiblock(viewer.state, layer_state,
-                                                 scaled=scatter_viewer,
-                                                 clip_to_bounds=viewer.state.clip_data,
-                                                 **layer_info)
-        for mesh_info in meshes:
-            mesh = mesh_info.pop("mesh")
-            if len(mesh.points) > 0:
-                plotter.add_mesh(mesh, **mesh_info)
-
-    return plotter
 
 
 def export_to_ar(viewer, filepath, state_dict, compression="draco"):
