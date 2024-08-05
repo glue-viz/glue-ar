@@ -21,30 +21,33 @@
      </property>
     </widget>
    </item>
-   <item row="9" column="0">
+   <item row="6" column="0">
+    <widget class="QComboBox" name="combosel_method"/>
+   </item>
+   <item row="10" column="0">
     <widget class="QLabel" name="label_compression_message">
      <property name="text">
       <string>Select compression method</string>
      </property>
     </widget>
    </item>
-   <item row="10" column="0">
+   <item row="11" column="0">
     <widget class="QComboBox" name="combosel_compression"/>
    </item>
    <item row="5" column="0">
     <widget class="QLabel" name="label_method">
      <property name="text">
-      <string>Select the export method</string>
+      <string>Select the layer export method</string>
      </property>
     </widget>
    </item>
    <item row="4" column="0">
     <layout class="QFormLayout" name="layer_layout"/>
    </item>
-   <item row="8" column="0">
+   <item row="9" column="0">
     <widget class="QComboBox" name="combosel_filetype"/>
    </item>
-   <item row="11" column="0">
+   <item row="12" column="0">
     <widget class="QWidget" name="widget" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
@@ -83,7 +86,7 @@
      </layout>
     </widget>
    </item>
-   <item row="7" column="0">
+   <item row="8" column="0">
     <widget class="QLabel" name="label_filetype_message">
      <property name="text">
       <string>Select the export filetype</string>
@@ -93,8 +96,12 @@
    <item row="3" column="0">
     <widget class="QListWidget" name="listsel_layer"/>
    </item>
-   <item row="6" column="0">
-    <widget class="QComboBox" name="combosel_method"/>
+   <item row="7" column="0">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

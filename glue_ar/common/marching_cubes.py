@@ -1,9 +1,8 @@
 from mcubes import marching_cubes
-from numpy import isfinite, linspace, transpose
-from typing import Iterable, Optional
+from numpy import array, isfinite, linspace, transpose
+from typing import Iterable
 
 from gltflib import AccessorType, BufferTarget, ComponentType
-from gltflib.gltf import GLTF
 
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
@@ -38,6 +37,8 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
     color_components = hex_to_components(color)
     builder.add_material(color_components, opacity=opacity)
 
+    clip_transforms = clip_linear_transformations(bounds)
+
     for level in levels[1:]:
         barr = bytearray()
         level_bin = f"layer_{layer_state.layer.uuid}_level_{level}.bin"
@@ -45,6 +46,9 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
         points, triangles = marching_cubes(data, level)
         if len(points) == 0:
             continue
+
+        points = bring_into_clip(array(points), clip_transforms)
+        print(points)
         add_points_to_bytearray(barr, points)
         point_len = len(barr)
 
@@ -73,6 +77,7 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
             mins=pt_mins,
             maxes=pt_maxes,
         )
+        print(triangle_len)
         builder.add_buffer_view(
             buffer=buffer,
             byte_length=triangle_len,
