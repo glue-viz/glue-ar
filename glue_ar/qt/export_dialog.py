@@ -34,16 +34,11 @@ class ARExportDialog(QDialog):
         self.ui = load_ui('export_dialog.ui', self, directory=os.path.dirname(__file__))
 
         self._layer_export_states: Dict[str, Dict[str, State]] = {
-            layer.layer.label: {
-                name: state_cls()
-                for (name, state_cls) in ar_layer_export.export_state_classes(type(layer.state))
-            }
+            layer.layer.label: {}
             for layer in layers
         }
-        self.state_dictionary: Dict[str, Tuple[str, State]] = {
-            label: list(states.items())[0] for label, states in self._layer_export_states.items()
-        }
-        self._on_layer_change(layers[0].layer.label)
+        self.state_dictionary: Dict[str, Tuple[str, State]] = {}
+        self._on_layer_change(self.state.layer)
 
         self._connections = autoconnect_callbacks_to_qt(self.state, self.ui)
         self._layer_connections = []
@@ -97,9 +92,15 @@ class ARExportDialog(QDialog):
         self._clear_layout(self.ui.layer_layout)
 
     def _on_layer_change(self, layer_name: str):
-        method, state = self.state_dictionary[layer_name]
         layer = self._layer_for_label(layer_name)
-        method_names = ar_layer_export.method_names(type(layer.state), self.state.filetype)
+        layer_state_cls = type(layer.state)
+        method_names = ar_layer_export.method_names(layer_state_cls, self.state.filetype)
+        if layer_name in self.state_dictionary:
+            method, state = self.state_dictionary[layer_name]
+        else:
+            method = method_names[0]
+            state = ar_layer_export.options_class(layer_state_cls, method)()
+            self.state_dictionary[layer_name] = (method, state)
 
         with delay_callback(self.state, 'method'):
             self.state.method_helper.choices = method_names
@@ -114,6 +115,7 @@ class ARExportDialog(QDialog):
     def _update_layer_ui(self, state: State):
         self._clear_layer_layout()
         self._layer_connections = []
+        print(id(state))
         for property in state.callback_properties():
             row = QHBoxLayout()
             name = display_name(property)
@@ -122,13 +124,23 @@ class ARExportDialog(QDialog):
                 row.addWidget(widget)
             self.ui.layer_layout.addRow(row)
 
+        print("CONNS")
+        for conn in self._layer_connections:
+            print(id(conn._instance))
+
     def _on_filetype_change(self, filetype: str):
         gl = filetype.lower() in ["gltf", "glb"]
         self.ui.combosel_compression.setVisible(gl)
         self.ui.label_compression_message.setVisible(gl)
 
     def _on_method_change(self, method_name: str):
-        state = self._layer_export_states[self.state.layer][method_name]
+        if method_name in self._layer_export_states[self.state.layer]:
+            state = self._layer_export_states[self.state.layer][method_name]
+        else:
+            layer = self._layer_for_label(self.state.layer)
+            states = ar_layer_export.export_state_classes(type(layer.state))
+            state_cls = next(t[1] for t in states if t[0] == method_name)
+            state = state_cls()
+            self._layer_export_states[self.state.layer][method_name] = state
         self.state_dictionary[self.state.layer] = (method_name, state)
-        print(state)
         self._update_layer_ui(state)

@@ -10,7 +10,7 @@ from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARVoxelExportOptions
 from glue_ar.usd_utils import material_for_color
 from glue_ar.utils import BoundsWithResolution, alpha_composite, frb_for_layer, hex_to_components, \
-                          isomin_for_layer, isomax_for_layer, layer_color, xyz_bounds
+                          isomin_for_layer, isomax_for_layer, layer_color, unique_id, xyz_bounds
 
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, \
                                clip_linear_transformations, index_mins, index_maxes
@@ -50,8 +50,9 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     point_index = 0
     points_barr = bytearray()
     triangles_barr = bytearray()
-    points_bin = "points.bin"
-    triangles_bin = "triangles.bin"
+    voxels_id = unique_id()
+    points_bin = f"points_{voxels_id}.bin"
+    triangles_bin = f"triangles_{voxels_id}.bin"
 
     triangles = rectangular_prism_triangulation()
     triangles_barr = bytearray()
@@ -59,22 +60,22 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     triangle_barrlen = len(triangles_barr)
 
     builder.add_buffer_view(
-        buffer=1,
+        buffer=builder.buffer_count+1,
         byte_length=triangle_barrlen,
         byte_offset=0,
         target=BufferTarget.ELEMENT_ARRAY_BUFFER,
     )
     builder.add_accessor(
-        buffer_view=0,
+        buffer_view=builder.buffer_view_count-1,
         component_type=ComponentType.UNSIGNED_INT,
         count=len(triangles) * 3,
         type=AccessorType.SCALAR,
         mins=[0],
         maxes=[7],
     )
+    indices_accessor = builder.accessor_count - 1
 
     opacity_factor = 0.75
-
     occupied_voxels = {}
 
     for layer_state, option in zip(layer_states, options):
@@ -126,7 +127,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
         # The first one (index 0) for the points
         # and the second one (index 1) for the triangles
         builder.add_buffer_view(
-           buffer=0,
+           buffer=builder.buffer_count,
            byte_length=ptbarr_len-prev_ptbarr_len,
            byte_offset=prev_ptbarr_len,
            target=BufferTarget.ARRAY_BUFFER,
@@ -150,8 +151,8 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                 rgba[3],
             )
         builder.add_mesh(
-            position_accessor=builder.accessor_count - 1,
-            indices_accessor=0,
+            position_accessor=builder.accessor_count-1,
+            indices_accessor=indices_accessor,
             material=material_index
         )
 

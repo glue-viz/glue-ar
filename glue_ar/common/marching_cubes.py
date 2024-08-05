@@ -32,7 +32,7 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
     data[~isfinite(data)] = isomin - 10
     data = transpose(data, (1, 0, 2))
 
-    levels = linspace(isomin, isomax, options.isosurface_count)
+    levels = linspace(isomin, isomax, int(options.isosurface_count))
     opacity = 0.25 * layer_state.alpha
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
@@ -112,7 +112,7 @@ def add_isosurface_layer_usd(
     data[~isfinite(data)] = isomin - 10
     data = transpose(data, (1, 0, 2))
 
-    isosurface_count: int = options.isosurface_count
+    isosurface_count = int(options.isosurface_count)
     levels = linspace(isomin, isomax, isosurface_count)
     opacity = layer_state.alpha
     color = layer_color(layer_state)

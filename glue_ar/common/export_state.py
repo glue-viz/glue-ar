@@ -18,7 +18,7 @@ class ARExportDialogState(State):
         super(ARExportDialogState, self).__init__()
 
         self.filetype_helper = ComboHelper(self, 'filetype')
-        self.filetype_helper.choices = ['glTF', 'glB', 'USDA', 'USDC']
+        self.filetype_helper.choices = ['glB', 'glTF', 'USDC', 'USDA']
 
         self.compression_helper = ComboHelper(self, 'compression')
         self.compression_helper.choices = ['None', 'Draco', 'Meshoptimizer']

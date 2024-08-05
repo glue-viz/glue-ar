@@ -66,6 +66,7 @@ class QtARExportTool(Tool):
         layer_states = [layer.state for layer in self.viewer.layers if 
                         layer.enabled and layer.state.visible]
         bounds = xyz_bounds(self.viewer.state, with_resolution=True)
+        print(dialog.state_dictionary)
         export_viewer(self.viewer.state,
                       layer_states,
                       bounds,

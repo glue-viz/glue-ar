@@ -42,7 +42,7 @@ class ARExportLayerOptionsRegistry(DictRegistry):
             key = (layer_state_cls, name, extension)
             self._members[key] = spec
 
-    def export_state_classes(self, layer_state_cls) -> List[Tuple[Type[State], str]]:
+    def export_state_classes(self, layer_state_cls) -> List[Tuple[str, Type[State]]]:
         return [(name, export_state_cls) for (state_cls, name), export_state_cls in
                 self.method_state_types.items() if layer_state_cls == state_cls]
 

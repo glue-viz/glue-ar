@@ -6,7 +6,7 @@ __all__ = ["ARIsosurfaceExportOptions", "ARVoxelExportOptions"]
 
 
 class ARIsosurfaceExportOptions(State):
-    isosurface_count = CallbackProperty(5)
+    isosurface_count = CallbackProperty(20)
 
 
 class ARVoxelExportOptions(State):

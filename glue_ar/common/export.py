@@ -17,7 +17,7 @@ from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume import meshes_for_volume_layer
 from glue_ar.utils import BoundsWithResolution, bounds_3d_from_layers, xyz_bounds
 
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 
 NODE_MODULES_DIR = join(abspath(join(dirname(abspath(__file__)), "..")),
@@ -44,12 +44,16 @@ def export_viewer(viewer_state: Vispy3DViewerState,
     ext = splitext(filepath)[1][1:]
     builder = _BUILDERS[ext]()
     layer_groups = defaultdict(list)
-    for layer in layer_states:
-        name, export_state = state_dictionary[layer.layer.label]
-        print(name, type(export_state))
-        layer_groups[(type(layer), name)].append(export_state)
+    export_groups = defaultdict(list)
+    for layer_state in layer_states:
+        name, export_state = state_dictionary[layer_state.layer.label]
+        key = (type(layer_state), name)
+        layer_groups[key].append(layer_state)
+        export_groups[key].append(export_state)
     
-    for (layer_state_cls, name), export_states in layer_groups.items():
+    for key, layer_states in layer_groups.items():
+        export_states = export_groups[key]
+        layer_state_cls, name = key
         spec = ar_layer_export.export_spec(layer_state_cls, name, ext)
         if spec.multiple:
             spec.export_method(builder, viewer_state, layer_states, export_states, bounds)
