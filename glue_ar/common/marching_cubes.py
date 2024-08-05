@@ -123,13 +123,12 @@ def add_isosurface_layer_usd(
     bounds: BoundsWithResolution,
 ):
 
-    data = frb_for_layer(viewer_state, layer_state, list(reversed(bounds)))
+    data = frb_for_layer(viewer_state, layer_state, bounds)
 
     isomin = isomin_for_layer(viewer_state, layer_state)
     isomax = isomax_for_layer(viewer_state, layer_state)
 
     data[~isfinite(data)] = isomin - 10
-    data = transpose(data, (1, 0, 2))
 
     isosurface_count = int(options.isosurface_count)
     levels = linspace(isomin, isomax, isosurface_count)
@@ -137,7 +136,31 @@ def add_isosurface_layer_usd(
     color = layer_color(layer_state)
     color_components = tuple(hex_to_components(color))
 
+    world_bounds = (
+        (viewer_state.y_min, viewer_state.y_max),
+        (viewer_state.x_min, viewer_state.x_max),
+        (viewer_state.z_min, viewer_state.z_max),
+    )
+    resolution = viewer_state.resolution
+    x_range = viewer_state.x_max - viewer_state.x_min
+    y_range = viewer_state.y_max - viewer_state.y_min
+    z_range = viewer_state.z_max - viewer_state.z_min
+    x_spacing = x_range / resolution
+    y_spacing = y_range / resolution
+    z_spacing = z_range / resolution
+    sides = (z_spacing, x_spacing, y_spacing)
+    if viewer_state.native_aspect:
+        clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
+        clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
+    else:
+        clip_sides = [2 / resolution for _ in range(3)]
+
     for i, level in enumerate(levels[1:]):
         alpha = (3 * i + isosurface_count) / (4 * isosurface_count) * opacity
         points, triangles = marching_cubes(data, level)
+        if len(points) == 0:
+            continue
+
+        points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, clip_sides)) for pt in points]
+        points = [[p[1], p[0], p[2]] for p in points]
         builder.add_mesh(points, triangles, color_components, alpha)
