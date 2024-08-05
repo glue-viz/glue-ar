@@ -1,20 +1,19 @@
 from mcubes import marching_cubes
-from numpy import array, isfinite, linspace, transpose
-from typing import Iterable
+from numpy import isfinite, linspace, transpose
 
 from gltflib import AccessorType, BufferTarget, ComponentType
 
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 
-from glue_ar.utils import bring_into_clip
+# from glue_ar.utils import bring_into_clip
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARIsosurfaceExportOptions
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
 from glue_ar.utils import BoundsWithResolution, frb_for_layer, hex_to_components, isomin_for_layer, \
-                          isomax_for_layer, layer_color, xyz_bounds
+                          isomax_for_layer, layer_color
 
 
 @ar_layer_export(VolumeLayerState, "Isosurface", ARIsosurfaceExportOptions, ("gltf", "glb"))
@@ -123,20 +122,3 @@ def add_isosurface_layer_usd(
         alpha = (3 * i + isosurface_count) / (4 * isosurface_count) * opacity
         points, triangles = marching_cubes(data, level)
         builder.add_mesh(points, triangles, color_components, alpha)
-
-
-def create_marching_cubes_usd(
-    viewer_state: Vispy3DVolumeViewerState,
-    layer_states: Iterable[VolumeLayerState],
-    isosurface_count: int = 75):
-
-    bounds = xyz_bounds(viewer_state, with_resolution=True)
-
-    builder = USDBuilder()
-    output_filename = "marching_cubes.usdc"
-    output_filepath = output_filename
-
-    for layer_state in layer_states:
-        add_marching_cubes_layer_usd(builder, viewer_state, layer_state, bounds, isosurface_count)
-
-    builder.export(output_filepath)

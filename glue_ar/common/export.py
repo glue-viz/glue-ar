@@ -1,19 +1,16 @@
 from collections import defaultdict
-from os.path import abspath, dirname, join, split, splitext
+from os.path import abspath, dirname, join, splitext
 from subprocess import run
 from typing import Dict
 from glue.core.state_objects import State
-from glue_vispy_viewers.scatter.scatter_viewer import BaseVispyViewerMixin
 from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
-from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.common.scatter import add_scatter_layer_gltf, add_scatter_layer_usd
 from glue_ar.common.usd_builder import USDBuilder
-from glue_ar.utils import Bounds, BoundsWithResolution, bounds_3d_from_layers
+from glue_ar.utils import Bounds, BoundsWithResolution
 
 from typing import List, Tuple, Union
 
@@ -48,7 +45,7 @@ def export_viewer(viewer_state: Vispy3DViewerState,
         key = (type(layer_state), name)
         layer_groups[key].append(layer_state)
         export_groups[key].append(export_state)
-    
+
     for key, layer_states in layer_groups.items():
         export_states = export_groups[key]
         layer_state_cls, name = key
@@ -58,7 +55,7 @@ def export_viewer(viewer_state: Vispy3DViewerState,
         else:
             for layer_state, export_state in zip(layer_states, export_states):
                 spec.export_method(builder, viewer_state, layer_state, export_state, bounds)
-        
+
     builder.build_and_export(filepath)
 
 
@@ -188,81 +185,3 @@ def export_modelviewer(output_path, gltf_path, alt_text):
 
     with open(output_path, 'w') as f:
         f.write(html)
-
-
-def export_gl(viewer: BaseVispyViewerMixin,
-              state_dictionary: Dict,
-              filepath: str,
-              compression="draco"):
-
-    builder = GLTFBuilder()
-    layer_states = [layer.state for layer in viewer.layers if layer.enabled and layer.state.visible] 
-    volume_viewer = isinstance(viewer.state, Vispy3DVolumeViewerState)
-    if viewer.state.clip_data:
-        bounds = bounds_3d(viewer.state, with_resolution=volume_viewer)
-    else:
-        bounds = bounds_3d_from_layers(viewer.state, layer_states, with_resolution=volume_viewer)
-
-    for layer_state in layer_states:
-        layer_info = state_dictionary.get(layer_state.layer.label, {})
-        if layer_info:
-            layer_info = layer_info.as_dict()
-        if isinstance(layer_state, VolumeLayerState):
-            add_volume_layer_gltf(builder=builder,
-                                  viewer_state=viewer_state,
-                                  layer_state=layer_state,
-                                  bounds=bounds)
-        else:
-            add_scatter_layer_gltf(builder=builder,
-                                   viewer_state=viewer_state,
-                                   layer_state=layer_state,
-                                   bounds=bounds,
-                                   theta_resolution=state_dictionary.get("theta_resolution", 8),
-                                   phi_resolution=state_dictionary.get("phi_resolution", 8))
-
-    model = builder.build()
-    model.export(filepath)
-    if compression != "none":
-        compress_gl(filepath, method=compression)
-
-
-def export_usd(viewer: BaseVispyViewerMixin,
-               state_dictionary: Dict,
-               filepath: str):
-
-    builder = USDBuilder()
-    layer_states = [layer.state for layer in viewer.layers if layer.enabled and layer.state.visible]
-    volume_viewer = isinstance(viewer.state, Vispy3DVolumeViewerState)
-    if viewer.state.clip_data:
-        bounds = bounds_3d(viewer.state, with_resolution=volume_viewer)
-    else:
-        bounds = bounds_3d_from_layers(viewer.state, layer_states, with_resolution=volume_viewer)
-
-    for layer_state in layer_states:
-        layer_info = state_dictionary.get(layer_state.layer.label, {})
-        if layer_info:
-            layer_info = layer_info.as_dict()
-        if isinstance(layer_state, VolumeLayerState):
-            add_volume_layer_usd(builder=builder,
-                                  viewer_state=viewer_state,
-                                  layer_state=layer_state,
-                                  bounds=bounds)
-        else:
-            add_scatter_layer_usd(builder=builder,
-                                   viewer_state=viewer_state,
-                                   layer_state=layer_state,
-                                   bounds=bounds,
-                                   theta_resolution=state_dictionary.get("theta_resolution", 8),
-                                   phi_resolution=state_dictionary.get("phi_resolution", 8))
-
-
-def export_to_ar(viewer, filepath, state_dict, compression="draco"):
-    dir, base = split(filepath)
-    name, ext = splitext(base)
-    plotter = create_plotter(viewer, state_dict)
-    html_path = join(dir, f"{name}.html")
-    if ext in [".gltf", ".glb"]:
-        export_gl(plotter, filepath, with_alpha=True, compression=compression)
-        export_modelviewer(html_path, base, viewer.state.title)
-    else:
-        plotter.export_obj(filepath)

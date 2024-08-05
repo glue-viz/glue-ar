@@ -187,8 +187,8 @@ def add_error_bars_gltf(builder: GLTFBuilder,
     errors_bin = f"errors_{unique_id()}.bin"
     points = []
     for pt, err in zip(data, err_values):
-        start = [c - err if idx == index else c for idx, c in enumerate(pt)]
-        end = [c + err if idx == index else c for idx, c in enumerate(pt)]
+        start = [c - err if idx == gltf_index else c for idx, c in enumerate(pt)]
+        end = [c + err if idx == gltf_index else c for idx, c in enumerate(pt)]
         line_points = (start, end)
         points.extend(line_points)
 
@@ -535,7 +535,6 @@ def add_scatter_layer_usd(
                 normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
                 color = tuple(int(256 * c) for c in cmap(normalized)[:3])
             builder.add_mesh(points, triangles, color=color, opacity=layer_state.alpha)
-        
 
     for axis in ("x", "y", "z"):
         if getattr(layer_state, f"{axis}err_visible", False):

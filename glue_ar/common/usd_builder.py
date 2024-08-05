@@ -6,11 +6,14 @@ from glue_ar.usd_utils import material_for_color
 from glue_ar.utils import unique_id
 
 
+MaterialInfo = Tuple[int, int, int, float, float, float]
+
+
 class USDBuilder:
 
     def __init__(self):
         self._create_stage()
-        self._material_map: Dict[Tuple[int,int,int,float,float,float], UsdShade.Shader] = {}
+        self._material_map: Dict[MaterialInfo, UsdShade.Shader] = {}
 
     def __del__(self):
         self.tmpfile.close()
@@ -44,12 +47,12 @@ class USDBuilder:
         return material
 
     def add_mesh(self,
-                  points: Iterable[Iterable[float]],
-                  triangles: Iterable[Iterable[int]],
-                  color: Tuple[int, int, int],
-                  opacity: float,
-                  metallic: float = 0.1,
-                  roughness: float = 0.4) -> UsdGeom.Mesh:
+                 points: Iterable[Iterable[float]],
+                 triangles: Iterable[Iterable[int]],
+                 color: Tuple[int, int, int],
+                 opacity: float,
+                 metallic: float = 0.1,
+                 roughness: float = 0.4) -> UsdGeom.Mesh:
         """
         This returns the generated mesh rather than the builder instance.
         This breaks the builder pattern but we'll potentially want this reference to it
@@ -80,7 +83,7 @@ class USDBuilder:
     def add_translated_reference(self,
                                  mesh: UsdGeom.Mesh,
                                  translation: Tuple[float, float, float],
-                                 material: Optional[UsdShade.Material]=None) -> UsdGeom.Mesh:
+                                 material: Optional[UsdShade.Material] = None) -> UsdGeom.Mesh:
         prim = mesh.GetPrim()
         xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
         UsdGeom.Xform.Define(self.stage, xform_key)

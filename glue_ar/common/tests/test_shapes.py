@@ -1,44 +1,6 @@
 from itertools import product
-from math import cos, sqrt
-from glue_ar.gltf_utils import index_maxes
-from ..shapes import cone_points, cylinder_points, orthogonal_basis, rectangular_prism_points, rectangular_prism_triangulation, sphere_points
-
-from typing import Dict, Iterable, List, Tuple
-
-
-# def parity(triangle: Tuple[int ,int, int]) -> int:
-#     return (
-#         int(triangle[1] > triangle[2]) + \
-#         int(triangle[0] > triangle[1]) + \
-#         int(triangle[0] > triangle[2])
-#     ) % 2   
-# 
-# 
-# # This will only work for a triangulation of a simple surface
-# # which is all we need for this package
-# def orientable(triangulation: Iterable[Tuple[int, int, int]]) -> bool:
-#    
-#     sides_found: Dict[Tuple[int, int], List[int]] = {}
-#     for t in triangulation:
-#         p = parity(t)
-#         sgn = (-1) ** p
-#         for i, idx_i in enumerate(t):
-#             for j in range(i+1, len(t)):
-#                 idx_j = t[j]
-#                 side = (min(idx_i, idx_j), max(idx_i, idx_j))
-#                 if side not in sides_found:
-#                     print("Adding", side, sgn)
-#                     sides_found[side] = [sgn]
-#                 else:
-#                     prev = sides_found[side]
-#                     print(prev)
-#                     print(idx_i, idx_j)
-#                     print(sgn)
-#                     print("======")
-#                     if len(prev) > 1 or sgn == prev[0]:
-#                         return False
-#                     prev.append(sgn)
-#     return True
+from math import sqrt
+from ..shapes import cone_points, cylinder_points, rectangular_prism_points, sphere_points
 
 
 class TestShapes:
@@ -99,7 +61,6 @@ class TestShapes:
         points = cylinder_points(center, radius, length, central_axis, theta_resolution)
         points = {tuple(round(t, precision) for t in pt) for pt in points}
 
-
         half_sqrt2 = sqrt(2) / 2
         xy = ((1, 0), (half_sqrt2, half_sqrt2), (0, 1), (-half_sqrt2, half_sqrt2),
               (-1, 0), (-half_sqrt2, -half_sqrt2), (0, -1), (half_sqrt2, -half_sqrt2))
@@ -125,4 +86,3 @@ class TestShapes:
         expected = {tuple(round(t, precision) for t in pt) for pt in expected}
 
         assert points == expected
-

@@ -4,7 +4,7 @@ import struct
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 
-from glue_ar.utils import isomin_for_layer, isomax_for_layer
+from glue_ar.utils import isomin_for_layer
 
 
 def create_points_export(
@@ -26,7 +26,7 @@ def create_points_export(
             target_cid=layer_state.attribute)
 
     isomin = isomin_for_layer(viewer_state, layer_state)
-    isomax = isomax_for_layer(viewer_state, layer_state)
+    # isomax = isomax_for_layer(viewer_state, layer_state)
 
     data[~isfinite(data)] = isomin - 10
 
@@ -37,5 +37,6 @@ def create_points_export(
     z = linspace(viewer_state.z_min, viewer_state.z_max, resolution)
 
     barr = bytearray()
-    for v in x:
-        barr.extend(struct.pack('f', v))
+    for c in (x, y, z):
+        for v in c:
+            barr.extend(struct.pack('f', v))

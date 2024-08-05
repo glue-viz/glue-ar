@@ -39,8 +39,10 @@ def isomax_for_layer(viewer_state: ViewerState, layer_state: VolumeLayerState) -
 
     return layer_state.vmax
 
+
 @overload
 def xyz_bounds(viewer_state: Vispy3DViewerState, with_resolution: Literal[False]) -> Bounds: ...
+
 
 @overload
 def xyz_bounds(viewer_state: Vispy3DViewerState, with_resolution: Literal[True]) -> BoundsWithResolution: ...
@@ -52,7 +54,7 @@ def xyz_bounds(viewer_state: Vispy3DViewerState, with_resolution: bool) -> Union
                       (viewer_state.z_min, viewer_state.z_max)]
     if with_resolution:
         return [(*b, viewer_state.resolution) for b in bounds]
-    
+
     return bounds
 
 
@@ -117,7 +119,9 @@ def bring_into_clip(data, bounds: Union[Bounds, BoundsWithResolution], preserve_
     return scaled
 
 
-def mask_for_bounds(viewer_state: Vispy3DViewerState, layer_state: LayerState, bounds: Union[Bounds, BoundsWithResolution]):
+def mask_for_bounds(viewer_state: Vispy3DViewerState,
+                    layer_state: LayerState,
+                    bounds: Union[Bounds, BoundsWithResolution]):
     data = layer_state.layer
     bounds = [(min(b), max(b)) for b in bounds]
     return (data[viewer_state.x_att] >= bounds[0][0]) & \

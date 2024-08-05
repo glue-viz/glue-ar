@@ -8,8 +8,8 @@ from glue_qt.utils import load_ui
 from glue_vispy_viewers.common.vispy_data_viewer import delay_callback
 from glue_vispy_viewers.scatter.layer_artist import VispyLayerArtist
 
-from glue_ar.common.export_options import ar_layer_export 
-from glue_ar.common.export_state import ARExportDialogState 
+from glue_ar.common.export_options import ar_layer_export
+from glue_ar.common.export_state import ARExportDialogState
 
 from qtpy.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QLayout, QLineEdit, QWidget
 from qtpy.QtGui import QIntValidator, QDoubleValidator

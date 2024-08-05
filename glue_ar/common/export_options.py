@@ -57,7 +57,6 @@ class ARExportLayerOptionsRegistry(DictRegistry):
         return [name for (state_cls, name, ext) in self._members.keys()
                 if state_cls == layer_state_cls and ext == extension]
 
-
     def __call__(self,
                  layer_state_cls: Type[VispyLayerState],
                  name: str,
