@@ -87,7 +87,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         data[~isfinite(data)] = isomin - 1
 
-        data = transpose(data, (2, 0, 1))
+        data = transpose(data, (1, 0, 2))
 
         isorange = isomax - isomin
         nonempty_indices = argwhere(data > isomin)
