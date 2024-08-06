@@ -7,7 +7,7 @@ from glue.viewers.common.viewer import LayerArtist, Viewer
 from glue_vispy_viewers.common.layer_state import LayerState, VispyLayerState
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
-from numpy import array, inf, isnan, logical_and, ndarray
+from numpy import array, inf, isnan, ndarray
 
 from typing import Literal, overload, Iterable, List, Optional, Tuple, Union
 
@@ -29,11 +29,11 @@ def data_count(layers: Iterable[Union[LayerArtist, LayerState]]) -> int:
 
 def export_label_for_layer(layer: Union[LayerArtist, LayerState],
                            add_data_label: bool = True) -> str:
-        if (not add_data_label) or isinstance(layer.layer, BaseData):
-            return layer.layer.label
-        else:
-            data = layer.layer.data
-            return f"{layer.layer.label} ({data.label})"
+    if (not add_data_label) or isinstance(layer.layer, BaseData):
+        return layer.layer.label
+    else:
+        data = layer.layer.data
+        return f"{layer.layer.label} ({data.label})"
 
 
 def layers_to_export(viewer: Viewer) -> List[LayerArtist]:

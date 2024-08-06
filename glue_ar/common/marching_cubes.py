@@ -1,17 +1,17 @@
 from mcubes import marching_cubes
-from numpy import isfinite, linspace, transpose
+from numpy import isfinite, linspace
 
 from gltflib import AccessorType, BufferTarget, ComponentType
 
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 
-# from glue_ar.utils import bring_into_clip
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARIsosurfaceExportOptions
-from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, clip_linear_transformations, index_mins, index_maxes
+from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, \
+                               clip_linear_transformations, index_mins, index_maxes
 from glue_ar.utils import BoundsWithResolution, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color
 

@@ -1,5 +1,4 @@
 from os.path import splitext
-from glue_vispy_viewers.volume import viewer_state
 from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
 
 from qtpy import compat
@@ -60,20 +59,14 @@ class QtARExportTool(Tool):
                         layer.enabled and layer.state.visible]
         bounds = xyz_bounds(self.viewer.state, with_resolution=isinstance(self.viewer, VispyVolumeViewerMixin))
 
-        # worker = Worker(export_viewer,
-        #                 viewer_state=self.viewer.state,
-        #                 layer_states=layer_states,
-        #                 bounds=bounds,
-        #                 state_dictionary=dialog.state_dictionary,
-        #                 filepath=export_path)
-        # exporting_dialog = ExportingDialog(parent=self.viewer, filetype=filetype)
-        # worker.result.connect(exporting_dialog.close)
-        # worker.error.connect(exporting_dialog.close)
-        # worker.start()
-        # exporting_dialog.exec_()
-
-        export_viewer(viewer_state=self.viewer.state,
-                      layer_states=layer_states,
-                      bounds=bounds,
-                      state_dictionary=dialog.state_dictionary,
-                      filepath=export_path)
+        worker = Worker(export_viewer,
+                        viewer_state=self.viewer.state,
+                        layer_states=layer_states,
+                        bounds=bounds,
+                        state_dictionary=dialog.state_dictionary,
+                        filepath=export_path)
+        exporting_dialog = ExportingDialog(parent=self.viewer, filetype=filetype)
+        worker.result.connect(exporting_dialog.close)
+        worker.error.connect(exporting_dialog.close)
+        worker.start()
+        exporting_dialog.exec_()
