@@ -34,17 +34,13 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     x_spacing = x_range / resolution
     y_spacing = y_range / resolution
     z_spacing = z_range / resolution
-    sides = (z_spacing, x_spacing, y_spacing)
+    sides = (x_spacing, y_spacing, z_spacing)
 
-    world_bounds = (
-        (viewer_state.x_min, viewer_state.x_max),
-        (viewer_state.y_min, viewer_state.y_max),
-        (viewer_state.z_min, viewer_state.z_max),
-    )
+    world_bounds = xyz_bounds(viewer_state, with_resolution=False)
     if viewer_state.native_aspect:
         clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
         clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
-        clip_sides = [clip_sides[1], clip_sides[0], clip_sides[2]]
+        clip_sides = [clip_sides[1], clip_sides[2], clip_sides[0]]
     else:
         clip_sides = [2 / resolution for _ in range(3)]
 
@@ -179,17 +175,13 @@ def add_voxel_layers_usd(builder: USDBuilder,
     x_spacing = x_range / resolution
     y_spacing = y_range / resolution
     z_spacing = z_range / resolution
-    sides = (z_spacing, x_spacing, y_spacing)
+    sides = (x_spacing, y_spacing, z_spacing)
 
-    world_bounds = (
-        (viewer_state.x_min, viewer_state.x_max),
-        (viewer_state.y_min, viewer_state.y_max),
-        (viewer_state.z_min, viewer_state.z_max),
-    )
+    world_bounds = xyz_bounds(viewer_state, with_resolution=False)
     if viewer_state.native_aspect:
         clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
         clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
-        clip_sides = [clip_sides[1], clip_sides[0], clip_sides[2]]
+        clip_sides = [clip_sides[1], clip_sides[2], clip_sides[0]]
     else:
         clip_sides = [2 / resolution for _ in range(3)]
 
