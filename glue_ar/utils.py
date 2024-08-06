@@ -18,6 +18,15 @@ Bounds = List[Tuple[float, float]]
 BoundsWithResolution = List[Tuple[float, float, int]]
 
 
+def data_count(layers: Iterable[Union[LayerArtist, LayerState]]) -> int:
+    """
+    Count the number of unique Data objects (either directly or as parents of subsets)
+    used in the set of layers
+    """
+    data = set(layer.layer if isinstance(layer.layer, BaseData) else layer.layer.data for layer in layers)
+    return len(data)
+
+
 def layers_to_export(viewer: Viewer) -> List[LayerArtist]:
     return list(filter(lambda artist: artist.enabled and artist.visible, viewer.layers))
 

@@ -34,22 +34,27 @@ class ARExportDialog(QDialog):
         self.ui = load_ui('export_dialog.ui', self, directory=os.path.dirname(__file__))
 
         self._layer_export_states: Dict[str, Dict[str, State]] = {
-            layer.layer.label: {}
+            self.state.label_for_layer(layer): {}
             for layer in layers
         }
 
         self.state_dictionary: Dict[str, Tuple[str, State]] = {}
         self._on_layer_change(self.state.layer)
         for layer in layers:
-            label = layer.layer.label
+            method = self.state.method
+            label = self.state.label_for_layer(layer)
             if label in self.state_dictionary:
                 _, state = self.state_dictionary[label]
             else:
                 states = ar_layer_export.export_state_classes(type(layer.state))
-                state_cls = next(t[1] for t in states if t[0] == self.state.method)
+                state_cls = next((t[1] for t in states if t[0] == self.state.method), None)
+                if state_cls is None:
+                    method_names = ar_layer_export.method_names(type(layer.state), self.state.filetype)
+                    method = method_names[0]
+                    state_cls = next(t[1] for t in states if t[0] == method)
                 state = state_cls()
-                self.state_dictionary[label] = (self.state.method, state)
-            self._layer_export_states[label][self.state.method] = state
+                self.state_dictionary[label] = (method, state)
+            self._layer_export_states[label][method] = state
 
         self._connections = autoconnect_callbacks_to_qt(self.state, self.ui)
         self._layer_connections = []
@@ -62,7 +67,7 @@ class ARExportDialog(QDialog):
         self.state.add_callback('method', self._on_method_change)
 
     def _layer_for_label(self, label: str) -> VispyLayerArtist:
-        return next(layer for layer in self.viewer.layers if layer.layer.label == label)
+        return next(layer for layer in self.state.layers if self.state.label_for_layer(layer) == label)
 
     def _widgets_for_property(self,
                               instance: HasCallbackProperties,
@@ -113,6 +118,8 @@ class ARExportDialog(QDialog):
             state = ar_layer_export.options_class(layer_state_cls, method)()
             self.state_dictionary[layer_name] = (method, state)
 
+        print(method_names)
+        print(method)
         with delay_callback(self.state, 'method'):
             self.state.method_helper.choices = method_names
             method_change = method != self.state.method
