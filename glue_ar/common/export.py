@@ -1,16 +1,18 @@
-from os import remove
-from os.path import abspath, dirname, join, split, splitext
+from collections import defaultdict
+from os.path import abspath, dirname, join, splitext
 from subprocess import run
-
-import pyvista as pv
-from gltflib.gltf import GLTF
-
-from glue_vispy_viewers.scatter.scatter_viewer import Vispy3DScatterViewerState
+from typing import Dict
+from glue.core.state_objects import State
+from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 
-from glue_ar.common.scatter import scatter_layer_as_multiblock
-from glue_ar.utils import bounds_3d_from_layers, xyz_bounds
-from glue_ar.common.volume import bounds_3d, meshes_for_volume_layer
+
+from glue_ar.common.export_options import ar_layer_export
+from glue_ar.common.gltf_builder import GLTFBuilder
+from glue_ar.common.usd_builder import USDBuilder
+from glue_ar.utils import Bounds, BoundsWithResolution, export_label_for_layer
+
+from typing import List, Tuple, Union
 
 
 NODE_MODULES_DIR = join(abspath(join(dirname(abspath(__file__)), "..")),
@@ -20,19 +22,41 @@ NODE_MODULES_DIR = join(abspath(join(dirname(abspath(__file__)), "..")),
 GLTF_PIPELINE_FILEPATH = join(NODE_MODULES_DIR, "gltf-pipeline", "bin", "gltf-pipeline.js")
 GLTFPACK_FILEPATH = join(NODE_MODULES_DIR, "gltfpack", "cli.js")
 
+_BUILDERS = {
+    "gltf": GLTFBuilder,
+    "glb": GLTFBuilder,
+    "usda": USDBuilder,
+    "usdc": USDBuilder
+}
 
-def export_meshes(meshes, output_path):
-    plotter = pv.Plotter()
-    for info in meshes.values():
-        plotter.add_mesh(info["mesh"], color=info["color"], name=info["name"], opacity=info["opacity"])
 
-    # TODO: What's the correct way to deal with this?
-    if output_path.endswith(".obj"):
-        plotter.export_obj(output_path)
-    elif output_path.endswith(".gltf"):
-        plotter.export_gltf(output_path)
-    else:
-        raise ValueError("Unsupported extension!")
+def export_viewer(viewer_state: Vispy3DViewerState,
+                  layer_states: List[VolumeLayerState],
+                  bounds: Union[Bounds, BoundsWithResolution],
+                  state_dictionary: Dict[str, Tuple[str, State]],
+                  filepath: str):
+
+    ext = splitext(filepath)[1][1:]
+    builder = _BUILDERS[ext]()
+    layer_groups = defaultdict(list)
+    export_groups = defaultdict(list)
+    for layer_state in layer_states:
+        name, export_state = state_dictionary[export_label_for_layer(layer_state)]
+        key = (type(layer_state), name)
+        layer_groups[key].append(layer_state)
+        export_groups[key].append(export_state)
+
+    for key, layer_states in layer_groups.items():
+        export_states = export_groups[key]
+        layer_state_cls, name = key
+        spec = ar_layer_export.export_spec(layer_state_cls, name, ext)
+        if spec.multiple:
+            spec.export_method(builder, viewer_state, layer_states, export_states, bounds)
+        else:
+            for layer_state, export_state in zip(layer_states, export_states):
+                spec.export_method(builder, viewer_state, layer_state, export_state, bounds)
+
+    builder.build_and_export(filepath)
 
 
 def compress_gltf_pipeline(filepath):
@@ -56,46 +80,10 @@ def compress_gl(filepath, method="draco"):
     compressor(filepath)
 
 
-def export_gl_by_extension(exporter, filepath):
-    _, ext = splitext(filepath)
-    if ext == ".glb":
-        exporter.export_glb(filepath)
-    elif ext == ".gltf":
-        exporter.export_gltf(filepath)
-    else:
-        raise ValueError("File extension should be either .glb or .gltf")
-
-
-# pyvista (well, VTK) doesn't set alphaMode in the exported GLTF
-# which means that our opacity won't necessarily be respected.
-# Maybe we could fix this upstream? But for now, let's just take
-# matters into our own hands.
-# We want alphaMode as BLEND
-# see https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#alpha-coverage
-def export_gl(plotter, filepath, with_alpha=True, compression="draco"):
-    path, ext = splitext(filepath)
-    gltf_path = filepath
-    glb = ext == ".glb"
-    if glb:
-        gltf_path = path + ".gltf"
-
-    plotter.export_gltf(gltf_path)
-
-    gl = GLTF.load_gltf(gltf_path)
-    if with_alpha and gl.model.materials is not None:
-        for material in gl.model.materials:
-            material.alphaMode = "BLEND"
-    export_gl_by_extension(gl, filepath)
-    if compression != "none":
-        compress_gl(filepath, method=compression)
-    if glb:
-        remove(gltf_path)
-
-
 def export_modelviewer(output_path, gltf_path, alt_text):
     mv_url = "https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"
     html = f"""
-        <html>
+    <html>
         <body>
             <script type="module" src="{mv_url}"></script>
             <style>
@@ -197,48 +185,3 @@ def export_modelviewer(output_path, gltf_path, alt_text):
 
     with open(output_path, 'w') as f:
         f.write(html)
-
-
-def create_plotter(viewer, state_dictionary):
-    plotter = pv.Plotter()
-    layer_states = [layer.state for layer in viewer.layers if layer.enabled and layer.state.visible]
-    scatter_viewer = isinstance(viewer.state, Vispy3DScatterViewerState)
-    if scatter_viewer:
-        bounds = xyz_bounds(viewer.state)
-    elif viewer.state.clip_data:
-        bounds = bounds_3d(viewer.state)
-    else:
-        bounds = bounds_3d_from_layers(viewer.state, layer_states)
-    frbs = {}
-    for layer_state in layer_states:
-        layer_info = state_dictionary.get(layer_state.layer.label, {})
-        if layer_info:
-            layer_info = layer_info.as_dict()
-        if isinstance(layer_state, VolumeLayerState):
-            meshes = meshes_for_volume_layer(viewer.state, layer_state,
-                                             bounds=bounds,
-                                             precomputed_frbs=frbs,
-                                             **layer_info)
-        else:
-            meshes = scatter_layer_as_multiblock(viewer.state, layer_state,
-                                                 scaled=scatter_viewer,
-                                                 clip_to_bounds=viewer.state.clip_data,
-                                                 **layer_info)
-        for mesh_info in meshes:
-            mesh = mesh_info.pop("mesh")
-            if len(mesh.points) > 0:
-                plotter.add_mesh(mesh, **mesh_info)
-
-    return plotter
-
-
-def export_to_ar(viewer, filepath, state_dict, compression="draco"):
-    dir, base = split(filepath)
-    name, ext = splitext(base)
-    plotter = create_plotter(viewer, state_dict)
-    html_path = join(dir, f"{name}.html")
-    if ext in [".gltf", ".glb"]:
-        export_gl(plotter, filepath, with_alpha=True, compression=compression)
-        export_modelviewer(html_path, base, viewer.state.title)
-    else:
-        plotter.export_obj(filepath)

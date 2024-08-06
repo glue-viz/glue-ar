@@ -17,8 +17,8 @@ dependencies = [
     "glue-vispy-viewers>=1.2.1",
     "numpy",
     "pillow",
-    "pyvista",
     "qtpy",
     "scipy",
+    "usd-core",
 ]
 dynamic = ["version"]

@@ -4,5 +4,5 @@ glue-qt
 glue-vispy-viewers
 ngrok
 pillow
-pyvista
 segno
+usd-core

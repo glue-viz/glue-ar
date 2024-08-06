@@ -19,6 +19,7 @@ def setup_qt():
         from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
     except ImportError:
         from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewer
+
     VispyVolumeViewer.subtools = {
         **VispyVolumeViewer.subtools,
         "save": VispyVolumeViewer.subtools["save"] + ["save:ar"]

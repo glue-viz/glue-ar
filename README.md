@@ -3,8 +3,7 @@
 This package is an experimental plugin for [glue](<ttps://glueviz.org/>) that allows exporting augmented reality (AR)
 figures out of the 3D scatter and volume viewers from [glue-vispy-viewers](https://github.com/glue-viz/glue-vispy-viewers).
 Currently this ability is exposed via viewer tools that save a 3D file representing the current view. Currently supported
-file formats include [OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file) and [glTF](https://www.khronos.org/gltf/).
-This export is performed used [pyvista](https://pyvista.org/), which provides a Python interface to the [Visualization Toolkit (VTK)](https://vtk.org/).
+file formats include [glTF/glB](https://www.khronos.org/gltf/) and [USD](https://openusd.org/release/index.html).
 
 
 ## Installation
@@ -45,7 +44,7 @@ Another popular option for sharing 3D files in augmented reality is [CoSpaces](h
 or on a mobile device via a dedicated app. The CoSpaces app allows viewing figures in AR on a flat surface directly, or using the [Merge Cube](https://mergeedu.com/cube)
 to allow for a more tangible AR experience.
 
-CoSpaces supports both OBJ and glTF file formats, so the outputs of glue-ar can be used in CoSpaces without modification. It is our aim to eventually allow
+CoSpaces supports the glTF file format, so the outputs of glue-ar can be used in CoSpaces without modification. It is our aim to eventually allow
 automatic CoSpaces upload, but for now sharing your AR figures to CoSpaces requires some manual steps (as well as a CoSpaces account).
 
 To create a scene with your newly-exported figure, do the following:

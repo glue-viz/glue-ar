@@ -50,7 +50,7 @@ setup_args = dict(
         "glue-core",
         "glue-vispy-viewers",
         "pillow",
-        "pyvista",
+        "usd-core",
     ],
     extras_require={
         "test": [
