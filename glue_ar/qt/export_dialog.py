@@ -10,6 +10,7 @@ from glue_vispy_viewers.scatter.layer_artist import VispyLayerArtist
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.export_state import ARExportDialogState
+from glue_ar.utils import export_label_for_layer
 
 from qtpy.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QLayout, QLineEdit, QWidget
 from qtpy.QtGui import QIntValidator, QDoubleValidator
@@ -34,7 +35,7 @@ class ARExportDialog(QDialog):
         self.ui = load_ui('export_dialog.ui', self, directory=os.path.dirname(__file__))
 
         self._layer_export_states: Dict[str, Dict[str, State]] = {
-            self.state.label_for_layer(layer): {}
+            export_label_for_layer(layer): {}
             for layer in layers
         }
 
@@ -42,7 +43,7 @@ class ARExportDialog(QDialog):
         self._on_layer_change(self.state.layer)
         for layer in layers:
             method = self.state.method
-            label = self.state.label_for_layer(layer)
+            label = export_label_for_layer(layer)
             if label in self.state_dictionary:
                 _, state = self.state_dictionary[label]
             else:
@@ -67,7 +68,7 @@ class ARExportDialog(QDialog):
         self.state.add_callback('method', self._on_method_change)
 
     def _layer_for_label(self, label: str) -> VispyLayerArtist:
-        return next(layer for layer in self.state.layers if self.state.label_for_layer(layer) == label)
+        return next(layer for layer in self.state.layers if export_label_for_layer(layer) == label)
 
     def _widgets_for_property(self,
                               instance: HasCallbackProperties,
@@ -118,8 +119,6 @@ class ARExportDialog(QDialog):
             state = ar_layer_export.options_class(layer_state_cls, method)()
             self.state_dictionary[layer_name] = (method, state)
 
-        print(method_names)
-        print(method)
         with delay_callback(self.state, 'method'):
             self.state.method_helper.choices = method_names
             method_change = method != self.state.method

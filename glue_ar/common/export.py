@@ -10,7 +10,7 @@ from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
-from glue_ar.utils import Bounds, BoundsWithResolution
+from glue_ar.utils import Bounds, BoundsWithResolution, export_label_for_layer
 
 from typing import List, Tuple, Union
 
@@ -41,7 +41,7 @@ def export_viewer(viewer_state: Vispy3DViewerState,
     layer_groups = defaultdict(list)
     export_groups = defaultdict(list)
     for layer_state in layer_states:
-        name, export_state = state_dictionary[layer_state.layer.label]
+        name, export_state = state_dictionary[export_label_for_layer(layer_state)]
         key = (type(layer_state), name)
         layer_groups[key].append(layer_state)
         export_groups[key].append(export_state)

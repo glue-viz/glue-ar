@@ -1,6 +1,13 @@
 from echo import SelectionCallbackProperty
+from glue.core import BaseData
 from glue.core.data_combo_helper import ComboHelper
 from glue.core.state_objects import State
+from glue.viewers.common.viewer import LayerArtist
+from glue_vispy_viewers.common.layer_state import LayerState
+
+from glue_ar.utils import data_count, export_label_for_layer
+
+from typing import Iterable, Union
 
 
 __all__ = ["ARExportDialogState"]
@@ -13,7 +20,7 @@ class ARExportDialogState(State):
     compression = SelectionCallbackProperty()
     method = SelectionCallbackProperty()
 
-    def __init__(self, layers):
+    def __init__(self, layers: Iterable[LayerState]):
 
         super(ARExportDialogState, self).__init__()
 
@@ -27,4 +34,5 @@ class ARExportDialogState(State):
 
         self.layers = layers
         self.layer_helper = ComboHelper(self, 'layer')
-        self.layer_helper.choices = [state.layer.label for state in self.layers]
+        add_data_label = data_count(self.layers) > 1
+        self.layer_helper.choices = [export_label_for_layer(layer_state, add_data_label) for layer_state in layers]
