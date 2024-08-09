@@ -1,5 +1,10 @@
-from glue_ar.common.scatter_export_options import *  # noqa
-from glue_ar.common.volume_export_options import *  # noqa
+from pkg_resources import get_distribution, DistributionNotFound
+import traceback
+
+try:
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:
+    pass
 
 
 def setup_qt():
@@ -8,7 +13,7 @@ def setup_qt():
     except ImportError:
         from glue_vispy_viewers.scatter.scatter_viewer import VispyScatterViewer
 
-    from glue_ar.qt.export_tool import QtARExportTool  # noqa
+    from .qt.export_tool import QtARExportTool  # noqa
 
     VispyScatterViewer.subtools = {
         **VispyScatterViewer.subtools,
@@ -26,7 +31,7 @@ def setup_qt():
     }
 
     try:
-        from glue_ar.qt.qr_tool import ARLocalQRTool  # noqa
+        from .qt.qr_tool import ARLocalQRTool  # noqa
         VispyScatterViewer.tools = [t for t in VispyScatterViewer.tools] + ["ar"]
         VispyVolumeViewer.tools = [t for t in VispyVolumeViewer.tools] + ["ar"]
         VispyScatterViewer.subtools["ar"] = ["ar:qr"]
@@ -36,7 +41,7 @@ def setup_qt():
 
 
 def setup_jupyter():
-    from glue_ar.jupyter.export_tool import JupyterARExportTool  # noqa
+    from .jupyter.export_tool import JupyterARExportTool  # noqa
     from glue_vispy_viewers.scatter.jupyter import JupyterVispyScatterViewer
     from glue_vispy_viewers.volume.jupyter import JupyterVispyVolumeViewer
     JupyterVispyScatterViewer.tools = [t for t in JupyterVispyScatterViewer.tools] + ["save:ar_jupyter"]
@@ -46,14 +51,14 @@ def setup_jupyter():
 def setup():
     try:
         setup_qt()
-    except ImportError as e:
+    except ImportError:
         print("Qt setup error")
-        print(e)
+        print(traceback.format_exc())
         pass
 
     try:
         setup_jupyter()
-    except ImportError as e:
+    except ImportError:
         print("Jupyter setup error")
-        print(e)
+        print(traceback.format_exc())
         pass

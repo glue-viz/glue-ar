@@ -5,7 +5,7 @@ import socket
 import segno
 
 
-GLUE_LOGO = os.path.abspath(os.path.join(os.path.dirname(__file__), "logo.png"))
+GLUE_LOGO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logo.png"))
 GLUE_RED = "#eb1c24"
 
 
@@ -23,19 +23,20 @@ def get_local_ip():
     return IP
 
 
-def create_qr(url):
+def create_qr(url, with_logo=True, color=GLUE_RED):
     qr = segno.make_qr(url)
     out = BytesIO()
-    qr.save(out, kind="png", scale=7, dark=GLUE_RED, light="white")
+    qr.save(out, kind="png", scale=7, dark=color, light="white")
     out.seek(0)
     img = Image.open(out)
     img = img.convert("RGB")
-    width, height = img.size
-    logo_max_size = height // 3
-    logo_img = Image.open(GLUE_LOGO)
-    # Resize the logo to logo_max_size
-    logo_img.thumbnail((logo_max_size, logo_max_size), Image.Resampling.LANCZOS)
-    # Calculate the center of the QR code
-    box = ((width - logo_img.size[0]) // 2, (height - logo_img.size[1]) // 2)
-    img.paste(logo_img, box)
+    if with_logo:
+        width, height = img.size
+        logo_max_size = height // 3
+        logo_img = Image.open(GLUE_LOGO)
+        # Resize the logo to logo_max_size
+        logo_img.thumbnail((logo_max_size, logo_max_size), Image.Resampling.LANCZOS)
+        # Calculate the center of the QR code
+        box = ((width - logo_img.size[0]) // 2, (height - logo_img.size[1]) // 2)
+        img.paste(logo_img, box)
     return img
