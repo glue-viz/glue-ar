@@ -100,10 +100,11 @@ def find_packages(top=HERE, exclude=None):
     Find all of the packages.
     """
     packages = []
+    exclude = exclude or []
     for d, dirs, _ in os.walk(top, followlinks=True):
+        if any(d.startswith(os.path.join(top, ex)) for ex in exclude):
+            continue
         packages.append(os.path.relpath(d, HERE).replace(os.path.sep, "."))
-    if exclude:
-        packages = [p for p in packages if p not in exclude]
     return packages
 
 
