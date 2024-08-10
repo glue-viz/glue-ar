@@ -95,13 +95,15 @@ def get_version(file, name="__version__"):
     return version_ns[name]
 
 
-def find_packages(top=HERE):
+def find_packages(top=HERE, exclude=None):
     """
     Find all of the packages.
     """
     packages = []
     for d, dirs, _ in os.walk(top, followlinks=True):
         packages.append(os.path.relpath(d, HERE).replace(os.path.sep, "."))
+    if exclude:
+        packages = [p for p in packages if p not in exclude]
     return packages
 
 
@@ -707,7 +709,7 @@ def data_files(root_directory):
 name = "glue_ar"
 
 js_content_command = combine_commands(
-    install_npm("js", build_cmd="glue-ar-export")
+    install_npm("js", build_cmd="glue-ar-export", force=True)
 )
 
 # Custom "command class" that (1) makes sure to create the JS content, (2)
@@ -730,7 +732,10 @@ setup_args = dict(
     cmdclass=cmdclass,
     python_requires=">=3.8",
     zip_safe=False,
-    packages=[name],
+    packages=find_packages(name, exclude=["js"]),
+    package_data={
+        "glue_ar": ["py.typed"],
+    },
     include_package_data=True,
     install_requires=[
         "gltflib",
