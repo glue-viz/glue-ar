@@ -731,7 +731,7 @@ cmdclass["js-content"] = js_content_command
 setup_args = dict(
     name=name,
     cmdclass=cmdclass,
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     zip_safe=False,
     packages=find_packages(name, exclude=["js"]),
     package_data={
