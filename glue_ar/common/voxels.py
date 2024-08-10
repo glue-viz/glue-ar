@@ -93,7 +93,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
         color_components = hex_to_components(color)
 
         for indices in nonempty_indices:
-            value = data[*indices]
+            value = data[tuple(indices)]
             adjusted_opacity = min(max(layer_state.alpha * opacity_factor * (value - isomin) / isorange, 0), 1)
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
@@ -208,7 +208,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
         color_components = hex_to_components(color)
 
         for indices in nonempty_indices:
-            value = data[*indices]
+            value = data[tuple(indices)]
             adjusted_opacity = min(max(layer_state.alpha * opacity_factor * (value - isomin) / isorange, 0), 1)
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
