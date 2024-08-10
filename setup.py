@@ -710,7 +710,7 @@ def data_files(root_directory):
 name = "glue_ar"
 
 js_content_command = combine_commands(
-    install_npm("js", build_cmd="glue-ar-export", force=True)
+    install_npm("js", build_cmd="glue-ar-export")
 )
 
 # Custom "command class" that (1) makes sure to create the JS content, (2)
