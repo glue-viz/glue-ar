@@ -1,6 +1,10 @@
 from itertools import product
 from math import sqrt
-from ..shapes import cone_points, cylinder_points, rectangular_prism_points, sphere_points
+import pytest
+from glue_ar.common.shapes import cone_points, cone_triangles, \
+                                  cylinder_points, cylinder_triangles, \
+                                  rectangular_prism_points, rectangular_prism_triangulation, \
+                                  sphere_points, sphere_triangles
 
 
 class TestShapes:
@@ -19,6 +23,38 @@ class TestShapes:
                 (2.0, 0.5, 2.5),
                 (2.0, 1.5, -0.5),
                 (2.0, 1.5, 2.5)} == points
+
+    def test_rectangular_prism_triangles(self):
+        triangles = set(rectangular_prism_triangulation())
+
+        assert {(0, 2, 1),
+                (0, 4, 2),
+                (1, 2, 3),
+                (4, 0, 1),
+                (4, 7, 6),
+                (5, 1, 7),
+                (5, 4, 1),
+                (6, 2, 4),
+                (7, 1, 3),
+                (7, 2, 6),
+                (7, 3, 2),
+                (7, 4, 5)} == triangles
+
+        start_index = 5
+        triangles = set(rectangular_prism_triangulation(start_index=start_index))
+
+        assert {(5, 7, 6),
+                (5, 9, 7),
+                (6, 7, 8),
+                (9, 5, 6),
+                (9, 12, 11),
+                (10, 6, 12),
+                (10, 9, 6),
+                (11, 7, 9),
+                (12, 6, 8),
+                (12, 7, 11),
+                (12, 8, 7),
+                (12, 9, 10)} == triangles
 
     def test_sphere_points(self):
         center = (1, 2, 3)
@@ -50,6 +86,19 @@ class TestShapes:
 
         assert points == expected
 
+    @pytest.mark.parametrize("theta_resolution,phi_resolution", product((5, 8, 10, 12, 15, 20), repeat=2))
+    def test_sphere_points_count(self, theta_resolution, phi_resolution):
+        points = sphere_points(center=(0, 0, 0,), radius=1,
+                               theta_resolution=theta_resolution,
+                               phi_resolution=phi_resolution)
+        assert len(points) == 2 + (theta_resolution - 2) * phi_resolution
+
+    @pytest.mark.parametrize("theta_resolution,phi_resolution", product((5, 8, 10, 12, 15, 20), repeat=2))
+    def test_sphere_triangles_count(self, theta_resolution, phi_resolution):
+        triangles = sphere_triangles(theta_resolution=theta_resolution,
+                                     phi_resolution=phi_resolution)
+        assert len(triangles) == 2 * phi_resolution * (theta_resolution - 2)
+
     def test_cylinder_points(self):
         center = (-1, 2, -5)
         radius = 3
@@ -70,7 +119,20 @@ class TestShapes:
 
         assert points == expected
 
-    def test_points(self):
+    @pytest.mark.parametrize("theta_resolution", (3, 5, 8, 10, 12, 15, 20))
+    def test_cylinder_points_count(self, theta_resolution):
+        points = cylinder_points(center=(0, 0, 0,), radius=1,
+                                 length=1, central_axis=(0, 0, 1),
+                                 theta_resolution=theta_resolution)
+        assert len(points) == 2 * theta_resolution
+
+    @pytest.mark.parametrize("theta_resolution,start_index", product((3, 5, 8, 10, 12, 15), (0, 2, 5, 7, 10)))
+    def test_cylinder_triangles_count(self, theta_resolution, start_index):
+        triangles = cylinder_triangles(theta_resolution=theta_resolution,
+                                       start_index=start_index)
+        assert len(triangles) == 2 * (theta_resolution - 2) + 2 * theta_resolution
+
+    def test_cone_points(self):
         center = (2, 0, -1)
         radius = 6
         height = 10
@@ -86,3 +148,16 @@ class TestShapes:
         expected = {tuple(round(t, precision) for t in pt) for pt in expected}
 
         assert points == expected
+
+    @pytest.mark.parametrize("theta_resolution", (3, 5, 8, 10, 12, 15, 20))
+    def test_cone_points_count(self, theta_resolution):
+        points = cone_points(base_center=(0, 0, 0,), radius=1,
+                             height=1, central_axis=(0, 0, 1),
+                             theta_resolution=theta_resolution)
+        assert len(points) == theta_resolution + 1
+
+    @pytest.mark.parametrize("theta_resolution,start_index", product((3, 5, 8, 10, 12, 15), (0, 2, 5, 7, 10)))
+    def test_cone_triangles_count(self, theta_resolution, start_index):
+        triangles = cone_triangles(theta_resolution=theta_resolution,
+                                   start_index=start_index)
+        assert len(triangles) == 2 * theta_resolution - 2
