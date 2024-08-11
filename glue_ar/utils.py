@@ -9,7 +9,7 @@ from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
 from numpy import array, inf, isnan, ndarray
 
-from typing import Literal, overload, Iterable, List, Optional, Tuple, Union
+from typing import Iterator, Literal, overload, Iterable, List, Optional, Tuple, Union
 
 
 AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
@@ -229,3 +229,11 @@ def ndarray_has_nan(arr: ndarray) -> bool:
 
 def iterable_has_nan(arr: Iterable[float]) -> bool:
     return any(isnan(x) for x in arr)
+
+
+def iterator_count(iter: Iterator) -> int:
+    """
+    Returns the size of an iterator.
+    Note that this consumes the iterator.
+    """
+    return sum(1 for _ in iter)
