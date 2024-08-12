@@ -65,7 +65,6 @@ def export_viewer(viewer_state: Vispy3DViewerState,
         export_modelviewer(mv_path, filepath, viewer_state.title)
 
 
-
 def compress_gltf_pipeline(filepath: str):
     run(["node", GLTF_PIPELINE_FILEPATH, "-i", filepath, "-o", filepath, "-d"], capture_output=True)
 
