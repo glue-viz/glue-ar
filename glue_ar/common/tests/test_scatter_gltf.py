@@ -1,10 +1,11 @@
+from random import random, randint, seed
 from tempfile import NamedTemporaryFile
+
 from gltflib import AccessorType, AlphaMode, BufferTarget, ComponentType, GLTFModel
 from gltflib.gltf import GLTF
 from glue.core import Data
 from glue_qt.app import GlueApplication
 from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
-from random import random, randint, seed
 
 from glue_ar.common.export import export_viewer
 from glue_ar.common.scatter_export_options import ARScatterExportOptions
@@ -42,7 +43,9 @@ class TestScatterGLTF:
         }
 
     def teardown_method(self, method):
+        self.viewer.close(warn=False)
         self.viewer = None
+        self.app.close()
         self.app = None
 
     def test_basic_export(self):
