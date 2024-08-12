@@ -1,7 +1,8 @@
+from collections import defaultdict
 from pxr import Usd, UsdGeom, UsdLux, UsdShade
 from tempfile import NamedTemporaryFile
 from typing import Dict, Iterable, Optional, Tuple
-from glue_ar.usd_utils import material_for_color
+from glue_ar.usd_utils import material_for_color, material_for_mesh
 
 from glue_ar.utils import unique_id
 
@@ -29,6 +30,8 @@ class USDBuilder:
         self.default_prim = UsdGeom.Xform.Define(self.stage, self.default_prim_key).GetPrim()
         self.stage.SetDefaultPrim(self.default_prim)
 
+        self._mesh_counts: Dict[str, int] = defaultdict(int)
+
         light = UsdLux.RectLight.Define(self.stage, "/light")
         light.CreateHeightAttr(-1)
 
@@ -43,7 +46,11 @@ class USDBuilder:
         if material is not None:
             return material
 
-        material = material_for_color(self.stage, color, opacity)
+        material = material_for_color(self.stage,
+                                      color=color,
+                                      opacity=opacity,
+                                      metallic=metallic,
+                                      roughness=roughness)
         self._material_map[color_key] = material
         return material
 
@@ -52,8 +59,8 @@ class USDBuilder:
                  triangles: Iterable[Iterable[int]],
                  color: Tuple[int, int, int],
                  opacity: float,
-                 metallic: float = 0.1,
-                 roughness: float = 0.4,
+                 metallic: float = 0.0,
+                 roughness: float = 1.0,
                  identifier: Optional[str] = None) -> UsdGeom.Mesh:
         """
         This returns the generated mesh rather than the builder instance.
@@ -61,9 +68,11 @@ class USDBuilder:
         for other meshes that we create.
         """
         identifier = identifier or unique_id()
-        xform_key = f"{self.default_prim_key}/xform_{identifier}"
+        count = self._mesh_counts[identifier]
+        xform_key = f"{self.default_prim_key}/xform_{identifier}_{count}"
         UsdGeom.Xform.Define(self.stage, xform_key)
-        mesh_key = f"{xform_key}/mesh_{identifier}"
+        mesh_key = f"{xform_key}/mesh_{identifier}_{count}"
+        self._mesh_counts[identifier] += 1
         mesh = UsdGeom.Mesh.Define(self.stage, mesh_key)
         mesh.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
         mesh.CreatePointsAttr(points)
@@ -76,13 +85,6 @@ class USDBuilder:
 
         return mesh
 
-    def _material_for_mesh(self, mesh: UsdGeom.Mesh) -> UsdShade.Material:
-        prim = mesh.GetPrim()
-        relationship = prim.GetRelationship("material:binding")
-        target = relationship.GetTargets()[0]
-        material_prim = prim.GetStage().GetPrimAtPath(target)
-        return UsdShade.Material(material_prim)
-
     def add_translated_reference(self,
                                  mesh: UsdGeom.Mesh,
                                  translation: Tuple[float, float, float],
@@ -90,9 +92,11 @@ class USDBuilder:
                                  identifier: Optional[str] = None) -> UsdGeom.Mesh:
         prim = mesh.GetPrim()
         identifier = identifier or unique_id()
-        xform_key = f"{self.default_prim_key}/xform_{identifier}"
+        count = self._mesh_counts[identifier]
+        xform_key = f"{self.default_prim_key}/xform_{identifier}_{count}"
         UsdGeom.Xform.Define(self.stage, xform_key)
-        new_mesh_key = f"{xform_key}/level_{identifier}"
+        new_mesh_key = f"{xform_key}/mesh_{identifier}_{count}"
+        self._mesh_counts[identifier] += 1
         new_mesh = UsdGeom.Mesh.Define(self.stage, new_mesh_key)
         new_prim = new_mesh.GetPrim()
 
@@ -100,7 +104,7 @@ class USDBuilder:
         references.AddInternalReference(prim.GetPrimPath())
 
         if material is None:
-            material = self._material_for_mesh(mesh)
+            material = material_for_mesh(mesh)
         new_mesh.GetPrim().ApplyAPI(UsdShade.MaterialBindingAPI)
         UsdShade.MaterialBindingAPI(new_mesh).Bind(material)
 
