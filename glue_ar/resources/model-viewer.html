@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <script type="module" src="$url"></script>
+      $style
+  </head>
+  <body>
+    <model-viewer
+      src="$gltf_path"
+      camera-orbit="0.9677rad 1.2427rad auto"
+      shadow-intensity="1"
+      ar
+      ar-modes="webxr quick-look"
+      camera-controls
+      alt="$alt_text"
+    >
+      <button slot="ar-button" class="ar-button">
+        $button_text
+      </button>
+    </model-viewer>
+  </body>
+</html>
+

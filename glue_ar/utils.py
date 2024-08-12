@@ -1,4 +1,4 @@
-import os
+from os.path import abspath, dirname, join
 from uuid import uuid4
 from glue.core import BaseData
 from glue.core.subset_group import GroupedSubset
@@ -12,7 +12,9 @@ from numpy import array, inf, isnan, ndarray
 from typing import Literal, overload, Iterable, List, Optional, Tuple, Union
 
 
-AR_ICON = os.path.abspath(os.path.join(os.path.dirname(__file__), "ar"))
+PACKAGE_DIR = dirname(abspath(__file__))
+AR_ICON = abspath(join(dirname(__file__), "ar"))
+RESOURCES_DIR = join(PACKAGE_DIR, "resources")
 
 Bounds = List[Tuple[float, float]]
 BoundsWithResolution = List[Tuple[float, float, int]]
