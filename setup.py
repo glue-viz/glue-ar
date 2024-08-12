@@ -735,7 +735,7 @@ setup_args = dict(
     zip_safe=False,
     packages=find_packages(name, exclude=["js"]),
     package_data={
-        "glue_ar": ["py.typed"],
+        "glue_ar": ["py.typed", "resources/**"],
     },
     include_package_data=True,
     install_requires=[
