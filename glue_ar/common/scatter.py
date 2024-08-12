@@ -14,7 +14,7 @@ from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, 
                            normalize, sphere_points, sphere_triangles
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
 from glue_ar.usd_utils import material_for_color
-from glue_ar.utils import iterable_has_nan, hex_to_components, layer_color, mask_for_bounds, \
+from glue_ar.utils import export_label_for_layer, iterable_has_nan, hex_to_components, layer_color, mask_for_bounds, \
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
@@ -466,6 +466,8 @@ def add_scatter_layer_usd(
     fixed_size = layer_state.size_mode == "Fixed"
     fixed_color = layer_state.color_mode == "Fixed"
 
+    identifier = export_label_for_layer(layer_state).replace(" ", "_")
+
     if not fixed_size:
         size_mask = isfinite(layer_state.layer[layer_state.size_attribute])
         mask = size_mask if mask is None else (mask & size_mask)
@@ -513,7 +515,11 @@ def add_scatter_layer_usd(
         points = sphere_points(center=first_point, radius=radius,
                                theta_resolution=theta_resolution,
                                phi_resolution=phi_resolution)
-        sphere_mesh = builder.add_mesh(points, triangles, color=color_components, opacity=layer_state.alpha)
+        sphere_mesh = builder.add_mesh(points,
+                                       triangles,
+                                       color=color_components,
+                                       opacity=layer_state.alpha,
+                                       identifier=identifier)
 
         for i in range(1, len(data)):
             point = data[i]
@@ -522,7 +528,10 @@ def add_scatter_layer_usd(
                 material = None
             else:
                 material = material_for_color(builder.stage, colors[i], layer_state.alpha)
-            builder.add_translated_reference(sphere_mesh, translation, material=material)
+            builder.add_translated_reference(sphere_mesh,
+                                             translation,
+                                             material=material,
+                                             identifier=identifier)
 
     else:
         for i, point in enumerate(data):

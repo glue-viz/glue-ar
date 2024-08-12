@@ -27,6 +27,7 @@ class USDBuilder:
 
         self.default_prim_key = "/world"
         self.default_prim = UsdGeom.Xform.Define(self.stage, self.default_prim_key).GetPrim()
+        self.stage.SetDefaultPrim(self.default_prim)
 
         light = UsdLux.RectLight.Define(self.stage, "/light")
         light.CreateHeightAttr(-1)
@@ -52,15 +53,17 @@ class USDBuilder:
                  color: Tuple[int, int, int],
                  opacity: float,
                  metallic: float = 0.1,
-                 roughness: float = 0.4) -> UsdGeom.Mesh:
+                 roughness: float = 0.4,
+                 identifier: Optional[str] = None) -> UsdGeom.Mesh:
         """
         This returns the generated mesh rather than the builder instance.
         This breaks the builder pattern but we'll potentially want this reference to it
         for other meshes that we create.
         """
-        xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
+        identifier = identifier or unique_id()
+        xform_key = f"{self.default_prim_key}/xform_{identifier}"
         UsdGeom.Xform.Define(self.stage, xform_key)
-        mesh_key = f"{xform_key}/mesh_{unique_id()}"
+        mesh_key = f"{xform_key}/mesh_{identifier}"
         mesh = UsdGeom.Mesh.Define(self.stage, mesh_key)
         mesh.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
         mesh.CreatePointsAttr(points)
@@ -83,11 +86,13 @@ class USDBuilder:
     def add_translated_reference(self,
                                  mesh: UsdGeom.Mesh,
                                  translation: Tuple[float, float, float],
-                                 material: Optional[UsdShade.Material] = None) -> UsdGeom.Mesh:
+                                 material: Optional[UsdShade.Material] = None,
+                                 identifier: Optional[str] = None) -> UsdGeom.Mesh:
         prim = mesh.GetPrim()
-        xform_key = f"{self.default_prim_key}/xform_{unique_id()}"
+        identifier = identifier or unique_id()
+        xform_key = f"{self.default_prim_key}/xform_{identifier}"
         UsdGeom.Xform.Define(self.stage, xform_key)
-        new_mesh_key = f"{xform_key}/level_{unique_id()}"
+        new_mesh_key = f"{xform_key}/level_{identifier}"
         new_mesh = UsdGeom.Mesh.Define(self.stage, new_mesh_key)
         new_prim = new_mesh.GetPrim()
 
