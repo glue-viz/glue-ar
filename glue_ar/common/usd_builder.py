@@ -13,17 +13,12 @@ MaterialInfo = Tuple[int, int, int, float, float, float]
 
 class USDBuilder:
 
-    def __init__(self):
-        self._create_stage()
+    def __init__(self, filepath: str):
+        self._create_stage(filepath)
         self._material_map: Dict[MaterialInfo, UsdShade.Shader] = {}
 
-    def __del__(self):
-        self.tmpfile.close()
-        remove(self.tmpfile.name)
-
-    def _create_stage(self):
-        self.tmpfile = NamedTemporaryFile(suffix=".usdc", delete=False)
-        self.stage = Usd.Stage.CreateNew(self.tmpfile.name)
+    def _create_stage(self, filepath: str):
+        self.stage = Usd.Stage.CreateNew(filepath)
 
         # TODO: Do we want to make changing this an option?
         UsdGeom.SetStageUpAxis(self.stage, UsdGeom.Tokens.y)
