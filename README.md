@@ -16,6 +16,10 @@ cd glue-ar
 pip install .  # Use `pip install -e .` to install in editable mode
 ```
 
+Installation requires Node.js to be installed on your system, as we currently use JavaScript packages for performing
+Draco and Meshopt compression. (Having Node installed is all that you need - the npm/JS management relevant for the
+package is all handled by the package build process).
+
 
 ## Viewer tools
 
@@ -35,8 +39,10 @@ has no additional dependencies and can be served using static file hosting.
 ## Draco compression
 
 The files exported by glue-ar can, in their original form, be quite large. In order to mitigate this problem, glue-ar allows using 
-[Draco compression](https://google.github.io/draco/) via the [gltf-pipeline](https://github.com/CesiumGS/gltf-pipeline) package. Using Draco compression
-allows for a considerable reduction in file size (often an order of magnitude or more), and Draco-compressed files can be read by model-viewer.
+[Draco compression](https://google.github.io/draco/) via the [`gltf-pipeline`](https://github.com/CesiumGS/gltf-pipeline) package, or
+[Mshopt](https://meshoptimizer.org/) via the [`gltfpack`](https://meshoptimizer.org/gltf/) package.
+These compression methods allow for a considerable reduction in file size (often an order of magnitude or more),
+and files compression by both methods can be read by model-viewer.
 
 ## CoSpaces
 
@@ -56,5 +62,5 @@ To create a scene with your newly-exported figure, do the following:
     * MERGE Cube > Empty scene to use the MERGE Cube (note that creating a MERGE Cube requires a plan addon)
 5. In the bottom left corner, select Upload > 3D models, then press the Upload button to the right
 6. Select your 3D model
-    * Note that CoSpaces currently does not support the extension needed for Draco compression
+    * Note that CoSpaces currently does not support the extensions needed for Draco or Meshopt compression
 7. Done!
