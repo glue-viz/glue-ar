@@ -1,6 +1,6 @@
 from collections import defaultdict
 from inspect import getfullargspec
-from os.path import abspath, dirname, extsep, join, splitext
+from os.path import extsep, join, split, splitext
 from string import Template
 from subprocess import run
 from typing import Dict
