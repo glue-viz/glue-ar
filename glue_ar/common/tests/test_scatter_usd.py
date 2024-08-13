@@ -55,6 +55,7 @@ class TestScatterUSD:
     def test_basic_export(self):
         bounds = xyz_bounds(self.viewer.state, with_resolution=False)
         self.tmpfile = NamedTemporaryFile(suffix=".usdc", delete=False)
+        self.tmpfile.close()
         export_viewer(self.viewer.state,
                       [layer.state for layer in self.viewer.layers],
                       bounds=bounds,
