@@ -1,7 +1,5 @@
 from collections import defaultdict
-from os import remove
 from pxr import Usd, UsdGeom, UsdLux, UsdShade
-from tempfile import NamedTemporaryFile
 from typing import Dict, Iterable, Optional, Tuple
 from glue_ar.usd_utils import material_for_color, material_for_mesh
 
