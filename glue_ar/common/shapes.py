@@ -84,6 +84,10 @@ def sphere_points(center: Union[List[float], Tuple[float, float, float]],
     return points
 
 
+def sphere_points_count(theta_resolution: int, phi_resolution: int) -> int:
+    return 2 + (theta_resolution - 2) * phi_resolution
+
+
 def sphere_triangles(theta_resolution: int = 5, phi_resolution: int = 5) -> List[Tuple[int, int, int]]:
     triangles = [(int(0), i + 1, i) for i in range(1, phi_resolution)]
     tr, pr = theta_resolution, phi_resolution
@@ -100,6 +104,10 @@ def sphere_triangles(theta_resolution: int = 5, phi_resolution: int = 5) -> List
         triangles.append((sphere_mesh_index(row, col, tr, pr), sphere_mesh_index(row, col+1, tr, pr), last_index))
 
     return triangles
+
+
+def sphere_triangles_count(theta_resolution: int, phi_resolution: int) -> int:
+    return 2 * phi_resolution * (theta_resolution - 2)
 
 
 def normalize(vector: Iterable[float]) -> List[float]:
@@ -141,6 +149,10 @@ def cylinder_points(center: Iterable[float],
     ]
 
 
+def cylinder_points_count(theta_resolution: int) -> int:
+    return 2 * theta_resolution
+
+
 def cylinder_triangles(theta_resolution: int = 5, start_index: int = 0) -> List[Tuple[int, int, int]]:
     bottom = [
         (0, i + 1, i) for i in range(1, theta_resolution-1)
@@ -164,6 +176,10 @@ def cylinder_triangles(theta_resolution: int = 5, start_index: int = 0) -> List[
     return [t for v in (bottom, top, bottom_based_sides, top_based_sides) for t in v]
 
 
+def cylinder_triangles_count(theta_resolution: int) -> int:
+    return 2 * (theta_resolution - 2) + 2 * theta_resolution
+
+
 def cone_points(base_center: Iterable[float],
                 radius: float,
                 height: float,
@@ -184,6 +200,10 @@ def cone_points(base_center: Iterable[float],
     ]
 
 
+def cone_points_count(theta_resolution: int) -> int:
+    return theta_resolution + 1
+
+
 def cone_triangles(theta_resolution: int = 5, start_index: int = 0) -> List[Tuple[int, int, int]]:
     sides = [(start_index, start_index + i, start_index + 1 + (i % theta_resolution))
              for i in range(1, theta_resolution + 1)]
@@ -193,3 +213,7 @@ def cone_triangles(theta_resolution: int = 5, start_index: int = 0) -> List[Tupl
     ]
 
     return sides + bottom
+
+
+def cone_triangles_count(theta_resolution: int) -> int:
+    return 2 * theta_resolution - 2
