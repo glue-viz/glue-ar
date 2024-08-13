@@ -1,4 +1,5 @@
 from collections import defaultdict
+from os import remove
 from pxr import Usd, UsdGeom, UsdLux, UsdShade
 from tempfile import NamedTemporaryFile
 from typing import Dict, Iterable, Optional, Tuple
@@ -18,9 +19,10 @@ class USDBuilder:
 
     def __del__(self):
         self.tmpfile.close()
+        remove(self.tmpfile.name)
 
     def _create_stage(self):
-        self.tmpfile = NamedTemporaryFile(suffix=".usdc")
+        self.tmpfile = NamedTemporaryFile(suffix=".usdc", delete=False)
         self.stage = Usd.Stage.CreateNew(self.tmpfile.name)
 
         # TODO: Do we want to make changing this an option?
