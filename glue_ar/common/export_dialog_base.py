@@ -79,4 +79,8 @@ class ARExportDialogBase:
             self._layer_export_states[self.state.layer][method_name] = state
         self.state_dictionary[self.state.layer] = (method_name, state)
 
+    @staticmethod
+    def display_name(prop):
+        return prop.replace("_", " ").capitalize()
+
 

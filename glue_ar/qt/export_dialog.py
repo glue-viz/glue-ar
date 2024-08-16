@@ -1,30 +1,20 @@
 import os
-from typing import Dict, List, Tuple
+from typing import List
 
 from echo import HasCallbackProperties
 from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_float_text
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
-from glue_vispy_viewers.common.vispy_data_viewer import delay_callback
-from glue_vispy_viewers.scatter.layer_artist import VispyLayerArtist
 from glue_ar.common.export_dialog_base import ARExportDialogBase
-
-from glue_ar.common.export_options import ar_layer_export
-from glue_ar.common.export_state import ARExportDialogState
-from glue_ar.utils import export_label_for_layer
 
 from qtpy.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QLayout, QLineEdit, QWidget
 from qtpy.QtGui import QIntValidator, QDoubleValidator
 
 
-__all__ = ['ARExportDialog']
+__all__ = ['QtARExportDialog']
 
 
-def display_name(prop):
-    return prop.replace("_", " ").capitalize()
-
-
-class ARExportDialog(ARExportDialogBase, QDialog):
+class QtARExportDialog(ARExportDialogBase, QDialog):
 
     def __init__(self, parent=None, viewer=None):
 
@@ -51,7 +41,7 @@ class ARExportDialog(ARExportDialogBase, QDialog):
             widget.setText(display_name)
             self._layer_connections.append(connect_checkable_button(instance, property, widget))
             return [widget]
-        elif t in [int, float]:
+        elif t in (int, float):
             label = QLabel()
             prompt = f"{display_name}:"
             label.setText(prompt)
@@ -90,7 +80,7 @@ class ARExportDialog(ARExportDialogBase, QDialog):
         self._layer_connections = []
         for property in state.callback_properties():
             row = QHBoxLayout()
-            name = display_name(property)
+            name = self.display_name(property)
             widgets = self._widgets_for_property(state, property, name)
             for widget in widgets:
                 row.addWidget(widget)

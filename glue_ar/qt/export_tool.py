@@ -10,7 +10,7 @@ from glue_qt.utils.threading import Worker
 
 from glue_ar.utils import AR_ICON, xyz_bounds
 from glue_ar.common.export import export_viewer
-from glue_ar.qt.export_dialog import ARExportDialog
+from glue_ar.qt.export_dialog import QtARExportDialog
 from glue_ar.qt.exporting_dialog import ExportingDialog
 
 
@@ -42,7 +42,7 @@ class QtARExportTool(Tool):
 
     def activate(self):
 
-        dialog = ARExportDialog(parent=self.viewer, viewer=self.viewer)
+        dialog = QtARExportDialog(parent=self.viewer, viewer=self.viewer)
         result = dialog.exec_()
         if result == QDialog.Rejected:
             return
