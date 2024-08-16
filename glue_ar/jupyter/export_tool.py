@@ -32,11 +32,16 @@ class JupyterARExportTool(Tool):
     def activate(self):
 
         done = False
+        def on_cancel():
+            nonlocal done
+            done = True
         self.export_dialog = JupyterARExportDialog(
                                 viewer=self.viewer,
                                 display=True,
-                                on_cancel=lambda: done = True,
-                                on_submit=lambda: self._open_file_dialog)
+                                on_cancel=on_cancel,
+                                on_export=self._open_file_dialog)
+        with self.viewer.output_widget:
+            display(self.export_dialog)
 
     def _open_file_dialog(self):
         file_chooser = FileChooser(getcwd())
