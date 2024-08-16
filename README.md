@@ -36,11 +36,11 @@ of the exported figure using the [model-viewer](https://modelviewer.dev) web com
 glTF viewer that, on an Android or iOS device, allows viewing the glTF file using the hardware AR capability. Additionally, this exported HTML
 has no additional dependencies and can be served using static file hosting.
 
-## Draco compression
+## glTF compression
 
-The files exported by glue-ar can, in their original form, be quite large. In order to mitigate this problem, glue-ar allows using 
+The files exported by glue-ar can, in their original form, be quite large. In order to mitigate this problem for glTF files, glue-ar allows using 
 [Draco compression](https://google.github.io/draco/) via the [`gltf-pipeline`](https://github.com/CesiumGS/gltf-pipeline) package, or
-[Mshopt](https://meshoptimizer.org/) via the [`gltfpack`](https://meshoptimizer.org/gltf/) package.
+[Meshopt](https://meshoptimizer.org/) via the [`gltfpack`](https://meshoptimizer.org/gltf/) package.
 These compression methods allow for a considerable reduction in file size (often an order of magnitude or more),
 and files compression by both methods can be read by model-viewer.
 
