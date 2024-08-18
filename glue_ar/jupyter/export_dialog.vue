@@ -1,24 +1,28 @@
 <template>
   <v-dialog
     v-model="dialog_open"
+    width="500px"
   >
     <v-card>
       <v-card-title>
         Export 3D File
       </v-card-title>
       <v-container>
+        <!--
         <v-list
           :items="layer_items"
-          v-model:selected="state.layer"
-        />
+          v-model:selected="dialog_state.layer"
+        ></v-list>
+        -->
         <v-text>Layer Options</v-text>
         <jupyter-widget :widget="layer_layout"/>
         <v-select
           v-if="method_items.length > 1"
           label="Export method"
           :items="method_items"
-          v-model="state.method"
+          v-model="method_selected"
         />
+        <!--
         <v-divider></v-divider>
         <v-text>File Options</v-text>
         <v-select
@@ -37,6 +41,7 @@
           <v-btn @click="cancel">Cancel</v-btn>
           <v-btn @click="export">Export</v-btn>
         </v-row>
+    -->
       </v-container>
     </v-card>
   </v-dialog>

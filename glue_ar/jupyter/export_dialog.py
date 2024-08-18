@@ -55,6 +55,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
     filetype_items = traitlets.List().tag(sync=True)
 
     method_items = traitlets.List().tag(sync=True)
+    method_selected = traitlets.Int().tag(sync=True)
 
     layer_layout = traitlets.Instance(DOMWidget).tag(sync=True, **widget_serialization)
 
@@ -67,6 +68,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         self.layer_layout = VBox()
         VuetifyTemplate.__init__(self)
 
+        self._on_layer_change(self.state.layer)
 
         link_glue_choices(self, self.state, 'layer')
         link_glue_choices(self, self.state, 'compression')
@@ -76,6 +78,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         self.dialog_open = display
         self.on_cancel = on_cancel
         self.on_export = on_export
+        self.dialog_state = self.state
 
     def _update_layer_ui(self, state: State):
         widgets = []

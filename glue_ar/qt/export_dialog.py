@@ -25,6 +25,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
 
         self._connections = autoconnect_callbacks_to_qt(self.state, self.ui)
         self._layer_connections = []
+        self._on_layer_change(self.state.layer)
 
         self.ui.button_cancel.clicked.connect(self.reject)
         self.ui.button_ok.clicked.connect(self.accept)
