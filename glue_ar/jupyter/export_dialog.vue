@@ -8,12 +8,17 @@
         Export 3D File
       </v-card-title>
       <v-container>
-        <!--
-        <v-list
-          :items="layer_items"
-          v-model:selected="dialog_state.layer"
-        ></v-list>
-        -->
+        <v-list>
+          <v-list-item-group
+            v-model="layer_selected"
+          >
+            <v-list-item
+              v-for="layer in layer_items"
+            >
+              {{ layer.text }}
+            </v-list-item>
+          </v-list-item-group>
+        </v-list>
         <v-text>Layer Options</v-text>
         <jupyter-widget :widget="layer_layout"/>
         <v-select
@@ -22,26 +27,23 @@
           :items="method_items"
           v-model="method_selected"
         />
-        <!--
         <v-divider></v-divider>
         <v-text>File Options</v-text>
         <v-select
           label="Filetype"
           :items="filetype_items"
-          v-model="state.filetype"
+          v-model="filetype_selected"
         />
         <v-select
-          v-if="['glB', 'glTF'].includes(state.filetype)"
           label="Compression method"
           :items="compression_items"
-          v-model="state.compression"
+          v-model="compression_selected"
         />
         <v-row>
           <v-spacer></v-spacer>
-          <v-btn @click="cancel">Cancel</v-btn>
-          <v-btn @click="export">Export</v-btn>
+          <v-btn @click="cancel_dialog">Cancel</v-btn>
+          <v-btn @click="export_viewer">Export</v-btn>
         </v-row>
-    -->
       </v-container>
     </v-card>
   </v-dialog>

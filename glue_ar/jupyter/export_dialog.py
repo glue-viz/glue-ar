@@ -51,8 +51,13 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
     dialog_open = traitlets.Bool().tag(sync=True)
 
     layer_items = traitlets.List().tag(sync=True)
+    layer_selected = traitlets.Int().tag(sync=True)
+
     compression_items = traitlets.List().tag(sync=True)
+    compression_selected = traitlets.Int().tag(sync=True)
+
     filetype_items = traitlets.List().tag(sync=True)
+    filetype_selected = traitlets.Int().tag(sync=True)
 
     method_items = traitlets.List().tag(sync=True)
     method_selected = traitlets.Int().tag(sync=True)
@@ -92,14 +97,14 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         state = self._layer_export_states[self.state.layer][method_name]
         self._update_layer_ui(state)
 
-    def vue_cancel(self, *args):
+    def vue_cancel_dialog(self, *args):
         self.state = None
         self.state_dictionary = {}
         self.dialog_open = False
         if self.on_cancel:
             self.on_cancel()
 
-    def vue_export(self, *args):
+    def vue_export_viewer(self, *args):
         self.dialog_open = False
         if self.on_export:
             self.on_export()
