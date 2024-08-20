@@ -73,8 +73,6 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         multiple_methods = len(self.state.method_helper.choices) > 1
         self.ui.label_method.setVisible(multiple_methods)
         self.ui.combosel_method.setVisible(multiple_methods)
-        state = self.state_dictionary[layer_name][1]
-        self._update_layer_ui(state)
 
     def _update_layer_ui(self, state: State):
         self._clear_layer_layout()

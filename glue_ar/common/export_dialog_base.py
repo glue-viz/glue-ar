@@ -49,6 +49,8 @@ class ARExportDialogBase:
     def _layer_for_label(self, label: str) -> VispyLayerArtist:
         return next(layer for layer in self.state.layers if export_label_for_layer(layer) == label)
 
+    def _update_layer_ui(self, state: State):
+        pass
 
     def _on_layer_change(self, layer_name: str):
         layer = self._layer_for_label(layer_name)
@@ -62,8 +64,12 @@ class ARExportDialogBase:
             self.state_dictionary[layer_name] = (method, state)
 
         with delay_callback(self.state, 'method'):
+            method_change = method != self.state.method
             self.state.method_helper.choices = method_names
             self.state.method = method
+
+        if not method_change:
+            self._update_layer_ui(state)
 
     def _on_filetype_change(self, filetype: str):
         pass

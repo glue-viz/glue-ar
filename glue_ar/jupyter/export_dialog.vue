@@ -13,7 +13,9 @@
             v-model="layer_selected"
           >
             <v-list-item
-              v-for="layer in layer_items"
+              v-for="(layer, index) in layer_items"
+              :key="index"
+              :value="index"
             >
               {{ layer.text }}
             </v-list-item>
@@ -48,3 +50,14 @@
     </v-card>
   </v-dialog>
 </template>
+
+
+<script>
+export default {
+  watch: {
+    layer_selected(value) {
+      console.log(`layer_selected is ${value}`);
+    }
+  }
+}
+</script>

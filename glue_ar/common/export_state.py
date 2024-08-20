@@ -32,5 +32,4 @@ class ARExportDialogState(State):
 
         self.layers = layers
         self.layer_helper = ComboHelper(self, 'layer')
-        add_data_label = data_count(self.layers) > 1
-        self.layer_helper.choices = [export_label_for_layer(layer_state, add_data_label) for layer_state in layers]
+        self.layer_helper.choices = [export_label_for_layer(layer_state) for layer_state in layers]

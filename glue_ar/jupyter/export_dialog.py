@@ -36,7 +36,7 @@ def widgets_for_property(instance: HasCallbackProperties,
         # Are the `link` conversion functions enough?
         widget = v.TextField(label=display_name)
         link((instance, property),
-             (widget, 'value'),
+             (widget, 'v_model'),
              lambda value: str(value),
              lambda text: t(text))
         return [widget]
@@ -86,6 +86,10 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         self.dialog_state = self.state
 
     def _update_layer_ui(self, state: State):
+        if self.layer_layout is not None:
+            for widget in self.layer_layout.children:
+                widget.close()
+
         widgets = []
         for property, _ in state.iter_callback_properties():
             name = self.display_name(property)
