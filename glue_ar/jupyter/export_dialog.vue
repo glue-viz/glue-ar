@@ -50,14 +50,3 @@
     </v-card>
   </v-dialog>
 </template>
-
-
-<script>
-export default {
-  watch: {
-    layer_selected(value) {
-      console.log(`layer_selected is ${value}`);
-    }
-  }
-}
-</script>
