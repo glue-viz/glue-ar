@@ -3,7 +3,7 @@ from glue.core.data_combo_helper import ComboHelper
 from glue.core.state_objects import State
 from glue_vispy_viewers.common.layer_state import LayerState
 
-from glue_ar.utils import data_count, export_label_for_layer
+from glue_ar.utils import export_label_for_layer
 
 from typing import Iterable
 
@@ -32,5 +32,4 @@ class ARExportDialogState(State):
 
         self.layers = layers
         self.layer_helper = ComboHelper(self, 'layer')
-        add_data_label = data_count(self.layers) > 1
-        self.layer_helper.choices = [export_label_for_layer(layer_state, add_data_label) for layer_state in layers]
+        self.layer_helper.choices = [export_label_for_layer(layer_state) for layer_state in layers]

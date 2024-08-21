@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Export 3D Volume</string>
+   <string>Export 3D File</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="0,0">
    <item row="4" column="0" colspan="2">

@@ -2,7 +2,7 @@ from glue.config import DictRegistry
 from glue.core.state_objects import State
 from glue_vispy_viewers.common.layer_state import VispyLayerState
 
-from typing import Callable, Iterable, List, Optional, Tuple, Type
+from typing import Callable, Iterable, List, Tuple, Type
 
 
 __all__ = ["ar_layer_export"]
@@ -46,8 +46,8 @@ class ARExportLayerOptionsRegistry(DictRegistry):
         return [(name, export_state_cls) for (state_cls, name), export_state_cls in
                 self.method_state_types.items() if layer_state_cls == state_cls]
 
-    def options_class(self, state_cls, name) -> Optional[Type[State]]:
-        return self.method_state_types.get((state_cls, name), None)
+    def options_class(self, state_cls, name) -> Type[State]:
+        return self.method_state_types[(state_cls, name)]
 
     def export_spec(self, state_cls, name, extension) -> ARExportSpecification:
         return self._members[(state_cls, name, extension)]
