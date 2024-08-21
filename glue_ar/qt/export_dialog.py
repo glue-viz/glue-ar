@@ -92,6 +92,6 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         self.ui.label_compression_message.setVisible(gl)
 
     def _on_method_change(self, method_name: str):
-        super()._on_filetype_change(method_name)
+        super()._on_method_change(method_name)
         state = self._layer_export_states[self.state.layer][method_name]
         self._update_layer_ui(state)
