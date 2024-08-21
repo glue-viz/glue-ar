@@ -62,8 +62,6 @@ class JupyterARExportTool(Tool):
         )
 
         def on_ok_click(button, event, data):
-            with self.viewer.output_widget:
-                print("On ok click", file_chooser.selected)
             self.maybe_save_figure(file_chooser.selected)
 
         def on_close_click(button, event, data):
@@ -82,8 +80,6 @@ class JupyterARExportTool(Tool):
             display(dialog)
 
     def maybe_save_figure(self, filepath):
-        with self.viewer.output_widget:
-            print("Maybe save figure")
         if exists(filepath):
             yes_btn = v.Btn(color='success', children=["Yes"])
             no_btn = v.Btn(color='error', children=["No"])
@@ -118,10 +114,6 @@ class JupyterARExportTool(Tool):
         bounds = xyz_bounds(self.viewer.state, with_resolution=isinstance(self.viewer, VispyVolumeViewerMixin))
         layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         state_dict = self.export_dialog.state_dictionary
-        with self.viewer.output_widget:
-            print("About to export")
-            print(bounds)
-            print(layer_states)
         export_viewer(viewer_state=self.viewer.state,
                       layer_states=layer_states,
                       bounds=bounds,
