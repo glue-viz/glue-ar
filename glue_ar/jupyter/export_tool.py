@@ -14,7 +14,7 @@ from glue_ar.jupyter.export_dialog import JupyterARExportDialog
 from glue_ar.utils import AR_ICON, export_label_for_layer, xyz_bounds
 
 import ipyvuetify as v  # noqa
-from ipywidgets import HBox, Layout, VBox  # noqa
+from ipywidgets import HBox, Layout # noqa
 from IPython.display import display  # noqa
 from ipyfilechooser import FileChooser
 
@@ -35,13 +35,13 @@ class JupyterARExportTool(Tool):
         def on_cancel():
             nonlocal done
             done = True
-        export_dialog = JupyterARExportDialog(
+        self.export_dialog = JupyterARExportDialog(
                                 viewer=self.viewer,
                                 display=True,
                                 on_cancel=on_cancel,
                                 on_export=self._open_file_dialog)
         with self.viewer.output_widget:
-            display(export_dialog)
+            display(self.export_dialog)
 
     def _open_file_dialog(self):
         file_chooser = FileChooser(getcwd())
@@ -62,10 +62,13 @@ class JupyterARExportTool(Tool):
         )
 
         def on_ok_click(button, event, data):
+            with self.viewer.output_widget:
+                print("On ok click", file_chooser.selected)
             self.maybe_save_figure(file_chooser.selected)
 
         def on_close_click(button, event, data):
             self.viewer.output_widget.clear_output()
+            dialog.close()
 
         def on_selected_change(chooser):
             ok_btn.disabled = not bool(chooser.selected_filename)
@@ -79,6 +82,8 @@ class JupyterARExportTool(Tool):
             display(dialog)
 
     def maybe_save_figure(self, filepath):
+        with self.viewer.output_widget:
+            print("Maybe save figure")
         if exists(filepath):
             yes_btn = v.Btn(color='success', children=["Yes"])
             no_btn = v.Btn(color='error', children=["No"])
@@ -111,12 +116,14 @@ class JupyterARExportTool(Tool):
 
     def save_figure(self, filepath):
         bounds = xyz_bounds(self.viewer.state, with_resolution=isinstance(self.viewer, VispyVolumeViewerMixin))
-        layers = [layer for layer in self.viewer.layers if layer.enabled and layer.state.visible]
-        filetype = splitext(filepath)[1][1:]
+        layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         state_dict = self.export_dialog.state_dictionary
+        with self.viewer.output_widget:
+            print("About to export")
+            print(bounds)
+            print(layer_states)
         export_viewer(viewer_state=self.viewer.state,
-                      layer_states=[layer.state for layer in self.viewer.layers
-                                    if layer.enabled and layer.state.visible],
+                      layer_states=layer_states,
                       bounds=bounds,
                       state_dictionary=state_dict,
                       filepath=filepath)

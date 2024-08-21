@@ -8,6 +8,7 @@
         Export 3D File
       </v-card-title>
       <v-container>
+        <h3>Layers</h3>
         <v-list>
           <v-list-item-group
             v-model="layer_selected"
@@ -21,7 +22,7 @@
             </v-list-item>
           </v-list-item-group>
         </v-list>
-        <v-text>Layer Options</v-text>
+        <h3>Layer Options</h3>
         <jupyter-widget :widget="layer_layout"/>
         <v-select
           v-if="method_items.length > 1"
@@ -29,8 +30,7 @@
           :items="method_items"
           v-model="method_selected"
         />
-        <v-divider></v-divider>
-        <v-text>File Options</v-text>
+        <h3>File Options</h3>
         <v-select
           label="Filetype"
           :items="filetype_items"
@@ -43,8 +43,8 @@
         />
         <v-row>
           <v-spacer></v-spacer>
-          <v-btn @click="cancel_dialog">Cancel</v-btn>
-          <v-btn @click="export_viewer">Export</v-btn>
+          <v-btn class="mx-2" color="error" @click="cancel_dialog">Cancel</v-btn>
+          <v-btn class="mx-2" color="success" @click="export_viewer">Export</v-btn>
         </v-row>
       </v-container>
     </v-card>

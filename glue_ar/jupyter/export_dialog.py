@@ -94,7 +94,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         for property, _ in state.iter_callback_properties():
             name = self.display_name(property)
             widgets.extend(widgets_for_property(state, property, name))
-        self.layer_layout = VBox(children=widgets)
+        self.layer_layout = v.Container(children=widgets, px_0=True, py_0=True)
 
     def _on_method_change(self, method_name: str):
         super()._on_method_change(method_name)
