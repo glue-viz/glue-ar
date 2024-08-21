@@ -13,7 +13,7 @@ from glue_ar.utils import export_label_for_layer
 class ARExportDialogBase:
 
     def __init__(self, viewer: Viewer):
-        
+
         self.viewer = viewer
         layers = [layer for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         self.state = ARExportDialogState(layers)
@@ -88,5 +88,3 @@ class ARExportDialogBase:
     @staticmethod
     def display_name(prop):
         return prop.replace("_", " ").capitalize()
-
-

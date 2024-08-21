@@ -1,17 +1,13 @@
 from os import getcwd
-from os.path import exists, splitext
-from typing import Dict, Iterable, Tuple
+from os.path import exists
 
 from glue.config import viewer_tool
-from glue.core.state_objects import State
-from glue.viewers.common.state import LayerState
 from glue.viewers.common.tool import Tool
 from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewerMixin
 
 from glue_ar.common.export import export_viewer
-from glue_ar.common.export_options import ar_layer_export
 from glue_ar.jupyter.export_dialog import JupyterARExportDialog
-from glue_ar.utils import AR_ICON, export_label_for_layer, xyz_bounds
+from glue_ar.utils import AR_ICON, xyz_bounds
 
 import ipyvuetify as v  # noqa
 from ipywidgets import HBox, Layout # noqa
@@ -32,9 +28,11 @@ class JupyterARExportTool(Tool):
     def activate(self):
 
         done = False
+
         def on_cancel():
             nonlocal done
             done = True
+
         self.export_dialog = JupyterARExportDialog(
                                 viewer=self.viewer,
                                 display=True,

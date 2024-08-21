@@ -14,6 +14,7 @@ from glue_jupyter.vuetify_helpers import link_glue_choices
 from glue_ar.common.export_dialog_base import ARExportDialogBase
 
 
+# Based on https://github.com/widgetti/ipyvuetify/issues/241
 class NumberField(v.VuetifyTemplate):
     label = traitlets.Unicode().tag(sync=True)
     value = traitlets.Unicode().tag(sync=True)
@@ -25,7 +26,7 @@ class NumberField(v.VuetifyTemplate):
         self.number_type = type
         self.label = label
         self.error_message = error_message
-    
+
     @traitlets.default("template")
     def _template(self):
         return """
@@ -43,7 +44,7 @@ class NumberField(v.VuetifyTemplate):
         self.temp_error = None
         try:
             self.number_type(value)
-        except:
+        except ValueError:
             self.temp_error = self.error_message
 
 

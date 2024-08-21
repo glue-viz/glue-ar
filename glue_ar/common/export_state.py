@@ -3,7 +3,7 @@ from glue.core.data_combo_helper import ComboHelper
 from glue.core.state_objects import State
 from glue_vispy_viewers.common.layer_state import LayerState
 
-from glue_ar.utils import data_count, export_label_for_layer
+from glue_ar.utils import export_label_for_layer
 
 from typing import Iterable
 

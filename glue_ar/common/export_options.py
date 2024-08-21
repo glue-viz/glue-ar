@@ -2,7 +2,7 @@ from glue.config import DictRegistry
 from glue.core.state_objects import State
 from glue_vispy_viewers.common.layer_state import VispyLayerState
 
-from typing import Callable, Iterable, List, Optional, Tuple, Type
+from typing import Callable, Iterable, List, Tuple, Type
 
 
 __all__ = ["ar_layer_export"]
