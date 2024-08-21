@@ -32,9 +32,7 @@ def widgets_for_property(instance: HasCallbackProperties,
         link((instance, property), (widget, 'value'))
         return [widget]
     elif t in (int, float):
-        # TODO: How to do text field validation Python-side?
-        # Are the `link` conversion functions enough?
-        widget = v.TextField(label=display_name)
+        widget = v.TextField(label=display_name, type="number")
         link((instance, property),
              (widget, 'v_model'),
              lambda value: str(value),
