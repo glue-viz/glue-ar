@@ -125,7 +125,7 @@ class TestScatterGLTF:
 
         # Unpack the center of each sphere mesh matches the
         # corresponding data point
-        tolerance = 1e-5
+        tolerance = 1e-7
         for index, mesh in enumerate(model.meshes):
             buffer_view = model.bufferViews[mesh.primitives[0].attributes.POSITION]
             points = unpack_vertices(gltf, model.buffers[0], buffer_view)
