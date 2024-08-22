@@ -56,10 +56,11 @@ def unpack_points(gltf: GLTF,
     current_point = []
     for value in iter_unpack(format, data):
         if len(current_point) < 3:
-            current_point.append(value)
+            current_point.append(value[0])
         else:
             unpacked.append(tuple(current_point))
-            current_point = [value]
+            current_point = [value[0]]
+
     unpacked.append(tuple(current_point))
 
     return unpacked
