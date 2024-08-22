@@ -11,8 +11,8 @@ from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
 from glue_ar.common.export import export_viewer
 from glue_ar.common.scatter_export_options import ARScatterExportOptions
 from glue_ar.common.shapes import sphere_points_count, sphere_triangles, sphere_triangles_count
-from glue_ar.common.tests.gltf_helpers import count_indices, count_vertices
-from glue_ar.utils import export_label_for_layer, hex_to_components, xyz_bounds
+from glue_ar.common.tests.gltf_helpers import count_indices, count_vertices, unpack_vertices
+from glue_ar.utils import export_label_for_layer, hex_to_components, mask_for_bounds, xyz_bounds, xyz_for_layer
 
 
 class TestScatterGLTF:
@@ -115,3 +115,21 @@ class TestScatterGLTF:
             assert accessor.componentType == ComponentType.FLOAT.value
             assert accessor.count == points_count
             assert accessor.type == AccessorType.VEC3.value
+
+        mask = mask_for_bounds(self.viewer.state, layer.state, bounds)
+        data = xyz_for_layer(self.viewer.state, layer.state,
+                             preserve_aspect=self.viewer.state.native_aspect,
+                             mask=mask,
+                             scaled=True)
+        data = data[:, [1, 2, 0]]
+
+        # Unpack the center of each sphere mesh matches the
+        # corresponding data point
+        tolerance = 1e-5
+        for index, mesh in enumerate(model.meshes):
+            buffer_view = model.bufferViews[mesh.primitives[0].attributes.POSITION]
+            points = unpack_vertices(gltf, model.buffers[0], buffer_view)
+            n_points = len(points)
+            center = tuple(sum(p[i] for p in points) / n_points for i in range(3))
+            data_point = data[index]
+            assert all(abs(center[i] - data_point[i]) < tolerance for i in range(len(center)))
