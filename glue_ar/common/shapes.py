@@ -89,19 +89,19 @@ def sphere_points_count(theta_resolution: int, phi_resolution: int) -> int:
 
 
 def sphere_triangles(theta_resolution: int = 5, phi_resolution: int = 5) -> List[Tuple[int, int, int]]:
-    triangles = [(int(0), i + 1, i) for i in range(1, phi_resolution)]
+    triangles = [(int(0), i, i + 1) for i in range(1, phi_resolution)]
     tr, pr = theta_resolution, phi_resolution
-    triangles.append((0, 1, phi_resolution))
+    triangles.append((1, 0, phi_resolution))
     for row in range(1, theta_resolution - 2):
         for col in range(phi_resolution):
             rc_index = sphere_mesh_index(row, col, tr, pr)
-            triangles.append((rc_index, sphere_mesh_index(row+1, col, tr, pr), sphere_mesh_index(row+1, col-1, tr, pr)))
-            triangles.append((rc_index, sphere_mesh_index(row, col+1, tr, pr), sphere_mesh_index(row+1, col, tr, pr)))
+            triangles.append((rc_index, sphere_mesh_index(row+1, col-1, tr, pr), sphere_mesh_index(row+1, col, tr, pr)))
+            triangles.append((rc_index, sphere_mesh_index(row+1, col, tr, pr), sphere_mesh_index(row, col+1, tr, pr)))
 
     row = theta_resolution - 2
     last_index = sphere_mesh_index(theta_resolution - 1, 0, tr, pr)
     for col in range(phi_resolution):
-        triangles.append((sphere_mesh_index(row, col, tr, pr), sphere_mesh_index(row, col+1, tr, pr), last_index))
+        triangles.append((sphere_mesh_index(row, col+1, tr, pr), sphere_mesh_index(row, col, tr, pr), last_index))
 
     return triangles
 
