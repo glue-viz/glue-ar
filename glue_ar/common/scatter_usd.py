@@ -8,7 +8,7 @@ from numpy.linalg import norm
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import radius_for_scatter_layer, VECTOR_OFFSETS
-from glue_ar.common.scatter_export_options import ARScatterExportOptions
+from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, sphere_points, sphere_triangles
@@ -81,12 +81,12 @@ def add_vectors_usd(builder: USDBuilder,
             builder.add_mesh(tip_points, tip_triangles, color=color, opacity=layer_state.alpha)
 
 
-@ar_layer_export(ScatterLayerState, "Scatter", ARScatterExportOptions, ("usdc", "usda"))
+@ar_layer_export(ScatterLayerState, "Scatter", ARVispyScatterExportOptions, ("usdc", "usda"))
 def add_scatter_layer_usd(
     builder: USDBuilder,
     viewer_state: Vispy3DScatterViewerState,
     layer_state: ScatterLayerState,
-    options: ARScatterExportOptions,
+    options: ARVispyScatterExportOptions,
     bounds: Bounds,
     clip_to_bounds: bool = True,
 ):

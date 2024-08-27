@@ -9,7 +9,7 @@ from glue_qt.app import GlueApplication
 from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
 
 from glue_ar.common.export import export_viewer
-from glue_ar.common.scatter_export_options import ARScatterExportOptions
+from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
 from glue_ar.common.shapes import sphere_points_count, sphere_triangles, sphere_triangles_count
 from glue_ar.common.tests.gltf_helpers import count_indices, count_vertices, unpack_vertices
 from glue_ar.utils import export_label_for_layer, hex_to_components, mask_for_bounds, xyz_bounds, xyz_for_layer
@@ -39,7 +39,7 @@ class TestScatterGLTF:
         self.viewer.state.y_att = self.data1.id['y']
         self.viewer.state.z_att = self.data1.id['z']
         self.state_dictionary = {
-            export_label_for_layer(layer): ("Scatter", ARScatterExportOptions())
+            export_label_for_layer(layer): ("Scatter", ARVispyScatterExportOptions())
             for layer in self.viewer.layers
         }
 
@@ -78,7 +78,7 @@ class TestScatterGLTF:
         label = export_label_for_layer(layer)
         method, options = self.state_dictionary[label]
         assert method == "Scatter"
-        assert isinstance(options, ARScatterExportOptions)
+        assert isinstance(options, ARVispyScatterExportOptions)
         color_components = [c / 256 for c in hex_to_components("#fedcba")] + [layer.state.alpha]
         assert material.alphaMode == AlphaMode.BLEND.value
         assert material.pbrMetallicRoughness is not None

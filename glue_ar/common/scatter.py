@@ -1,5 +1,13 @@
-from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
+from typing import Union
 
+
+from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
+try:
+    from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
+except ImportError:
+    Scatter3DLayerState = ScatterLayerState
+
+ScatterLayerState3D = Union[ScatterLayerState, Scatter3DLayerState]
 
 VECTOR_OFFSETS = {
     'tail': 0.5,
@@ -8,7 +16,7 @@ VECTOR_OFFSETS = {
 }
 
 
-def radius_for_scatter_layer(layer_state: ScatterLayerState) -> float:
+def radius_for_scatter_layer(layer_state: ScatterLayerState3D) -> float:
     # This feels like a bit of a magic calculation, and it kind of is.
     # The motivation is as follows:
     # 30 is the largest size that we use in the vispy viewer - if the sizing of

@@ -1,27 +1,28 @@
 from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
 from glue.utils import ensure_numerical
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
-from glue_vispy_viewers.scatter.viewer_state import Vispy3DScatterViewerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
 from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
 from numpy.linalg import norm
 
 from typing import List, Literal, Optional
 
+
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import radius_for_scatter_layer, VECTOR_OFFSETS
-from glue_ar.common.scatter_export_options import ARScatterExportOptions
+from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, sphere_points, sphere_triangles
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
-from glue_ar.utils import iterable_has_nan, hex_to_components, layer_color, mask_for_bounds, \
+from glue_ar.utils import Viewer3DState, iterable_has_nan, hex_to_components, layer_color, mask_for_bounds, \
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
+from glue_ar.common.scatter import ScatterLayerState3D
 
 
 def add_vectors_gltf(builder: GLTFBuilder,
-                     viewer_state: Vispy3DViewerState,
-                     layer_state: ScatterLayerState,
+                     viewer_state: Viewer3DState,
+                     layer_state: ScatterLayerState3D,
                      data: ndarray,
                      bounds: Bounds,
                      tip_height: float,
@@ -32,7 +33,10 @@ def add_vectors_gltf(builder: GLTFBuilder,
                      materials: Optional[List[int]] = None,
                      mask: Optional[ndarray] = None):
 
-    atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
+    if isinstance(layer_state, ScatterLayerState):
+        atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
+    else:
+        atts = [layer_state.vx_att, layer_state.vy_att, layer_state.vz_att]
     vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
 
     if viewer_state.native_aspect:
@@ -141,13 +145,14 @@ def add_vectors_gltf(builder: GLTFBuilder,
 
 
 def add_error_bars_gltf(builder: GLTFBuilder,
-                        viewer_state: Vispy3DViewerState,
-                        layer_state: ScatterLayerState,
+                        viewer_state: Viewer3DState,
+                        layer_state: ScatterLayerState3D,
                         axis: Literal["x", "y", "z"],
                         data: ndarray,
                         bounds: Bounds,
                         mask: Optional[ndarray] = None):
-    att = getattr(layer_state, f"{axis}err_attribute")
+    att_ending = "attribute" if isinstance(layer_state, ScatterLayerState) else "att"
+    att = getattr(layer_state, f"{axis}err_{att_ending}")
     err_values = layer_state.layer[att].ravel()[mask]
     err_values[~isfinite(err_values)] = 0
     index = ['x', 'y', 'z'].index(axis)
@@ -202,29 +207,32 @@ def add_error_bars_gltf(builder: GLTFBuilder,
     builder.add_file_resource(errors_bin, data=barr)
 
 
-@ar_layer_export(ScatterLayerState, "Scatter", ARScatterExportOptions, ("gltf", "glb"))
+@ar_layer_export(ScatterLayerState, "Scatter", ARVispyScatterExportOptions, ("gltf", "glb"))
 def add_scatter_layer_gltf(builder: GLTFBuilder,
-                           viewer_state: Vispy3DScatterViewerState,
-                           layer_state: ScatterLayerState,
-                           options: ARScatterExportOptions,
+                           viewer_state: Viewer3DState,
+                           layer_state: ScatterLayerState3D,
+                           theta_resolution: int,
+                           phi_resolution: int,
                            bounds: Bounds,
                            clip_to_bounds: bool = True):
-    theta_resolution = options.theta_resolution
-    phi_resolution = options.phi_resolution
     bounds = xyz_bounds(viewer_state, with_resolution=False)
     if clip_to_bounds:
         mask = mask_for_bounds(viewer_state, layer_state, bounds)
     else:
         mask = None
 
-    fixed_color = layer_state.color_mode == "Fixed"
+    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
+    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
+    fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
     fixed_size = layer_state.size_mode == "Fixed"
 
+    size_attr = "size_attribute" if vispy_layer_state else "size_att"
     if not fixed_size:
-        size_mask = isfinite(layer_state.layer[layer_state.size_attribute])
+        size_mask = isfinite(layer_state.layer[getattr(layer_state, size_attr)])
         mask = size_mask if mask is None else (mask & size_mask)
+    cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
     if not fixed_color:
-        color_mask = isfinite(layer_state.layer[layer_state.cmap_attribute])
+        color_mask = isfinite(layer_state.layer[getattr(layer_state, cmap_attr)])
         mask = color_mask if mask is None else (mask & color_mask)
 
     data = xyz_for_layer(viewer_state, layer_state,
@@ -279,7 +287,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
     buffer = builder.buffer_count
     cmap = layer_state.cmap
-    cmap_att = layer_state.cmap_attribute
+    cmap_att = getattr(layer_state, cmap_attr)
     cmap_vals = layer_state.layer[cmap_att][mask]
     crange = layer_state.cmap_vmax - layer_state.cmap_vmin
     uri = f"layer_{unique_id()}.bin"
@@ -361,3 +369,5 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             materials=materials,
             mask=mask,
         )
+
+

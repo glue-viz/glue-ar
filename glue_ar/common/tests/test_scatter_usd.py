@@ -8,7 +8,7 @@ from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
 from pxr import Sdf, Usd
 
 from glue_ar.common.export import export_viewer
-from glue_ar.common.scatter_export_options import ARScatterExportOptions
+from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
 from glue_ar.common.shapes import sphere_points_count, sphere_triangles_count
 from glue_ar.usd_utils import material_for_mesh
 from glue_ar.utils import export_label_for_layer, hex_to_components, iterator_count, xyz_bounds
@@ -38,7 +38,7 @@ class TestScatterUSD:
         self.viewer.state.y_att = self.data1.id['y']
         self.viewer.state.z_att = self.data1.id['z']
         self.state_dictionary = {
-            export_label_for_layer(layer): ("Scatter", ARScatterExportOptions())
+            export_label_for_layer(layer): ("Scatter", ARVispyScatterExportOptions())
             for layer in self.viewer.layers
         }
 
