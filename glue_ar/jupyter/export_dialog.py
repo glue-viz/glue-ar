@@ -67,6 +67,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
     method_selected = traitlets.Int().tag(sync=True)
 
     layer_layout = traitlets.Instance(DOMWidget).tag(sync=True, **widget_serialization)
+    has_layer_options = traitlets.Bool().tag(sync=True)
 
     def __init__(self,
                  viewer: Viewer,
@@ -102,6 +103,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
             widgets.extend(self.widgets_for_property(state, property, name))
         self.input_widgets = [w for w in widgets if isinstance(w, NumberField)]
         self.layer_layout = v.Container(children=widgets, px_0=True, py_0=True)
+        self.has_layer_options = len(self.layer_layout.children) > 0
 
     def _on_method_change(self, method_name: str):
         super()._on_method_change(method_name)
