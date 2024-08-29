@@ -1,3 +1,4 @@
+from types import NoneType
 from typing import Union
 
 
@@ -5,7 +6,7 @@ from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 try:
     from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
 except ImportError:
-    Scatter3DLayerState = ScatterLayerState
+    Scatter3DLayerState = NoneType
 
 ScatterLayerState3D = Union[ScatterLayerState, Scatter3DLayerState]
 

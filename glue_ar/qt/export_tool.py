@@ -64,7 +64,8 @@ class QtARExportTool(Tool):
                         layer_states=layer_states,
                         bounds=bounds,
                         state_dictionary=dialog.state_dictionary,
-                        filepath=export_path)
+                        filepath=export_path,
+                        compression=dialog.state.compression)
         exporting_dialog = ExportingDialog(parent=self.viewer, filetype=filetype)
         worker.result.connect(exporting_dialog.close)
         worker.error.connect(exporting_dialog.close)

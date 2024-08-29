@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 
-def rectangular_prism_points(center: Iterable[float], sides: Iterable[float]) -> List[Tuple[float]]:
+def rectangular_prism_points(center: Iterable[float], sides: Iterable[float]) -> List[Tuple[float, float, float]]:
     side_diffs = [(-s / 2, s / 2) for s in sides]
     diffs = product(*side_diffs)
     points = [tuple(c - d for c, d in zip(center, diff)) for diff in diffs]

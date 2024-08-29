@@ -9,3 +9,7 @@ class ARVispyScatterExportOptions(State):
 
     theta_resolution = CallbackProperty(8)
     phi_resolution = CallbackProperty(8)
+
+
+class ARIpyvolumeScatterExportOptions(State):
+    pass

@@ -3,7 +3,7 @@ from inspect import getfullargspec
 from os.path import extsep, join, split, splitext
 from string import Template
 from subprocess import run
-from typing import Dict
+from typing import Dict, Optional
 from glue.core.state_objects import State
 from glue.config import settings
 from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
@@ -36,7 +36,8 @@ def export_viewer(viewer_state: Vispy3DViewerState,
                   layer_states: List[VolumeLayerState],
                   bounds: Union[Bounds, BoundsWithResolution],
                   state_dictionary: Dict[str, Tuple[str, State]],
-                  filepath: str):
+                  filepath: str,
+                  compression: Optional[str]):
 
     base, ext = splitext(filepath)
     ext = ext[1:]
@@ -64,7 +65,9 @@ def export_viewer(viewer_state: Vispy3DViewerState,
 
     builder.build_and_export(filepath)
 
-    if ext in ["gltf", "glb"]:
+    if ext in ("gltf", "glb"):
+        if compression != "None":
+            compress_gl(filepath)
         mv_path = f"{base}{extsep}html"
         export_modelviewer(mv_path, filepath, viewer_state.title)
 

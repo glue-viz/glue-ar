@@ -1,23 +1,30 @@
+from functools import partial
 from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
 from glue.utils import ensure_numerical
+from glue_jupyter.common.state3d import ViewerState3D
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
-from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
+from numpy import clip, isfinite, isnan, ndarray, ones, sqrt
 from numpy.linalg import norm
 
-from typing import List, Literal, Optional
+from typing import Callable, Dict, List, Literal, Optional, Tuple
 
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import radius_for_scatter_layer, VECTOR_OFFSETS
-from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
+from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
-                                  normalize, sphere_points, sphere_triangles
+                                  normalize, rectangular_prism_points, rectangular_prism_triangulation, sphere_points, sphere_triangles
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
 from glue_ar.utils import Viewer3DState, iterable_has_nan, hex_to_components, layer_color, mask_for_bounds, \
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.common.scatter import ScatterLayerState3D
+from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D
+
+
+Point = Tuple[float, float, float]
+FullPointsGetter = Callable[[ScatterLayerState3D, Bounds, ndarray, Point, float], List[Point]]
+PointsGetter = Callable[[Point, float], List[Point]]
 
 
 def add_vectors_gltf(builder: GLTFBuilder,
@@ -207,25 +214,21 @@ def add_error_bars_gltf(builder: GLTFBuilder,
     builder.add_file_resource(errors_bin, data=barr)
 
 
-@ar_layer_export(ScatterLayerState, "Scatter", ARVispyScatterExportOptions, ("gltf", "glb"))
-def add_scatter_layer_gltf(builder: GLTFBuilder,
-                           viewer_state: Viewer3DState,
-                           layer_state: ScatterLayerState3D,
-                           theta_resolution: int,
-                           phi_resolution: int,
-                           bounds: Bounds,
-                           clip_to_bounds: bool = True):
-    bounds = xyz_bounds(viewer_state, with_resolution=False)
+def scatter_layer_mask(
+        viewer_state: Viewer3DState,
+        layer_state: ScatterLayerState3D,
+        bounds: Bounds,
+        clip_to_bounds: bool = True) -> ndarray:
+
     if clip_to_bounds:
         mask = mask_for_bounds(viewer_state, layer_state, bounds)
     else:
         mask = None
 
     vispy_layer_state = isinstance(layer_state, ScatterLayerState)
-    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
-    fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
     fixed_size = layer_state.size_mode == "Fixed"
-
+    cmap_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
+    fixed_color = getattr(layer_state, cmap_mode_attr, "Fixed") == "Fixed"
     size_attr = "size_attribute" if vispy_layer_state else "size_att"
     if not fixed_size:
         size_mask = isfinite(layer_state.layer[getattr(layer_state, size_attr)])
@@ -235,18 +238,25 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         color_mask = isfinite(layer_state.layer[getattr(layer_state, cmap_attr)])
         mask = color_mask if mask is None else (mask & color_mask)
 
-    data = xyz_for_layer(viewer_state, layer_state,
-                         preserve_aspect=viewer_state.native_aspect,
-                         mask=mask,
-                         scaled=True)
-    data = data[:, [1, 2, 0]]
+    return mask
+
+
+def sizes_for_layer(layer_state: ScatterLayerState3D,
+                    bounds: Bounds,
+                    mask: ndarray) -> Optional[ndarray]:
     factor = max((abs(b[1] - b[0]) for b in bounds))
+    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
+    if not vispy_layer_state:
+        factor *= 2
 
     # We calculate this even if we aren't using fixed size as we might also use this for vectors
-    radius = radius_for_scatter_layer(layer_state)
-    if not fixed_size:
+    fixed_size = layer_state.size_mode == "Fixed"
+    if fixed_size:
+        return None
+    else:
         # The specific size calculation is taken from the scatter layer artist
-        size_data = ensure_numerical(layer_state.layer[layer_state.size_attribute][mask].ravel())
+        size_attr = "size_attribute" if vispy_layer_state else "size_att"
+        size_data = ensure_numerical(layer_state.layer[getattr(layer_state, size_attr)][mask].ravel())
         size_data = clip(size_data, layer_state.size_vmin, layer_state.size_vmax)
         if layer_state.size_vmax == layer_state.size_vmin:
             sizes = sqrt(ones(size_data.shape) * 10)
@@ -256,8 +266,45 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         sizes *= (layer_state.size_scaling / (2 * factor))
         sizes[isnan(sizes)] = 0.
 
+    return sizes
+
+
+def sphere_points_getter(theta_resolution: int,
+                         phi_resolution: int) -> PointsGetter:
+
+    return partial(sphere_points, theta_resolution=theta_resolution, phi_resolution=phi_resolution)
+
+
+def box_points_getter(center: Point, size: float) -> List[Point]:
+    return rectangular_prism_points(center=center, sides=[size, size, size])
+
+
+def add_scatter_layer_gltf(builder: GLTFBuilder,
+                           viewer_state: Viewer3DState,
+                           layer_state: ScatterLayerState3D,
+                           points_getter: PointsGetter,
+                           triangles: List[Tuple[int, int, int]],
+                           bounds: Bounds,
+                           clip_to_bounds: bool = True):
+    if layer_state is None:
+        return
+
+    bounds = xyz_bounds(viewer_state, with_resolution=False)
+
+    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
+    fixed_size = layer_state.size_mode == "Fixed"
+    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
+    fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
+    radius = radius_for_scatter_layer(layer_state)
+    mask = scatter_layer_mask(viewer_state, layer_state, bounds, clip_to_bounds)
+
+    data = xyz_for_layer(viewer_state, layer_state,
+                         preserve_aspect=viewer_state.native_aspect,
+                         mask=mask,
+                         scaled=True)
+    data = data[:, [1, 2, 0]]
+
     barr = bytearray()
-    triangles = sphere_triangles(theta_resolution=theta_resolution, phi_resolution=phi_resolution)
     add_triangles_to_bytearray(barr, triangles)
     triangles_len = len(barr)
     max_index = max(idx for tri in triangles for idx in tri)
@@ -287,17 +334,18 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
     buffer = builder.buffer_count
     cmap = layer_state.cmap
+    cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
     cmap_att = getattr(layer_state, cmap_attr)
     cmap_vals = layer_state.layer[cmap_att][mask]
     crange = layer_state.cmap_vmax - layer_state.cmap_vmin
     uri = f"layer_{unique_id()}.bin"
+
+    sizes = sizes_for_layer(layer_state, bounds, mask)
     for i, point in enumerate(data):
 
         prev_len = len(barr)
-        r = radius if fixed_size else sizes[i]
-        pts = sphere_points(center=point, radius=r,
-                            theta_resolution=theta_resolution,
-                            phi_resolution=phi_resolution)
+        size = radius if fixed_size else sizes[i]
+        pts = points_getter(point, size)
         add_points_to_bytearray(barr, pts)
         point_mins = index_mins(pts)
         point_maxes = index_maxes(pts)
@@ -371,3 +419,57 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         )
 
 
+@ar_layer_export(ScatterLayerState, "Scatter", ARVispyScatterExportOptions, ("gltf", "glb"))
+def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
+                                 viewer_state: Vispy3DViewerState,
+                                 layer_state: ScatterLayerState,
+                                 options: ARVispyScatterExportOptions,
+                                 bounds: Bounds,
+                                 clip_to_bounds: bool = True):
+
+    triangles = sphere_triangles(theta_resolution=options.theta_resolution,
+                                 phi_resolution=options.phi_resolution)
+
+    points_getter = sphere_points_getter(theta_resolution=options.theta_resolution,
+                                         phi_resolution=options.phi_resolution)
+
+    add_scatter_layer_gltf(builder=builder,
+                           viewer_state=viewer_state,
+                           layer_state=layer_state,
+                           points_getter=points_getter,
+                           triangles=triangles,
+                           bounds=bounds,
+                           clip_to_bounds=clip_to_bounds)
+
+ipyvolume_triangle_getters: Dict[str, Callable] = {
+    "box": rectangular_prism_triangulation,
+    "sphere": partial(sphere_triangles, theta_resolution=12, phi_resolution=12),
+    "diamond": partial(sphere_triangles, theta_resolution=3, phi_resolution=3),
+}
+
+ipyvolume_points_getters: Dict[str, PointsGetter] = {
+    "box": box_points_getter,
+    "sphere": sphere_points_getter(theta_resolution=12, phi_resolution=12),
+    "diamond": sphere_points_getter(theta_resolution=3, phi_resolution=3),
+}
+
+@ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("gltf", "glb"))
+def add_ipyvolume_scatter_layer_gltf(builder: GLTFBuilder,
+                                     viewer_state: ViewerState3D,
+                                     layer_state: Scatter3DLayerState,
+                                     options: ARIpyvolumeScatterExportOptions,
+                                     bounds: Bounds,
+                                     clip_to_bounds: bool = True):
+    # TODO: What to do for circle2d?
+    geometry = str(layer_state.geo)
+    triangle_getter = ipyvolume_triangle_getters.get(geometry, rectangular_prism_triangulation)
+    triangles = triangle_getter()
+    points_getter = ipyvolume_points_getters.get(geometry, box_points_getter)
+
+    add_scatter_layer_gltf(builder=builder,
+                           viewer_state=viewer_state,
+                           layer_state=layer_state,
+                           points_getter=points_getter,
+                           triangles=triangles,
+                           bounds=bounds,
+                           clip_to_bounds=clip_to_bounds)

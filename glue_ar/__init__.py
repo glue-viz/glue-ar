@@ -42,10 +42,16 @@ def setup_qt():
 
 def setup_jupyter():
     from .jupyter.export_tool import JupyterARExportTool  # noqa
-    from glue_vispy_viewers.scatter.jupyter import JupyterVispyScatterViewer
-    from glue_vispy_viewers.volume.jupyter import JupyterVispyVolumeViewer
-    JupyterVispyScatterViewer.tools = [t for t in JupyterVispyScatterViewer.tools] + ["save:ar_jupyter"]
-    JupyterVispyVolumeViewer.tools = [t for t in JupyterVispyVolumeViewer.tools] + ["save:ar_jupyter"]
+    try:
+        from glue_vispy_viewers.scatter.jupyter import JupyterVispyScatterViewer
+        from glue_vispy_viewers.volume.jupyter import JupyterVispyVolumeViewer
+        JupyterVispyScatterViewer.tools = [t for t in JupyterVispyScatterViewer.tools] + ["save:ar_jupyter"]
+        JupyterVispyVolumeViewer.tools = [t for t in JupyterVispyVolumeViewer.tools] + ["save:ar_jupyter"]
+    except ImportError:
+        pass
+
+    from glue_jupyter.ipyvolume.scatter import IpyvolumeScatterView
+    IpyvolumeScatterView.tools = [t for t in IpyvolumeScatterView.tools] + ["save:ar_jupyter"]
 
 
 def setup():
