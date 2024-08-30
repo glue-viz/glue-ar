@@ -1,6 +1,5 @@
 from functools import partial
-from math import sqrt
-from numpy import clip, isfinite, isnan, ndarray, ones
+from numpy import clip, isfinite, isnan, ndarray, ones, sqrt
 from types import NoneType
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -65,7 +64,7 @@ def radius_for_scatter_layer(layer_state: ScatterLayerState3D) -> float:
     return min(layer_state.size_scaling * layer_state.size, 30) / 480
 
 
-def sizes_for_layer(layer_state: ScatterLayerState3D,
+def sizes_for_scatter_layer(layer_state: ScatterLayerState3D,
                     bounds: Bounds,
                     mask: ndarray) -> Optional[ndarray]:
     factor = max((abs(b[1] - b[0]) for b in bounds))

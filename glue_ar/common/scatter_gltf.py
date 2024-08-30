@@ -18,7 +18,7 @@ from glue_ar.utils import Viewer3DState, iterable_has_nan, hex_to_components, la
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
-                                   PointsGetter,  box_points_getter, IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, radius_for_scatter_layer, scatter_layer_mask, sizes_for_layer, sphere_points_getter
+                                   PointsGetter,  box_points_getter, IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter
 
 
 
@@ -270,7 +270,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     crange = layer_state.cmap_vmax - layer_state.cmap_vmin
     uri = f"layer_{unique_id()}.bin"
 
-    sizes = sizes_for_layer(layer_state, bounds, mask)
+    sizes = sizes_for_scatter_layer(layer_state, bounds, mask)
     for i, point in enumerate(data):
 
         prev_len = len(barr)
