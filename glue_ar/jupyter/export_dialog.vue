@@ -41,6 +41,7 @@
           v-model="filetype_selected"
         />
         <v-select
+          v-if="show_compression"
           label="Compression method"
           :items="compression_items"
           v-model="compression_selected"

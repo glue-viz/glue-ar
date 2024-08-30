@@ -59,6 +59,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
 
     compression_items = traitlets.List().tag(sync=True)
     compression_selected = traitlets.Int().tag(sync=True)
+    show_compression = traitlets.Bool(True).tag(sync=True)
 
     filetype_items = traitlets.List().tag(sync=True)
     filetype_selected = traitlets.Int().tag(sync=True)
@@ -109,6 +110,11 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         super()._on_method_change(method_name)
         state = self._layer_export_states[self.state.layer][method_name]
         self._update_layer_ui(state)
+
+    def _on_filetype_change(self, filetype: str):
+        super()._on_filetype_change(filetype)
+        gl = filetype.lower() in ("gltf", "glb")
+        self.show_compression = gl
 
     def widgets_for_property(self,
                              instance: HasCallbackProperties,
