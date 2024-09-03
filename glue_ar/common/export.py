@@ -66,8 +66,8 @@ def export_viewer(viewer_state: Vispy3DViewerState,
     builder.build_and_export(filepath)
 
     if ext in ("gltf", "glb"):
-        if compression != "None":
-            compress_gl(filepath)
+        if (compression is not None) and (compression != "None"):
+            compress_gl(filepath, method=compression)
         mv_path = f"{base}{extsep}html"
         export_modelviewer(mv_path, filepath, viewer_state.title)
 
@@ -87,7 +87,7 @@ COMPRESSORS = {
 
 
 def compress_gl(filepath: str, method: str = "draco"):
-    compressor = COMPRESSORS.get(method, None)
+    compressor = COMPRESSORS.get(method.lower(), None)
     if compressor is None:
         raise ValueError("Invalid compression method specified")
     compressor(filepath)

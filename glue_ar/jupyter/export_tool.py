@@ -42,7 +42,7 @@ class JupyterARExportTool(Tool):
             display(self.export_dialog)
 
     def _open_file_dialog(self):
-        file_chooser = FileChooser(getcwd())
+        file_chooser = FileChooser(getcwd(), filter_pattern=f"*.{self.export_dialog.state.filetype}")
         ok_btn = v.Btn(color='success', disabled=True, children=['Ok'])
         close_btn = v.Btn(color='error', children=['Close'])
         dialog = v.Dialog(
@@ -63,7 +63,7 @@ class JupyterARExportTool(Tool):
             self.maybe_save_figure(file_chooser.selected)
 
         def on_close_click(button, event, data):
-            # self.viewer.output_widget.clear_output()
+            self.viewer.output_widget.clear_output()
             dialog.close()
 
         def on_selected_change(chooser):
@@ -94,7 +94,7 @@ class JupyterARExportTool(Tool):
 
             def on_yes_click(button, event, data):
                 self.save_figure(filepath)
-                # self.viewer.output_widget.clear_output()
+                self.viewer.output_widget.clear_output()
 
             def on_no_click(button, event, data):
                 check_dialog.v_model = False
@@ -106,23 +106,15 @@ class JupyterARExportTool(Tool):
                 display(check_dialog)
         else:
             self.save_figure(filepath)
-            # self.viewer.output_widget.clear_output()
+            self.viewer.output_widget.clear_output()
 
     def save_figure(self, filepath):
         bounds = xyz_bounds(self.viewer.state, with_resolution=isinstance(self.viewer, VispyVolumeViewerMixin))
         layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         state_dict = self.export_dialog.state_dictionary
-
-        import traceback
-        with self.viewer.output_widget:
-            try:
-                export_viewer(viewer_state=self.viewer.state,
-                              layer_states=layer_states,
-                              bounds=bounds,
-                              state_dictionary=state_dict,
-                              filepath=filepath,
-                              compression=self.export_dialog.state.compression)
-                print(state_dict)
-            except Exception:
-                print(traceback.format_exc())
-
+        export_viewer(viewer_state=self.viewer.state,
+                      layer_states=layer_states,
+                      bounds=bounds,
+                      state_dictionary=state_dict,
+                      filepath=filepath,
+                      compression=self.export_dialog.state.compression)

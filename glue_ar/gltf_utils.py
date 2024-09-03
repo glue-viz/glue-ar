@@ -17,6 +17,12 @@ __all__ = [
 ]
 
 
+GLTF_COMPRESSION_EXTENSIONS = {
+    "draco": "KHR_draco_mesh_compression",
+    "meshoptimizer": "EXT_meshopt_compression",
+}
+
+
 def slope_intercept_between(a, b):
     slope = (b[1] - a[1]) / (b[0] - a[0])
     intercept = b[1] - slope * b[0]
