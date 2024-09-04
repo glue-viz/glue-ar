@@ -1,4 +1,3 @@
-from sys import platform
 from tempfile import NamedTemporaryFile
 
 from gltflib import AccessorType, AlphaMode, BufferTarget, ComponentType, GLTFModel

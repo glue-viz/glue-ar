@@ -1,4 +1,3 @@
-from sys import platform
 from tempfile import NamedTemporaryFile
 
 from pxr import Sdf, Usd
