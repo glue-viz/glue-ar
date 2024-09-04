@@ -106,12 +106,12 @@ def box_points_getter(center: Point, size: float) -> List[Point]:
 
 IPYVOLUME_TRIANGLE_GETTERS: Dict[str, Callable] = {
     "box": rectangular_prism_triangulation,
-    "sphere": partial(sphere_triangles, theta_resolution=12, phi_resolution=12),
+    "sphere": partial(sphere_triangles, theta_resolution=13, phi_resolution=13),
     "diamond": partial(sphere_triangles, theta_resolution=3, phi_resolution=3),
 }
 
 IPYVOLUME_POINTS_GETTERS: Dict[str, PointsGetter] = {
     "box": box_points_getter,
-    "sphere": sphere_points_getter(theta_resolution=12, phi_resolution=12),
+    "sphere": sphere_points_getter(theta_resolution=13, phi_resolution=13),
     "diamond": sphere_points_getter(theta_resolution=3, phi_resolution=3),
 }
