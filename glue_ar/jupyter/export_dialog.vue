@@ -22,7 +22,11 @@
             </v-list-item>
           </v-list-item-group>
         </v-list>
-        <h3>Layer Options</h3>
+        <h3
+          v-if="has_layer_options"
+        >
+          Layer Options
+        </h3>
         <jupyter-widget :widget="layer_layout"/>
         <v-select
           v-if="method_items.length > 1"
@@ -37,6 +41,7 @@
           v-model="filetype_selected"
         />
         <v-select
+          v-if="show_compression"
           label="Compression method"
           :items="compression_items"
           v-model="compression_selected"

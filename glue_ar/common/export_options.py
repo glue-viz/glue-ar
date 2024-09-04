@@ -1,6 +1,6 @@
 from glue.config import DictRegistry
 from glue.core.state_objects import State
-from glue_vispy_viewers.common.layer_state import VispyLayerState
+from glue.viewers.common.state import LayerState
 
 from typing import Callable, Iterable, List, Tuple, Type
 
@@ -26,7 +26,7 @@ class ARExportLayerOptionsRegistry(DictRegistry):
         self.method_state_types = {}
 
     def add(self,
-            layer_state_cls: Type[VispyLayerState],
+            layer_state_cls: Type[LayerState],
             name: str,
             layer_options_state: Type[State],
             extensions: Iterable[str],
@@ -58,7 +58,7 @@ class ARExportLayerOptionsRegistry(DictRegistry):
                 if state_cls == layer_state_cls and ext == extension]
 
     def __call__(self,
-                 layer_state_cls: Type[VispyLayerState],
+                 layer_state_cls: Type[LayerState],
                  name: str,
                  layer_options_state: Type[State],
                  extensions: Iterable[str],

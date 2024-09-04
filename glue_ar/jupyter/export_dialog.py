@@ -59,6 +59,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
 
     compression_items = traitlets.List().tag(sync=True)
     compression_selected = traitlets.Int().tag(sync=True)
+    show_compression = traitlets.Bool(True).tag(sync=True)
 
     filetype_items = traitlets.List().tag(sync=True)
     filetype_selected = traitlets.Int().tag(sync=True)
@@ -67,6 +68,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
     method_selected = traitlets.Int().tag(sync=True)
 
     layer_layout = traitlets.Instance(DOMWidget).tag(sync=True, **widget_serialization)
+    has_layer_options = traitlets.Bool().tag(sync=True)
 
     def __init__(self,
                  viewer: Viewer,
@@ -102,11 +104,17 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
             widgets.extend(self.widgets_for_property(state, property, name))
         self.input_widgets = [w for w in widgets if isinstance(w, NumberField)]
         self.layer_layout = v.Container(children=widgets, px_0=True, py_0=True)
+        self.has_layer_options = len(self.layer_layout.children) > 0
 
     def _on_method_change(self, method_name: str):
         super()._on_method_change(method_name)
         state = self._layer_export_states[self.state.layer][method_name]
         self._update_layer_ui(state)
+
+    def _on_filetype_change(self, filetype: str):
+        super()._on_filetype_change(filetype)
+        gl = filetype.lower() in ("gltf", "glb")
+        self.show_compression = gl
 
     def widgets_for_property(self,
                              instance: HasCallbackProperties,

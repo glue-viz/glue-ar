@@ -87,7 +87,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
 
     def _on_filetype_change(self, filetype: str):
         super()._on_filetype_change(filetype)
-        gl = filetype.lower() in ["gltf", "glb"]
+        gl = filetype.lower() in ("gltf", "glb")
         self.ui.combosel_compression.setVisible(gl)
         self.ui.label_compression_message.setVisible(gl)
 

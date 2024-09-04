@@ -1,25 +1,28 @@
 from typing import List, Optional, Tuple
 
-from glue.utils import ensure_numerical
+from glue_jupyter.common.state3d import ViewerState3D
+from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
-from glue_vispy_viewers.scatter.viewer_state import Vispy3DScatterViewerState
-from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
+from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
+from numpy import array, ndarray
 from numpy.linalg import norm
 
 from glue_ar.common.export_options import ar_layer_export
-from glue_ar.common.scatter import radius_for_scatter_layer, VECTOR_OFFSETS
-from glue_ar.common.scatter_export_options import ARScatterExportOptions
+from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, PointsGetter, \
+                                   ScatterLayerState3D, box_points_getter, radius_for_scatter_layer, \
+                                   scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter
+from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
-                                  normalize, sphere_points, sphere_triangles
-from glue_ar.utils import export_label_for_layer, iterable_has_nan, hex_to_components, \
-                          layer_color, mask_for_bounds, xyz_for_layer, Bounds
+                                  normalize, rectangular_prism_triangulation, sphere_triangles
+from glue_ar.utils import Viewer3DState, export_label_for_layer, iterable_has_nan, hex_to_components, \
+                          layer_color, xyz_for_layer, Bounds
 from glue_ar.usd_utils import material_for_color
 
 
 def add_vectors_usd(builder: USDBuilder,
-                    viewer_state: Vispy3DScatterViewerState,
-                    layer_state: ScatterLayerState,
+                    viewer_state: Viewer3DState,
+                    layer_state: ScatterLayerState3D,
                     data: ndarray,
                     bounds: Bounds,
                     tip_height: float,
@@ -30,7 +33,10 @@ def add_vectors_usd(builder: USDBuilder,
                     colors: Optional[List[Tuple[int, int, int]]] = None,
                     mask: Optional[ndarray] = None):
 
-    atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
+    if isinstance(layer_state, ScatterLayerState):
+        atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
+    else:
+        atts = [layer_state.vx_att, layer_state.vy_att, layer_state.vz_att]
     vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
 
     if viewer_state.native_aspect:
@@ -81,64 +87,40 @@ def add_vectors_usd(builder: USDBuilder,
             builder.add_mesh(tip_points, tip_triangles, color=color, opacity=layer_state.alpha)
 
 
-@ar_layer_export(ScatterLayerState, "Scatter", ARScatterExportOptions, ("usdc", "usda"))
 def add_scatter_layer_usd(
     builder: USDBuilder,
-    viewer_state: Vispy3DScatterViewerState,
-    layer_state: ScatterLayerState,
-    options: ARScatterExportOptions,
+    viewer_state: Viewer3DState,
+    layer_state: ScatterLayerState3D,
+    points_getter: PointsGetter,
+    triangles: List[Tuple[int, int, int]],
     bounds: Bounds,
     clip_to_bounds: bool = True,
 ):
 
-    theta_resolution = options.theta_resolution
-    phi_resolution = options.phi_resolution
-    if clip_to_bounds:
-        mask = mask_for_bounds(viewer_state, layer_state, bounds)
-    else:
-        mask = None
-
+    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
     fixed_size = layer_state.size_mode == "Fixed"
-    fixed_color = layer_state.color_mode == "Fixed"
+    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
+    fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
 
     identifier = export_label_for_layer(layer_state).replace(" ", "_")
 
-    if not fixed_size:
-        size_mask = isfinite(layer_state.layer[layer_state.size_attribute])
-        mask = size_mask if mask is None else (mask & size_mask)
-    if not fixed_color:
-        color_mask = isfinite(layer_state.layer[layer_state.cmap_attribute])
-        mask = color_mask if mask is None else (mask & color_mask)
-
+    mask = scatter_layer_mask(viewer_state, layer_state, bounds, clip_to_bounds)
     data = xyz_for_layer(viewer_state, layer_state,
                          preserve_aspect=viewer_state.native_aspect,
                          mask=mask,
                          scaled=True)
     data = data[:, [1, 2, 0]]
-    factor = max((abs(b[1] - b[0]) for b in bounds))
     color = layer_color(layer_state)
     color_components = tuple(hex_to_components(color))
 
     # We calculate this even if we aren't using fixed size as we might also use this for vectors
     radius = radius_for_scatter_layer(layer_state)
-    # TODO: Remove the fixed_size condition
-    if not fixed_size:
-        # The specific size calculation is taken from the scatter layer artist
-        size_data = ensure_numerical(layer_state.layer[layer_state.size_attribute][mask].ravel())
-        size_data = clip(size_data, layer_state.size_vmin, layer_state.size_vmax)
-        if layer_state.size_vmax == layer_state.size_vmin:
-            sizes = sqrt(ones(size_data.shape) * 10)
-        else:
-            sizes = sqrt(((size_data - layer_state.size_vmin) /
-                         (layer_state.size_vmax - layer_state.size_vmin)))
-        sizes *= (layer_state.size_scaling / (2 * factor))
-        sizes[isnan(sizes)] = 0.
-
-    triangles = sphere_triangles(theta_resolution=theta_resolution, phi_resolution=phi_resolution)
+    sizes = sizes_for_scatter_layer(layer_state, bounds, mask)
 
     if not fixed_color:
         cmap = layer_state.cmap
-        cmap_att = layer_state.cmap_attribute
+        cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
+        cmap_att = getattr(layer_state, cmap_attr)
         cmap_vals = layer_state.layer[cmap_att][mask]
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
         normalized = [max(min((cval - layer_state.cmap_vmin) / crange, 1), 0) for cval in cmap_vals]
@@ -147,14 +129,12 @@ def add_scatter_layer_usd(
     # If we're in fixed-size mode, we can reuse the same prim and translate it
     if fixed_size:
         first_point = data[0]
-        points = sphere_points(center=first_point, radius=radius,
-                               theta_resolution=theta_resolution,
-                               phi_resolution=phi_resolution)
-        sphere_mesh = builder.add_mesh(points,
-                                       triangles,
-                                       color=color_components,
-                                       opacity=layer_state.alpha,
-                                       identifier=identifier)
+        points = points_getter(first_point, radius)
+        mesh = builder.add_mesh(points,
+                                triangles,
+                                color=color_components,
+                                opacity=layer_state.alpha,
+                                identifier=identifier)
 
         for i in range(1, len(data)):
             point = data[i]
@@ -163,16 +143,14 @@ def add_scatter_layer_usd(
                 material = None
             else:
                 material = material_for_color(builder.stage, colors[i], layer_state.alpha)
-            builder.add_translated_reference(sphere_mesh,
+            builder.add_translated_reference(mesh,
                                              translation,
                                              material=material,
                                              identifier=identifier)
 
     else:
         for i, point in enumerate(data):
-            points = sphere_points(center=point, radius=sizes[i],
-                                   theta_resolution=theta_resolution,
-                                   phi_resolution=phi_resolution)
+            points = points_getter(point, sizes[i])
             color = color_components
             if not fixed_color:
                 cval = cmap_vals[i]
@@ -203,3 +181,48 @@ def add_scatter_layer_usd(
             colors=colors if not fixed_color else None,
             mask=mask,
         )
+
+
+@ar_layer_export(ScatterLayerState, "Scatter", ARVispyScatterExportOptions, ("usdc", "usda"))
+def add_vispy_scatter_layer_usd(builder: USDBuilder,
+                                viewer_state: Vispy3DViewerState,
+                                layer_state: ScatterLayerState,
+                                options: ARVispyScatterExportOptions,
+                                bounds: Bounds,
+                                clip_to_bounds: bool = True):
+
+    triangles = sphere_triangles(theta_resolution=options.theta_resolution,
+                                 phi_resolution=options.phi_resolution)
+
+    points_getter = sphere_points_getter(theta_resolution=options.theta_resolution,
+                                         phi_resolution=options.phi_resolution)
+
+    add_scatter_layer_usd(builder=builder,
+                          viewer_state=viewer_state,
+                          layer_state=layer_state,
+                          points_getter=points_getter,
+                          triangles=triangles,
+                          bounds=bounds,
+                          clip_to_bounds=clip_to_bounds)
+
+
+@ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("usdc", "usda"))
+def add_ipyvolume_scatter_layer_usd(builder: USDBuilder,
+                                    viewer_state: ViewerState3D,
+                                    layer_state: Scatter3DLayerState,
+                                    options: ARIpyvolumeScatterExportOptions,
+                                    bounds: Bounds,
+                                    clip_to_bounds: bool = True):
+    # TODO: What to do for circle2d?
+    geometry = str(layer_state.geo)
+    triangle_getter = IPYVOLUME_TRIANGLE_GETTERS.get(geometry, rectangular_prism_triangulation)
+    triangles = triangle_getter()
+    points_getter = IPYVOLUME_POINTS_GETTERS.get(geometry, box_points_getter)
+
+    add_scatter_layer_usd(builder=builder,
+                          viewer_state=viewer_state,
+                          layer_state=layer_state,
+                          points_getter=points_getter,
+                          triangles=triangles,
+                          bounds=bounds,
+                          clip_to_bounds=clip_to_bounds)

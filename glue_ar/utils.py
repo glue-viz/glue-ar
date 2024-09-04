@@ -1,23 +1,31 @@
 from os.path import abspath, dirname, join
 from uuid import uuid4
+from typing import Iterator, Literal, overload, Iterable, List, Optional, Tuple, Union
+
 from glue.core import BaseData
 from glue.core.subset_group import GroupedSubset
 from glue.viewers.common.state import ViewerState
 from glue.viewers.common.viewer import LayerArtist, Viewer
+
 from glue_vispy_viewers.common.layer_state import LayerState, VispyLayerState
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
 from numpy import array, inf, isnan, ndarray
 
-from typing import Iterator, Literal, overload, Iterable, List, Optional, Tuple, Union
+try:
+    from glue_jupyter.common.state3d import ViewerState3D
+except ImportError:
+    ViewerState3D = Vispy3DViewerState
 
 
 PACKAGE_DIR = dirname(abspath(__file__))
-AR_ICON = abspath(join(dirname(__file__), "ar"))
+AR_ICON = abspath(join(dirname(__file__), "ar.png"))
 RESOURCES_DIR = join(PACKAGE_DIR, "resources")
 
 Bounds = List[Tuple[float, float]]
 BoundsWithResolution = List[Tuple[float, float, int]]
+
+Viewer3DState = Union[Vispy3DViewerState, ViewerState3D]
 
 
 def data_count(layers: Iterable[Union[LayerArtist, LayerState]]) -> int:
@@ -61,14 +69,14 @@ def isomax_for_layer(viewer_state: ViewerState, layer_state: VolumeLayerState) -
 
 
 @overload
-def xyz_bounds(viewer_state: Vispy3DViewerState, with_resolution: Literal[False]) -> Bounds: ...
+def xyz_bounds(viewer_state: Viewer3DState, with_resolution: Literal[False]) -> Bounds: ...
 
 
 @overload
-def xyz_bounds(viewer_state: Vispy3DViewerState, with_resolution: Literal[True]) -> BoundsWithResolution: ...
+def xyz_bounds(viewer_state: Viewer3DState, with_resolution: Literal[True]) -> BoundsWithResolution: ...
 
 
-def xyz_bounds(viewer_state: Vispy3DViewerState, with_resolution: bool) -> Union[Bounds, BoundsWithResolution]:
+def xyz_bounds(viewer_state: Viewer3DState, with_resolution: bool) -> Union[Bounds, BoundsWithResolution]:
     bounds: Bounds = [(viewer_state.x_min, viewer_state.x_max),
                       (viewer_state.y_min, viewer_state.y_max),
                       (viewer_state.z_min, viewer_state.z_max)]
@@ -79,18 +87,18 @@ def xyz_bounds(viewer_state: Vispy3DViewerState, with_resolution: bool) -> Union
 
 
 @overload
-def bounds_3d_from_layers(viewer_state: Vispy3DViewerState,
+def bounds_3d_from_layers(viewer_state: Viewer3DState,
                           layer_states: Iterable[VispyLayerState],
                           with_resolution: Literal[False]) -> Bounds: ...
 
 
 @overload
-def bounds_3d_from_layers(viewer_state: Vispy3DViewerState,
+def bounds_3d_from_layers(viewer_state: Viewer3DState,
                           layer_states: Iterable[VispyLayerState],
                           with_resolution: Literal[True]) -> BoundsWithResolution: ...
 
 
-def bounds_3d_from_layers(viewer_state: Vispy3DViewerState,
+def bounds_3d_from_layers(viewer_state: Viewer3DState,
                           layer_states: Iterable[VispyLayerState],
                           with_resolution: bool) -> Union[Bounds, BoundsWithResolution]:
     mins = [inf, inf, inf]
@@ -139,7 +147,7 @@ def bring_into_clip(data, bounds: Union[Bounds, BoundsWithResolution], preserve_
     return scaled
 
 
-def mask_for_bounds(viewer_state: Vispy3DViewerState,
+def mask_for_bounds(viewer_state: Viewer3DState,
                     layer_state: LayerState,
                     bounds: Union[Bounds, BoundsWithResolution]):
     data = layer_state.layer
@@ -154,7 +162,7 @@ def mask_for_bounds(viewer_state: Vispy3DViewerState,
 
 # TODO: Worry about efficiency later
 # and just generally make this better
-def xyz_for_layer(viewer_state: Vispy3DViewerState,
+def xyz_for_layer(viewer_state: Viewer3DState,
                   layer_state: LayerState,
                   scaled: bool = False,
                   preserve_aspect: bool = True,

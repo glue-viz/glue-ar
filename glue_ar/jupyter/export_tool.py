@@ -42,7 +42,7 @@ class JupyterARExportTool(Tool):
             display(self.export_dialog)
 
     def _open_file_dialog(self):
-        file_chooser = FileChooser(getcwd())
+        file_chooser = FileChooser(getcwd(), filter_pattern=f"*.{self.export_dialog.state.filetype}")
         ok_btn = v.Btn(color='success', disabled=True, children=['Ok'])
         close_btn = v.Btn(color='error', children=['Close'])
         dialog = v.Dialog(
@@ -116,4 +116,5 @@ class JupyterARExportTool(Tool):
                       layer_states=layer_states,
                       bounds=bounds,
                       state_dictionary=state_dict,
-                      filepath=filepath)
+                      filepath=filepath,
+                      compression=self.export_dialog.state.compression)
