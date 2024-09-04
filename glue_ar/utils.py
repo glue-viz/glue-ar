@@ -19,7 +19,7 @@ except ImportError:
 
 
 PACKAGE_DIR = dirname(abspath(__file__))
-AR_ICON = abspath(join(dirname(__file__), "ar"))
+AR_ICON = abspath(join(dirname(__file__), "ar.png"))
 RESOURCES_DIR = join(PACKAGE_DIR, "resources")
 
 Bounds = List[Tuple[float, float]]
