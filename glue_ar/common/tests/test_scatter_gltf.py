@@ -2,6 +2,7 @@ from tempfile import NamedTemporaryFile
 
 from gltflib import AccessorType, AlphaMode, BufferTarget, ComponentType, GLTFModel
 from gltflib.gltf import GLTF
+import pytest
 
 from glue_ar.common.export import export_viewer
 from glue_ar.common.shapes import sphere_points_count, sphere_triangles, sphere_triangles_count
@@ -14,7 +15,9 @@ from glue_ar.utils import export_label_for_layer, hex_to_components, layers_to_e
 class TestScatterGLTF(BaseScatterTest):
 
     # TODO: How can we test the properties of compressed files?
-    def test_basic_export(self):
+    @pytest.mark.parametrize("app_type,viewer_type", (("qt", "vispy"), ("jupyter", "vispy"), ("jupyter", "ipyvolume")))
+    def test_basic_export(self, app_type, viewer_type):
+        self.basic_setup(app_type, viewer_type)
         bounds = xyz_bounds(self.viewer.state, with_resolution=False)
         self.tmpfile = NamedTemporaryFile(suffix=".gltf", delete=False)
         self.tmpfile.close()

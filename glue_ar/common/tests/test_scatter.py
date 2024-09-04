@@ -90,11 +90,12 @@ def test_scatter_mask_bounds(scatter_mask_data, clip, size, color):
         assert mask is None
 
 
-@pytest.mark.parametrize("app_type,viewer_type", (("qt", "vispy"), ("jupyter", "vispy"), ("jupyter", "ipyvolume")))
 class BaseScatterTest:
 
-    @pytest.fixture(scope="function", autouse=True)
-    def setup(self, app_type: str, viewer_type: str):
+    # We manually invoke this function in both downstream `test_basic_export` methods
+    # which is bad, but is to work around an issue with the CI on Windows.
+    # I will look for a better solution to this.
+    def basic_setup(self, app_type: str, viewer_type: str):
         self.app_type = app_type
         self.viewer_type = viewer_type
 

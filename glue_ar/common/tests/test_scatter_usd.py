@@ -1,6 +1,7 @@
 from tempfile import NamedTemporaryFile
 
 from pxr import Sdf, Usd
+import pytest
 
 from glue_ar.common.export import export_viewer
 from glue_ar.common.shapes import sphere_points_count, sphere_triangles_count
@@ -12,7 +13,9 @@ from glue_ar.common.tests.test_scatter import BaseScatterTest
 
 class TestVispyScatterUSD(BaseScatterTest):
 
-    def test_basic_export(self):
+    @pytest.mark.parametrize("app_type,viewer_type", (("qt", "vispy"), ("jupyter", "vispy"), ("jupyter", "ipyvolume")))
+    def test_basic_export(self, app_type, viewer_type):
+        self.basic_setup(app_type, viewer_type)
         bounds = xyz_bounds(self.viewer.state, with_resolution=False)
         self.tmpfile = NamedTemporaryFile(suffix=".usdc", delete=False)
         self.tmpfile.close()
