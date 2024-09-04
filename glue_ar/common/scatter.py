@@ -1,6 +1,9 @@
 from functools import partial
 from numpy import clip, isfinite, isnan, ndarray, ones, sqrt
-from types import NoneType
+try:
+    from types import NoneType
+except ImportError:
+    NoneType = type(None)
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 
