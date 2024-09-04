@@ -94,7 +94,7 @@ def test_scatter_mask_bounds(scatter_mask_data, clip, size, color):
 class BaseScatterTest:
 
     @pytest.fixture(scope='function', autouse=True)
-    def setup_method(self, app_type: str, viewer_type: str):
+    def setup_and_teardown(self, app_type: str, viewer_type: str):
 
         # Setup
         self.app_type = app_type
