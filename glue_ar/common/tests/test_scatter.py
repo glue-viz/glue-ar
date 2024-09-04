@@ -40,7 +40,7 @@ def scatter_mask_data():
                 color=color_values, size=size_values)
 
 
-# TODO: Making this a fixture caused problems the wrapped C/C++ object
+# TODO: Making this a fixture caused problems with the wrapped C/C++ object
 # defining the viewer being deleted. Can we fix that?
 def _scatter_mask_viewer(application: GlueApplication, scatter_mask_data: Data) -> VispyScatterViewer:
     application.data_collection.append(scatter_mask_data)
@@ -93,12 +93,11 @@ def test_scatter_mask_bounds(scatter_mask_data, clip, size, color):
 @pytest.mark.parametrize("app_type,viewer_type", (("qt", "vispy"), ("jupyter", "vispy"), ("jupyter", "ipyvolume")))
 class BaseScatterTest:
 
-    @pytest.fixture(scope='function', autouse=True)
-    def setup_and_teardown(self, app_type: str, viewer_type: str):
-
-        # Setup
+    @pytest.fixture(scope="function", autouse=True)
+    def setup(self, app_type: str, viewer_type: str):
         self.app_type = app_type
         self.viewer_type = viewer_type
+
         seed(186)
         self.n = 40
         x1 = [random() * 5 for _ in range(self.n)]
@@ -106,9 +105,9 @@ class BaseScatterTest:
         z1 = [randint(1, 30) for _ in range(self.n)]
         self.data1 = Data(x=x1, y=y1, z=z1, label="Scatter Data 1")
         self.data1.style.color = "#fedcba"
-        self.app = self._create_application(app_type)
+        self.app = self._create_application(self.app_type)
         self.app.data_collection.append(self.data1)
-        self.viewer: Viewer = self.app.new_data_viewer(self._viewer_class(viewer_type))
+        self.viewer: Viewer = self.app.new_data_viewer(self._viewer_class(self.viewer_type))
         self.viewer.add_data(self.data1)
 
         x2 = [random() * 7 for _ in range(self.n)]
@@ -121,9 +120,7 @@ class BaseScatterTest:
         self.viewer.state.z_att = self.data1.id['z']
         self.state_dictionary = self._basic_state_dictionary(viewer_type)
 
-        yield
-
-        # Teardown
+    def teardown_method(self, method):
         if getattr(self, "tmpfile", None) is not None:
             self.tmpfile.close()
             remove(self.tmpfile.name)

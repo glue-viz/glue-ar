@@ -16,8 +16,6 @@ class TestScatterGLTF(BaseScatterTest):
 
     # TODO: How can we test the properties of compressed files?
     def test_basic_export(self):
-        if self.app_type == "jupyter" and self.viewer == "vispy" and platform == "win32":
-            return
         bounds = xyz_bounds(self.viewer.state, with_resolution=False)
         self.tmpfile = NamedTemporaryFile(suffix=".gltf", delete=False)
         self.tmpfile.close()
