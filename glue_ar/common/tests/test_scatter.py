@@ -125,11 +125,13 @@ class BaseScatterTest:
         if getattr(self, "tmpfile", None) is not None:
             self.tmpfile.close()
             remove(self.tmpfile.name)
-        if hasattr(self.viewer, "close"):
-            self.viewer.close(warn=False)
-        self.viewer = None
-        if hasattr(self.app, 'close'):
-            self.app.close()
+        if hasattr(self, 'viewer'):
+            if hasattr(self.viewer, "close"):
+                self.viewer.close(warn=False)
+            self.viewer = None
+        if hasattr(self, 'app'):
+            if hasattr(self.app, 'close'):
+                self.app.close()
         self.app = None
 
     def _create_application(self, app_type: str) -> Union[GlueApplication, JupyterApplication]:
