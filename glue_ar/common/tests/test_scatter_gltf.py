@@ -4,11 +4,11 @@ from gltflib import AccessorType, AlphaMode, BufferTarget, ComponentType, GLTFMo
 from gltflib.gltf import GLTF
 
 from glue_ar.common.export import export_viewer
-from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.shapes import sphere_points_count, sphere_triangles, sphere_triangles_count
 from glue_ar.common.tests.gltf_helpers import count_indices, count_vertices, unpack_vertices
 from glue_ar.common.tests.test_scatter import BaseScatterTest
-from glue_ar.utils import export_label_for_layer, hex_to_components, layers_to_export, mask_for_bounds, xyz_bounds, xyz_for_layer
+from glue_ar.utils import export_label_for_layer, hex_to_components, layers_to_export, mask_for_bounds, \
+                          xyz_bounds, xyz_for_layer
 
 
 class TestScatterGLTF(BaseScatterTest):

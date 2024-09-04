@@ -11,7 +11,8 @@ try:
 except ImportError:
     Scatter3DLayerState = NoneType
 
-from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation, sphere_points, sphere_triangles
+from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation, \
+                                  sphere_points, sphere_triangles
 from glue_ar.utils import Bounds, Viewer3DState, mask_for_bounds
 
 ScatterLayerState3D = Union[ScatterLayerState, Scatter3DLayerState]
@@ -25,6 +26,7 @@ VECTOR_OFFSETS = {
     'middle': 0,
     'tip': -0.5,
 }
+
 
 def scatter_layer_mask(
         viewer_state: Viewer3DState,
@@ -65,8 +67,8 @@ def radius_for_scatter_layer(layer_state: ScatterLayerState3D) -> float:
 
 
 def sizes_for_scatter_layer(layer_state: ScatterLayerState3D,
-                    bounds: Bounds,
-                    mask: ndarray) -> Optional[ndarray]:
+                            bounds: Bounds,
+                            mask: ndarray) -> Optional[ndarray]:
     factor = max((abs(b[1] - b[0]) for b in bounds))
     vispy_layer_state = isinstance(layer_state, ScatterLayerState)
     if not vispy_layer_state:
@@ -100,6 +102,7 @@ def sphere_points_getter(theta_resolution: int,
 
 def box_points_getter(center: Point, size: float) -> List[Point]:
     return rectangular_prism_points(center=center, sides=[size, size, size])
+
 
 IPYVOLUME_TRIANGLE_GETTERS: Dict[str, Callable] = {
     "box": rectangular_prism_triangulation,

@@ -1,7 +1,6 @@
 from os.path import abspath, dirname, join
 from uuid import uuid4
-from types import NoneType
-from typing import Iterator, Literal, overload, Iterable, List, Optional, Tuple, Type, Union
+from typing import Iterator, Literal, overload, Iterable, List, Optional, Tuple, Union
 
 from glue.core import BaseData
 from glue.core.subset_group import GroupedSubset

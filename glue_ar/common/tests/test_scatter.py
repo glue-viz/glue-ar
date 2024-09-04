@@ -1,6 +1,3 @@
-from glue.core import Data
-from glue_qt.app import GlueApplication
-from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
 from itertools import product
 from math import sqrt
 from numpy import array, array_equal, nan, ones
@@ -9,11 +6,13 @@ import pytest
 from random import random, randint, seed
 from typing import cast, Dict, Tuple, Type, Union
 
+from glue.core import Data
 from glue.core.state_objects import State
 from glue.viewers.common.viewer import Viewer
 from glue_jupyter import JupyterApplication
 from glue_jupyter.ipyvolume.scatter import IpyvolumeScatterView
 from glue_qt.app import GlueApplication
+from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
 
 from glue_ar.common.scatter import scatter_layer_mask
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
@@ -36,7 +35,7 @@ def scatter_mask_data():
     size_values = [t / n for t in x_values]
     for index in size_nan_indices:
         size_values[index] = nan
-    
+
     return Data(x=x_values, y=y_values, z=z_values,
                 color=color_values, size=size_values)
 
@@ -64,12 +63,9 @@ def test_scatter_mask_bounds(scatter_mask_data, clip, size, color):
     viewer = _scatter_mask_viewer(application, scatter_mask_data)
     expected = ones(30).astype(bool)
     if clip:
-        valid_x = lambda value: value >= 10 and value <= 35
-        expected_x = array([valid_x(t) for t in scatter_mask_data['x']])
-        valid_y = lambda value: value >= 100 and value <= 150 
-        expected_y = array([valid_y(t) for t in scatter_mask_data['y']])
-        valid_z = lambda value: value >= -45 and value <= -20
-        expected_z = array([valid_z(t) for t in scatter_mask_data['z']])
+        expected_x = array([(t >= 10 and t <= 35) for t in scatter_mask_data['x']])
+        expected_y = array([(t >= 100 and t <= 150) for t in scatter_mask_data['y']])
+        expected_z = array([t >= -45 and t <= -20 for t in scatter_mask_data['z']])
         expected &= (expected_x & expected_y & expected_z)
     if size:
         viewer.layers[0].state.size_attribute = scatter_mask_data.id['size']
@@ -156,8 +152,9 @@ class BaseScatterTest:
 
     def _basic_state_dictionary(self, viewer_type: str) -> Dict[str, Tuple[str, State]]:
         if viewer_type == "vispy":
-            state_maker = lambda: ARVispyScatterExportOptions(theta_resolution=15,
-                                                              phi_resolution=15)
+            def state_maker():
+                return ARVispyScatterExportOptions(theta_resolution=15,
+                                                   phi_resolution=15)
         elif viewer_type == "ipyvolume":
             state_maker = ARIpyvolumeScatterExportOptions
         else:
@@ -170,4 +167,3 @@ class BaseScatterTest:
 
     def _export_state_class(self, viewer_type: str):
         return ARIpyvolumeScatterExportOptions if viewer_type == "ipyvolume" else ARVispyScatterExportOptions
-

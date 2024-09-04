@@ -9,7 +9,6 @@ from typing import List, Literal, Optional, Tuple
 
 
 from glue_ar.common.export_options import ar_layer_export
-from glue_ar.common.scatter import radius_for_scatter_layer, VECTOR_OFFSETS
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
@@ -18,8 +17,9 @@ from glue_ar.utils import Viewer3DState, iterable_has_nan, hex_to_components, la
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
-                                   PointsGetter,  box_points_getter, IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter
-
+                                   PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
+                                   IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, radius_for_scatter_layer, \
+                                   scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter
 
 
 def add_vectors_gltf(builder: GLTFBuilder,
@@ -370,7 +370,6 @@ def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
                            triangles=triangles,
                            bounds=bounds,
                            clip_to_bounds=clip_to_bounds)
-
 
 
 @ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("gltf", "glb"))
