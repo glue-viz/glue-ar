@@ -51,7 +51,9 @@ def setup_jupyter():
         pass
 
     from glue_jupyter.ipyvolume.scatter import IpyvolumeScatterView
+    from glue_jupyter.ipyvolume.volume import IpyvolumeVolumeView
     IpyvolumeScatterView.tools = [t for t in IpyvolumeScatterView.tools] + ["save:ar_jupyter"]
+    IpyvolumeVolumeView.tools = [t for t in IpyvolumeVolumeView.tools] + ["save:ar_jupyter"]
 
 
 def setup():

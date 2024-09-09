@@ -65,6 +65,7 @@ class ARExportLayerOptionsRegistry(DictRegistry):
                  multiple: bool = False):
         def adder(export_method: Callable):
             self.add(layer_state_cls, name, layer_options_state, extensions, multiple, export_method)
+            return export_method
         return adder
 
 
