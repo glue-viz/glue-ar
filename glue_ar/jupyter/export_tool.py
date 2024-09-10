@@ -3,11 +3,10 @@ from os.path import exists
 
 from glue.config import viewer_tool
 from glue.viewers.common.tool import Tool
-from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewerMixin
 
 from glue_ar.common.export import export_viewer
 from glue_ar.jupyter.export_dialog import JupyterARExportDialog
-from glue_ar.utils import AR_ICON, xyz_bounds
+from glue_ar.utils import AR_ICON, is_volume_viewer, xyz_bounds
 
 import ipyvuetify as v  # noqa
 from ipywidgets import HBox, Layout # noqa
@@ -109,7 +108,7 @@ class JupyterARExportTool(Tool):
             self.viewer.output_widget.clear_output()
 
     def save_figure(self, filepath):
-        bounds = xyz_bounds(self.viewer.state, with_resolution=isinstance(self.viewer, VispyVolumeViewerMixin))
+        bounds = xyz_bounds(self.viewer.state, with_resolution=is_volume_viewer(self.viewer))
         layer_states = [layer.state for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         state_dict = self.export_dialog.state_dictionary
         export_viewer(viewer_state=self.viewer.state,

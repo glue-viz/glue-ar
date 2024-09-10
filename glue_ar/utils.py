@@ -8,8 +8,9 @@ from glue.viewers.common.state import ViewerState
 from glue.viewers.common.viewer import LayerArtist, Viewer
 
 from glue_vispy_viewers.common.layer_state import LayerState, VispyLayerState
+from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
-from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
+from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState, Vispy3DVolumeViewerState
 from numpy import array, inf, isnan, ndarray
 
 try:
@@ -81,7 +82,8 @@ def xyz_bounds(viewer_state: Viewer3DState, with_resolution: bool) -> Union[Boun
                       (viewer_state.y_min, viewer_state.y_max),
                       (viewer_state.z_min, viewer_state.z_max)]
     if with_resolution:
-        return [(*b, viewer_state.resolution) for b in bounds]
+        resolution = get_resolution(viewer_state)
+        return [(*b, resolution) for b in bounds]
 
     return bounds
 
@@ -110,7 +112,8 @@ def bounds_3d_from_layers(viewer_state: Viewer3DState,
         maxes = [max(max(data[att]), m) for m, att in zip(maxes, atts)]
     bounds = [(lo, hi) for lo, hi in zip(mins, maxes)]
     if with_resolution:
-        return [(*b, viewer_state.resolution) for b in bounds]
+        resolution = get_resolution(viewer_state)
+        return [(*b, resolution) for b in bounds]
 
     return bounds
 
@@ -216,8 +219,9 @@ def frb_for_layer(viewer_state: ViewerState,
     data = data_for_layer(layer_or_state)
     layer_state = layer_or_state if isinstance(layer_or_state, LayerState) else layer_or_state.state
     is_data_layer = data is layer_or_state.layer
+    target_data = getattr(viewer_state, 'reference_data', data)
     data_frb = data.compute_fixed_resolution_buffer(
-        target_data=viewer_state.reference_data,
+        target_data=target_data,
         bounds=bounds,
         target_cid=layer_state.attribute
     )
@@ -226,7 +230,7 @@ def frb_for_layer(viewer_state: ViewerState,
         return data_frb
     else:
         subcube = data.compute_fixed_resolution_buffer(
-            target_data=viewer_state.reference_data,
+            target_data=target_data,
             bounds=bounds,
             subset_state=layer_state.layer.subset_state
         )
@@ -247,3 +251,30 @@ def iterator_count(iter: Iterator) -> int:
     Note that this consumes the iterator.
     """
     return sum(1 for _ in iter)
+
+
+def is_volume_viewer(viewer: Viewer) -> bool:
+    if isinstance(viewer, VispyVolumeViewerMixin):
+        return True
+    try:
+        from glue_jupyter.ipyvolume.volume import IpyvolumeVolumeView
+        if isinstance(viewer, IpyvolumeVolumeView):
+            return True
+    except ImportError:
+        pass
+
+    return False
+
+
+def get_resolution(viewer_state: Viewer3DState) -> int:
+    if isinstance(viewer_state, Vispy3DVolumeViewerState):
+        return viewer_state.resolution
+
+    try:
+        from glue_jupyter.common.state3d import VolumeViewerState
+        if isinstance(viewer_state, VolumeViewerState):
+            return max((getattr(state, 'max_resolution', 256) for state in viewer_state.layers), default=256)
+    except ImportError:
+        pass
+
+    return 256

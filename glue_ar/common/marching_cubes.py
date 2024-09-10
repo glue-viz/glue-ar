@@ -40,7 +40,7 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
         (viewer_state.x_min, viewer_state.x_max),
         (viewer_state.z_min, viewer_state.z_max),
     )
-    resolution = viewer_state.resolution
+    resolution = getattr(viewer_state, 'resolution', None) or getattr(layer_state, 'max_resolution')
     x_range = viewer_state.x_max - viewer_state.x_min
     y_range = viewer_state.y_max - viewer_state.y_min
     z_range = viewer_state.z_max - viewer_state.z_min
@@ -141,7 +141,7 @@ def add_isosurface_layer_usd(
         (viewer_state.x_min, viewer_state.x_max),
         (viewer_state.z_min, viewer_state.z_max),
     )
-    resolution = viewer_state.resolution
+    resolution = getattr(viewer_state, 'resolution', None) or getattr(layer_state, 'max_resolution')
     x_range = viewer_state.x_max - viewer_state.x_min
     y_range = viewer_state.y_max - viewer_state.y_min
     z_range = viewer_state.z_max - viewer_state.z_min
@@ -164,3 +164,13 @@ def add_isosurface_layer_usd(
         points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, clip_sides)) for pt in points]
         points = [[p[1], p[0], p[2]] for p in points]
         builder.add_mesh(points, triangles, color_components, alpha)
+
+
+try:
+    from glue_jupyter.ipyvolume.volume import VolumeLayerState as IPVVolumeLayerState
+    ar_layer_export.add(IPVVolumeLayerState, "Isosurface", ARIsosurfaceExportOptions,
+                        ("gltf", "glb"), False, add_isosurface_layer_gltf)
+    ar_layer_export.add(IPVVolumeLayerState, "Isosurface", ARIsosurfaceExportOptions,
+                        ("usda", "usdc"), False, add_isosurface_layer_usd)
+except ImportError:
+    pass

@@ -9,7 +9,7 @@ from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARVoxelExportOptions
 from glue_ar.usd_utils import material_for_color
-from glue_ar.utils import BoundsWithResolution, alpha_composite, frb_for_layer, hex_to_components, \
+from glue_ar.utils import BoundsWithResolution, alpha_composite, frb_for_layer, get_resolution, hex_to_components, \
                           isomin_for_layer, isomax_for_layer, layer_color, unique_id, xyz_bounds
 
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, \
@@ -26,7 +26,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                           options: Iterable[ARVoxelExportOptions],
                           bounds: Optional[BoundsWithResolution] = None):
 
-    resolution = viewer_state.resolution
+    resolution = get_resolution(viewer_state)
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
     x_range = viewer_state.x_max - viewer_state.x_min
     y_range = viewer_state.y_max - viewer_state.y_min
@@ -167,7 +167,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
                          options: Iterable[ARVoxelExportOptions],
                          bounds: Optional[BoundsWithResolution] = None):
 
-    resolution = viewer_state.resolution
+    resolution = get_resolution(viewer_state)
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
     x_range = viewer_state.x_max - viewer_state.x_min
     y_range = viewer_state.y_max - viewer_state.y_min
@@ -242,3 +242,13 @@ def add_voxel_layers_usd(builder: USDBuilder,
             builder.add_translated_reference(mesh, translation, material)
 
     return builder
+
+
+try:
+    from glue_jupyter.ipyvolume.volume import VolumeLayerState as IPVVolumeLayerState
+    ar_layer_export.add(IPVVolumeLayerState, "Voxel", ARVoxelExportOptions,
+                        ("gltf", "glb"), True, add_voxel_layers_gltf)
+    ar_layer_export.add(IPVVolumeLayerState, "Voxel", ARVoxelExportOptions,
+                        ("usda", "usdc"), True, add_voxel_layers_usd)
+except ImportError:
+    pass
