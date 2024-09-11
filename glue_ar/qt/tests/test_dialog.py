@@ -1,88 +1,165 @@
-from itertools import product 
-from mock import patch 
-import pytest
-from random import randint, random, seed
+from random import random, seed
 from typing import cast
 
+from echo import CallbackProperty
 from glue.core import Data
+from glue.core.state_objects import State
 from glue.core.link_helpers import LinkSame
 from glue_qt.app import GlueApplication
-from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
+from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
+from numpy import arange, ones
+from qtpy.QtGui import QDoubleValidator, QIntValidator
+from qtpy.QtWidgets import QCheckBox, QLabel, QLineEdit
 
-from glue_ar.common.export import export_viewer
-from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
 from glue_ar.qt.export_dialog import QtARExportDialog
-from glue_ar.qt.export_tool import QtARExportTool
-from glue_ar.qt.tests.utils import dialog_auto_accept_with_options
-from glue_ar.utils import export_label_for_layer
+from glue_ar.qt.tests.utils import combobox_options
 
 
-class TestScatterExportTool:
+class DummyState(State):
+    cb_int = CallbackProperty(0)
+    cb_float = CallbackProperty(1.7)
+    cb_bool = CallbackProperty(False)
+
+
+class TestQtExportDialog:
 
     def setup_method(self, method):
-        seed(1607)
+        seed(102)
         self.app = GlueApplication()
-        size_1 = 20
-        self.data_1 = Data(x=[random() for _ in range(size_1)],
-                      y=[random() for _ in range(size_1)],
-                      z=[random() for _ in range(size_1)],
-                      label="Scatter Data 1")
-        self.app.data_collection.append(self.data_1)
-        size_2 = 35
-        self.data_2 = Data(x=[randint(0, 10) for _ in range(size_2)],
-                      y=[randint(-5, 5) for _ in range(size_2)],
-                      z=[randint(100, 200) for _ in range(size_2)],
-                      label="Scatter Data 2")
-        self.app.data_collection.append(self.data_2)
-    
-        for c in ('x', 'y', 'z'):
-            c1 = self.data_1.id[c]
-            c2 = self.data_2.id[c]
+        self.volume_data = Data(
+                label='Volume Data',
+                x=arange(24).reshape((2, 3, 4)),
+                y=ones((2, 3, 4)),
+                z=arange(100, 124).reshape((2, 3, 4)))
+        self.app.data_collection.append(self.volume_data)
+
+        scatter_size = 50
+        self.scatter_data= Data(x=[random() for _ in range(scatter_size)],
+                                y=[random() for _ in range(scatter_size)],
+                                z=[random() for _ in range(scatter_size)],
+                                label="Scatter Data")
+        self.app.data_collection.append(self.scatter_data)
+
+        # Link pixel axes to scatter
+        for i, c in enumerate(('x', 'y', 'z')):
+            ri = 2 - i
+            c1 = self.volume_data.id[f"Pixel Axis {ri} [{c}]"]
+            c2 = self.scatter_data.id[c]
             self.app.data_collection.add_link(LinkSame(c1, c2))
-    
-        self.viewer: VispyScatterViewer = cast(VispyScatterViewer, self.app.new_data_viewer(VispyScatterViewer, data=self.data_1))
-        self.viewer.add_data(self.data_2)
-    
-    def test_toolbar(self):
-        toolbar = self.viewer.toolbar
-        assert toolbar is not None
-        assert "save" in toolbar.tools
-        tool = toolbar.tools["save"]
-        assert len([subtool for subtool in tool.subtools if isinstance(subtool, QtARExportTool)]) == 1
 
-    @pytest.mark.parametrize("extension,compression", product(("glB", "glTF", "USDA", "USDC"), ("None", "Draco", "Meshoptimizer")))
-    def test_tool_export_call(self, extension, compression):
-        auto_accept = dialog_auto_accept_with_options(filetype=extension, compression=compression)
-        with patch("qtpy.compat.getsavefilename") as fd, \
-             patch.object(QtARExportDialog, "exec_", auto_accept), \
-             patch.object(QtARExportTool, "_start_worker") as start_worker:
-                ext = extension.lower()
-                filepath = f"test.{ext}"
-                fd.return_value = filepath, ext
-                save_tool = self.viewer.toolbar.tools["save"]
-                ar_subtool = next(subtool for subtool in save_tool.subtools if isinstance(subtool, QtARExportTool))
-                ar_subtool.activate()
-                
-                bounds = [
-                    (self.viewer.state.x_min, self.viewer.state.x_max),
-                    (self.viewer.state.y_min, self.viewer.state.y_max),
-                    (self.viewer.state.z_min, self.viewer.state.z_max),
-                ]
+        # We use a volume viewer because it can support both volume and scatter layers
+        self.viewer: VispyVolumeViewer = cast(VispyVolumeViewer, self.app.new_data_viewer(VispyVolumeViewer, data=self.volume_data))
+        self.viewer.add_data(self.scatter_data)
 
-                # We can't use assert_called_once_with because the state dictionaries
-                # aren't recognized as equal
-                start_worker.assert_called_once()
-                call = start_worker.call_args_list[0]
-                assert call.args == (export_viewer,)
-                kwargs = call.kwargs
-                assert kwargs["viewer_state"] == self.viewer.state
-                assert kwargs["bounds"] == bounds
-                assert kwargs["filepath"] == filepath
-                assert kwargs["compression"] == compression
-                assert tuple(kwargs["state_dictionary"].keys()) == tuple(export_label_for_layer(layer) for layer in self.viewer.layers)
-                for value in kwargs["state_dictionary"].values():
-                    assert len(value) == 2
-                    assert value[0] == "Scatter"
-                    assert isinstance(value[1], ARVispyScatterExportOptions)
-                    assert value[1].theta_resolution == 8
-                    assert value[1].phi_resolution == 8
+        self.dialog = QtARExportDialog(parent=self.viewer, viewer=self.viewer)
+        self.dialog.show()
+
+    def teardown_method(self, method):
+        self.dialog.close()
+
+    def test_default_state(self):
+        state = self.dialog.state
+        assert state.filetype == "glB"
+        assert state.compression == "None"
+        assert state.layer == "Volume Data"
+        assert state.method in {"Isosurface", "Voxel"}
+
+        assert state.filetype_helper.choices == ['glB', 'glTF', 'USDC', 'USDA']
+        assert state.compression_helper.choices == ['None', 'Draco', 'Meshoptimizer']
+        assert state.layer_helper.choices == ["Volume Data", "Scatter Data"]
+        assert set(state.method_helper.choices) == {"Isosurface", "Voxel"}
+
+    def test_default_dictionary(self):
+        state_dict = self.dialog.state_dictionary
+        assert len(state_dict) == 2
+        assert set(state_dict.keys()) == {"Volume Data", "Scatter Data"}
+
+    def test_default_ui(self):
+        ui = self.dialog.ui
+        assert ui.button_cancel.isVisible()
+        assert ui.button_ok.isVisible()
+        assert ui.combosel_compression.isVisible()
+        assert ui.label_compression_message.isVisible()
+
+        compression_options = combobox_options(ui.combosel_compression)
+        assert compression_options == ["None", "Draco", "Meshoptimizer"]
+
+    def test_filetype_change(self):
+        state = self.dialog.state
+        ui = self.dialog.ui
+
+        state.filetype = "USDC"
+        assert not ui.combosel_compression.isVisible()
+        assert not ui.label_compression_message.isVisible()
+
+        state.filetype = "USDA"
+        assert not ui.combosel_compression.isVisible()
+        assert not ui.label_compression_message.isVisible()
+
+        state.filetype = "glTF"
+        assert ui.combosel_compression.isVisible()
+        assert ui.label_compression_message.isVisible()
+
+        state.filetype = "USDA"
+        assert not ui.combosel_compression.isVisible()
+        assert not ui.label_compression_message.isVisible()
+
+        state.filetype = "glB"
+        assert ui.combosel_compression.isVisible()
+        assert ui.label_compression_message.isVisible()
+
+        state.filetype = "glTF"
+        assert ui.combosel_compression.isVisible()
+        assert ui.label_compression_message.isVisible()
+
+    def test_widgets_for_property(self):
+        state = DummyState()
+
+        int_widgets = self.dialog._widgets_for_property(state, "cb_int", "Int CB")
+        assert len(int_widgets) == 2
+        label, edit = int_widgets
+        assert isinstance(label, QLabel)
+        assert label.text() == "Int CB:"
+        assert isinstance(edit, QLineEdit)
+        assert isinstance(edit.validator(), QIntValidator)
+        assert edit.text() == "0"
+
+        float_widgets = self.dialog._widgets_for_property(state, "cb_float", "Float CB")
+        assert len(float_widgets) == 2
+        label, edit = float_widgets
+        assert isinstance(label, QLabel)
+        assert label.text() == "Float CB:"
+        assert isinstance(edit, QLineEdit)
+        assert isinstance(edit.validator(), QDoubleValidator)
+        assert edit.text() == "1.7"
+
+        bool_widgets = self.dialog._widgets_for_property(state, "cb_bool", "Bool CB")
+        assert len(bool_widgets) == 1
+        box = bool_widgets[0]
+        assert isinstance(box, QCheckBox)
+        assert box.text() == "Bool CB"
+        assert not box.isChecked()
+
+    def test_update_layer_ui(self):
+        state = DummyState()
+        self.dialog._update_layer_ui(state)
+        assert self.dialog.ui.layer_layout.rowCount() == 3
+
+    def test_clear_layout(self):
+        self.dialog._clear_layer_layout()
+        assert self.dialog.ui.layer_layout.isEmpty()
+        assert self.dialog._layer_connections == []
+
+    def test_layer_change(self):
+        state = self.dialog.state
+        ui = self.dialog.ui
+
+        state.layer = "Scatter Data"
+        assert state.method_helper.choices == ["Scatter"]
+        assert not ui.label_method.isVisible()
+        assert not ui.combosel_method.isVisible()
+
+        state.layer = "Volume Data"
+        assert set(state.method_helper.choices) == {"Isosurface", "Voxel"}
+        assert ui.label_method.isVisible()
+        assert ui.combosel_method.isVisible()
