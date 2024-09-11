@@ -1,5 +1,4 @@
 from os.path import splitext
-from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
 
 from qtpy import compat
 from qtpy.QtWidgets import QDialog
@@ -8,7 +7,7 @@ from glue.config import viewer_tool
 from glue.viewers.common.tool import SimpleToolMenu, Tool
 from glue_qt.utils.threading import Worker
 
-from glue_ar.utils import AR_ICON, xyz_bounds
+from glue_ar.utils import AR_ICON, is_volume_viewer, xyz_bounds
 from glue_ar.common.export import export_viewer
 from glue_ar.qt.export_dialog import QtARExportDialog
 from glue_ar.qt.exporting_dialog import ExportingDialog
@@ -52,20 +51,23 @@ class QtARExportTool(Tool):
         if not export_path:
             return
 
-        _, ext = splitext(export_path)
-        ext = ext[1:]
-        filetype = _FILETYPE_NAMES.get(ext, None)
         layer_states = [layer.state for layer in self.viewer.layers if
                         layer.enabled and layer.state.visible]
-        bounds = xyz_bounds(self.viewer.state, with_resolution=isinstance(self.viewer, VispyVolumeViewerMixin))
+        bounds = xyz_bounds(self.viewer.state, with_resolution=is_volume_viewer(self.viewer))
 
-        worker = Worker(export_viewer,
-                        viewer_state=self.viewer.state,
-                        layer_states=layer_states,
-                        bounds=bounds,
-                        state_dictionary=dialog.state_dictionary,
-                        filepath=export_path,
-                        compression=dialog.state.compression)
+        self._start_worker(export_viewer,
+                           viewer_state=self.viewer.state,
+                           layer_states=layer_states,
+                           bounds=bounds,
+                           state_dictionary=dialog.state_dictionary,
+                           filepath=export_path,
+                           compression=dialog.state.compression)
+
+    def _start_worker(self, *args, **kwargs):
+        _, ext = splitext(kwargs["filepath"])
+        ext = ext[1:]
+        filetype = _FILETYPE_NAMES.get(ext, None)
+        worker = Worker(*args, **kwargs)
         exporting_dialog = ExportingDialog(parent=self.viewer, filetype=filetype)
         worker.result.connect(exporting_dialog.close)
         worker.error.connect(exporting_dialog.close)
