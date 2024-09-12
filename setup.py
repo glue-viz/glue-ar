@@ -751,7 +751,6 @@ setup_args = dict(
             "flake8",
             "pytest",
             "pytest-cov",
-            "mock",
         ],
         "qt": [
             "glue-qt",
