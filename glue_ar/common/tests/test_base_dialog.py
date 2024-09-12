@@ -83,6 +83,15 @@ class BaseExportDialogTest:
         assert method == "Voxel"
         layer_export_state.opacity_cutoff = 0.5
 
+        state.method = "Isosurface"
+        method, layer_export_state = self.dialog.state_dictionary["Volume Data"]
+        layer_export_state.isosurface_count = 25
+
+        state.method = "Voxel"
+        method, layer_export_state = self.dialog.state_dictionary["Volume Data"]
+        assert method == "Voxel"
+        assert layer_export_state.opacity_cutof == 0.5
+
         state.layer = "Scatter Data"
 
         state.layer = "Volume Data"
@@ -90,3 +99,8 @@ class BaseExportDialogTest:
         method, layer_export_state = self.dialog.state_dictionary["Volume Data"]
         assert method == "Voxel"
         assert layer_export_state.opacity_cutoff == 0.5
+        
+        state.method = "Isosurface"
+        method, layer_export_state = self.dialog.state_dictionary["Volume Data"]
+        assert method == "Isosurface"
+        assert layer_export_state.isosurface_count == 25
