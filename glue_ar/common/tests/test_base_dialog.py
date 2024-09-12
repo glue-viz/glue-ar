@@ -90,7 +90,7 @@ class BaseExportDialogTest:
         state.method = "Voxel"
         method, layer_export_state = self.dialog.state_dictionary["Volume Data"]
         assert method == "Voxel"
-        assert layer_export_state.opacity_cutof == 0.5
+        assert layer_export_state.opacity_cutoff == 0.5
 
         state.layer = "Scatter Data"
 
