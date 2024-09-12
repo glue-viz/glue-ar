@@ -7,7 +7,7 @@ from glue.core.state_objects import State
 from glue_qt.utils import load_ui
 from glue_ar.common.export_dialog_base import ARExportDialogBase
 
-from qtpy.QtWidgets import QCheckBox, QDialog, QHBoxLayout, QLabel, QLayout, QLineEdit, QWidget
+from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLayout, QLineEdit, QWidget
 from qtpy.QtGui import QIntValidator, QDoubleValidator
 
 
@@ -65,8 +65,19 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
                 else:
                     self._clear_layout(item.layout())
 
+                layout.removeItem(item)
+
+            if isinstance(layout, QFormLayout):
+                self._clear_form_rows(layout)
+
+    def _clear_form_rows(self, layout: QFormLayout):
+        if layout is not None:
+            while layout.rowCount():
+                layout.removeRow(0)
+
     def _clear_layer_layout(self):
         self._clear_layout(self.ui.layer_layout)
+        self._layer_connections = []
 
     def _on_layer_change(self, layer_name: str):
         super()._on_layer_change(layer_name)
@@ -76,7 +87,6 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
 
     def _update_layer_ui(self, state: State):
         self._clear_layer_layout()
-        self._layer_connections = []
         for property in state.callback_properties():
             row = QHBoxLayout()
             name = self.display_name(property)
