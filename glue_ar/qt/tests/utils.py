@@ -25,5 +25,6 @@ def dialog_auto_accept_with_options(**kwargs):
         dialog.accept()
     return exec_replacement
 
+
 def combobox_options(box: QComboBox):
     return [box.itemText(i) for i in range(box.count())]

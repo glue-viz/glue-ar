@@ -2,9 +2,9 @@ from unittest.mock import MagicMock
 from typing import cast
 
 from glue_jupyter import JupyterApplication
+# We can't use the Jupyter vispy widget for these tests until
+# https://github.com/glue-viz/glue-vispy-viewers/pull/388 is released
 from glue_jupyter.ipyvolume.volume import IpyvolumeVolumeView
-# We can't use the Jupyter vispy widget for these tests until https://github.com/glue-viz/glue-vispy-viewers/pull/388 is released
-# from glue_vispy_viewers.volume.jupyter.volume_viewer import JupyterVispyVolumeViewer
 from ipyvuetify import Checkbox
 
 from glue_ar.common.tests.test_base_dialog import BaseExportDialogTest, DummyState
@@ -21,7 +21,8 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         self._setup_data()
 
         # We use a volume viewer because it can support both volume and scatter layers
-        self.viewer: IpyvolumeVolumeView = cast(IpyvolumeVolumeView, self.app.volshow(widget="ipyvolume", data=self.volume_data))
+        self.viewer: IpyvolumeVolumeView = cast(IpyvolumeVolumeView,
+                                                self.app.volshow(widget="ipyvolume", data=self.volume_data))
         self.viewer.add_data(self.scatter_data)
 
         self.on_cancel = MagicMock()
@@ -61,13 +62,13 @@ class TestJupyterExportDialog(BaseExportDialogTest):
 
         state.filetype = "USDC"
         assert not self.dialog.show_compression
-        
+
         state.filetype = "USDA"
         assert not self.dialog.show_compression
 
         state.filetype = "glTF"
         assert self.dialog.show_compression
-        
+
         state.filetype = "USDA"
         assert not self.dialog.show_compression
 
@@ -88,16 +89,16 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         assert widget.value == "0"
         assert widget.number_type is int
         assert widget.error_message == "You must enter a valid integer"
-        
+
         float_widgets = self.dialog.widgets_for_property(state, "cb_float", "Float CB")
         assert len(float_widgets) == 1
         widget = float_widgets[0]
         assert isinstance(widget, NumberField)
         assert widget.label == "Float CB"
         assert widget.value == "1.7"
-        assert widget.number_type is float 
+        assert widget.number_type is float
         assert widget.error_message == "You must enter a valid number"
-        
+
         bool_widgets = self.dialog.widgets_for_property(state, "cb_bool", "Bool CB")
         assert len(bool_widgets) == 1
         widget = bool_widgets[0]

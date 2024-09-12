@@ -16,7 +16,7 @@ class DummyState(State):
 
 class BaseExportDialogTest:
 
-    app: Application 
+    app: Application
     dialog: Any
 
     def _setup_data(self):
@@ -29,10 +29,10 @@ class BaseExportDialogTest:
         self.app.data_collection.append(self.volume_data)
 
         scatter_size = 50
-        self.scatter_data= Data(x=[random() for _ in range(scatter_size)],
-                                y=[random() for _ in range(scatter_size)],
-                                z=[random() for _ in range(scatter_size)],
-                                label="Scatter Data")
+        self.scatter_data = Data(x=[random() for _ in range(scatter_size)],
+                                 y=[random() for _ in range(scatter_size)],
+                                 z=[random() for _ in range(scatter_size)],
+                                 label="Scatter Data")
         self.app.data_collection.append(self.scatter_data)
 
         # Link pixel axes to scatter
@@ -99,7 +99,7 @@ class BaseExportDialogTest:
         method, layer_export_state = self.dialog.state_dictionary["Volume Data"]
         assert method == "Voxel"
         assert layer_export_state.opacity_cutoff == 0.5
-        
+
         state.method = "Isosurface"
         method, layer_export_state = self.dialog.state_dictionary["Volume Data"]
         assert method == "Isosurface"

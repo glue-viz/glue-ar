@@ -1,6 +1,6 @@
 import ipyvuetify as v  # noqa
 from ipyvuetify.VuetifyTemplate import VuetifyTemplate
-from ipywidgets import DOMWidget, VBox, widget_serialization
+from ipywidgets import DOMWidget, widget_serialization
 import traitlets
 from typing import Callable, List, Optional
 
@@ -8,7 +8,6 @@ from echo import HasCallbackProperties
 from glue.core.state_objects import State
 from glue.viewers.common.viewer import Viewer
 from glue_jupyter.link import link
-from glue_jupyter.state_traitlets_helpers import GlueState
 from glue_jupyter.vuetify_helpers import link_glue_choices
 
 from glue_ar.common.export_dialog_base import ARExportDialogBase

@@ -21,7 +21,8 @@ class TestQtExportDialog(BaseExportDialogTest):
         self._setup_data()
 
         # We use a volume viewer because it can support both volume and scatter layers
-        self.viewer: VispyVolumeViewer = cast(VispyVolumeViewer, self.app.new_data_viewer(VispyVolumeViewer, data=self.volume_data))
+        self.viewer: VispyVolumeViewer = cast(VispyVolumeViewer,
+                                              self.app.new_data_viewer(VispyVolumeViewer, data=self.volume_data))
         self.viewer.add_data(self.scatter_data)
 
         self.dialog = QtARExportDialog(parent=self.viewer, viewer=self.viewer)
