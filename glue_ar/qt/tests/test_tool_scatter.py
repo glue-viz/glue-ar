@@ -1,8 +1,8 @@
 from itertools import product 
-from mock import patch 
 import pytest
 from random import randint, random, seed
 from typing import cast
+from unittest.mock import patch
 
 from glue.core import Data
 from glue.core.link_helpers import LinkSame
@@ -42,6 +42,10 @@ class TestScatterExportTool:
     
         self.viewer: VispyScatterViewer = cast(VispyScatterViewer, self.app.new_data_viewer(VispyScatterViewer, data=self.data_1))
         self.viewer.add_data(self.data_2)
+
+    def teardown_method(self):
+        self.viewer.close(warn=False)
+        self.app.close()
     
     def test_toolbar(self):
         toolbar = self.viewer.toolbar
@@ -79,8 +83,9 @@ class TestScatterExportTool:
                 assert kwargs["bounds"] == bounds
                 assert kwargs["filepath"] == filepath
                 assert kwargs["compression"] == compression
-                assert tuple(kwargs["state_dictionary"].keys()) == tuple(export_label_for_layer(layer) for layer in self.viewer.layers)
-                for value in kwargs["state_dictionary"].values():
+                state_dict = kwargs["state_dictionary"]
+                assert tuple(state_dict.keys()) == ("Scatter Data 1", "Scatter Data 2")
+                for value in state_dict.values():
                     assert len(value) == 2
                     assert value[0] == "Scatter"
                     assert isinstance(value[1], ARVispyScatterExportOptions)
