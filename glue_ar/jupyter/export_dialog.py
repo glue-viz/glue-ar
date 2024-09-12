@@ -51,7 +51,6 @@ class NumberField(v.VuetifyTemplate):
 class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
 
     template_file = (__file__, "export_dialog.vue")
-    dialog_state = GlueState().tag(sync=True)
     dialog_open = traitlets.Bool().tag(sync=True)
 
     layer_items = traitlets.List().tag(sync=True)
@@ -67,7 +66,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
     method_items = traitlets.List().tag(sync=True)
     method_selected = traitlets.Int().tag(sync=True)
 
-    layer_layout = traitlets.Instance(DOMWidget).tag(sync=True, **widget_serialization)
+    layer_layout = traitlets.Instance(v.Container).tag(sync=True, **widget_serialization)
     has_layer_options = traitlets.Bool().tag(sync=True)
 
     def __init__(self,
@@ -76,7 +75,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
                  on_cancel: Optional[Callable] = None,
                  on_export: Optional[Callable] = None):
         ARExportDialogBase.__init__(self, viewer=viewer)
-        self.layer_layout = VBox()
+        self.layer_layout = v.Container()
         VuetifyTemplate.__init__(self)
 
         self._on_layer_change(self.state.layer)
@@ -89,7 +88,6 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         self.dialog_open = display
         self.on_cancel = on_cancel
         self.on_export = on_export
-        self.dialog_state = self.state
 
         self.input_widgets = []
 
@@ -123,14 +121,13 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
 
         value = getattr(instance, property)
         t = type(value)
-        prop_name = self.display_name(property)
         if t is bool:
             widget = v.Checkbox(label=display_name)
             link((instance, property), (widget, 'value'))
             return [widget]
         elif t in (int, float):
             name = "integer" if t is int else "number"
-            widget = NumberField(type=t, label=prop_name, error_message=f"You must enter a valid {name}")
+            widget = NumberField(type=t, label=display_name, error_message=f"You must enter a valid {name}")
             link((instance, property),
                  (widget, 'value'),
                  lambda value: str(value),
@@ -140,7 +137,6 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
             return []
 
     def vue_cancel_dialog(self, *args):
-        self.state = None
         self.state_dictionary = {}
         self.dialog_open = False
         if self.on_cancel:

@@ -1,51 +1,24 @@
-from random import random, seed
 from typing import cast
 
-from echo import CallbackProperty
-from glue.core import Data
-from glue.core.state_objects import State
-from glue.core.link_helpers import LinkSame
 from glue_qt.app import GlueApplication
 from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
-from numpy import arange, ones
 from qtpy.QtGui import QDoubleValidator, QIntValidator
 from qtpy.QtWidgets import QCheckBox, QLabel, QLineEdit
 
+from glue_ar.common.tests.test_base_dialog import BaseExportDialogTest, DummyState
+from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
 from glue_ar.qt.export_dialog import QtARExportDialog
 from glue_ar.qt.tests.utils import combobox_options
 
 
-class DummyState(State):
-    cb_int = CallbackProperty(0)
-    cb_float = CallbackProperty(1.7)
-    cb_bool = CallbackProperty(False)
+class TestQtExportDialog(BaseExportDialogTest):
 
-
-class TestQtExportDialog:
+    app: GlueApplication
+    dialog: QtARExportDialog
 
     def setup_method(self, method):
-        seed(102)
         self.app = GlueApplication()
-        self.volume_data = Data(
-                label='Volume Data',
-                x=arange(24).reshape((2, 3, 4)),
-                y=ones((2, 3, 4)),
-                z=arange(100, 124).reshape((2, 3, 4)))
-        self.app.data_collection.append(self.volume_data)
-
-        scatter_size = 50
-        self.scatter_data= Data(x=[random() for _ in range(scatter_size)],
-                                y=[random() for _ in range(scatter_size)],
-                                z=[random() for _ in range(scatter_size)],
-                                label="Scatter Data")
-        self.app.data_collection.append(self.scatter_data)
-
-        # Link pixel axes to scatter
-        for i, c in enumerate(('x', 'y', 'z')):
-            ri = 2 - i
-            c1 = self.volume_data.id[f"Pixel Axis {ri} [{c}]"]
-            c2 = self.scatter_data.id[c]
-            self.app.data_collection.add_link(LinkSame(c1, c2))
+        self._setup_data()
 
         # We use a volume viewer because it can support both volume and scatter layers
         self.viewer: VispyVolumeViewer = cast(VispyVolumeViewer, self.app.new_data_viewer(VispyVolumeViewer, data=self.volume_data))
@@ -56,23 +29,6 @@ class TestQtExportDialog:
 
     def teardown_method(self, method):
         self.dialog.close()
-
-    def test_default_state(self):
-        state = self.dialog.state
-        assert state.filetype == "glB"
-        assert state.compression == "None"
-        assert state.layer == "Volume Data"
-        assert state.method in {"Isosurface", "Voxel"}
-
-        assert state.filetype_helper.choices == ['glB', 'glTF', 'USDC', 'USDA']
-        assert state.compression_helper.choices == ['None', 'Draco', 'Meshoptimizer']
-        assert state.layer_helper.choices == ["Volume Data", "Scatter Data"]
-        assert set(state.method_helper.choices) == {"Isosurface", "Voxel"}
-
-    def test_default_dictionary(self):
-        state_dict = self.dialog.state_dictionary
-        assert len(state_dict) == 2
-        assert set(state_dict.keys()) == {"Volume Data", "Scatter Data"}
 
     def test_default_ui(self):
         ui = self.dialog.ui
@@ -145,21 +101,33 @@ class TestQtExportDialog:
         self.dialog._update_layer_ui(state)
         assert self.dialog.ui.layer_layout.rowCount() == 3
 
+        state = ARVispyScatterExportOptions()
+        self.dialog._update_layer_ui(state)
+        assert self.dialog.ui.layer_layout.rowCount() == 2
+
     def test_clear_layout(self):
         self.dialog._clear_layer_layout()
         assert self.dialog.ui.layer_layout.isEmpty()
         assert self.dialog._layer_connections == []
 
-    def test_layer_change(self):
+    def test_layer_change_ui(self):
         state = self.dialog.state
         ui = self.dialog.ui
 
         state.layer = "Scatter Data"
-        assert state.method_helper.choices == ["Scatter"]
+        assert ui.combosel_method.currentText() == state.method
+        assert combobox_options(ui.combosel_method) == ["Scatter"]
         assert not ui.label_method.isVisible()
         assert not ui.combosel_method.isVisible()
 
         state.layer = "Volume Data"
-        assert set(state.method_helper.choices) == {"Isosurface", "Voxel"}
+        assert set(combobox_options(ui.combosel_method)) == {"Isosurface", "Voxel"}
+        assert ui.combosel_method.currentText() == state.method
         assert ui.label_method.isVisible()
         assert ui.combosel_method.isVisible()
+
+        state.layer = "Scatter Data"
+        assert ui.combosel_method.currentText() == state.method
+        assert combobox_options(ui.combosel_method) == ["Scatter"]
+        assert not ui.label_method.isVisible()
+        assert not ui.combosel_method.isVisible()

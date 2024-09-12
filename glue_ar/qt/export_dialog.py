@@ -77,6 +77,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
 
     def _clear_layer_layout(self):
         self._clear_layout(self.ui.layer_layout)
+        self._layer_connections = []
 
     def _on_layer_change(self, layer_name: str):
         super()._on_layer_change(layer_name)
@@ -86,7 +87,6 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
 
     def _update_layer_ui(self, state: State):
         self._clear_layer_layout()
-        self._layer_connections = []
         for property in state.callback_properties():
             row = QHBoxLayout()
             name = self.display_name(property)
