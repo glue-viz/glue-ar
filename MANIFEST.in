@@ -1,2 +1,3 @@
 recursive-include glue_ar/js *
 recursive-include glue_ar/resources *
+include **/*.vue
