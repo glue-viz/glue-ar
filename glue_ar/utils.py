@@ -278,3 +278,11 @@ def get_resolution(viewer_state: Viewer3DState) -> int:
         pass
 
     return 256
+
+
+def clamped_opacity(opacity: float) -> float:
+    return min(max(opacity, 0), 1)
+
+
+def binned_opacity(raw_opacity: float, resolution: float) -> float:
+    return clamped_opacity(round(raw_opacity / resolution) * resolution)
