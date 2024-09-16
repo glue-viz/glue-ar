@@ -77,7 +77,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     occupied_voxels = {}
 
     for layer_state, option in zip(layer_states, options):
-        opacity_cutoff = option.opacity_cutoff
+        opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
         opacity_resolution = clamp(option.opacity_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
@@ -193,7 +193,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
     occupied_voxels = {}
 
     for layer_state, option in zip(layer_states, options):
-        opacity_cutoff = option.opacity_cutoff
+        opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
         opacity_resolution = clamp(option.opacity_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
