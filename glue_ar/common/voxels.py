@@ -19,6 +19,14 @@ from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_tr
 from gltflib import AccessorType, BufferTarget, ComponentType
 
 
+def clamped_opacity(opacity: float) -> float:
+    return min(max(opacity, 0), 1)
+
+
+def binned_opacity(raw_opacity: float, n_bins: int) -> float:
+    return clamped_opacity(round(raw_opacity * n_bins) / n_bins)
+
+
 @ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ("gltf", "glb"), multiple=True)
 def add_voxel_layers_gltf(builder: GLTFBuilder,
                           viewer_state: Vispy3DVolumeViewerState,
@@ -77,6 +85,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = option.opacity_cutoff
+        n_opacity_bins = option.opacity_bins
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
         isomin = isomin_for_layer(viewer_state, layer_state)
@@ -94,14 +103,16 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            adjusted_opacity = min(max(layer_state.alpha * opacity_factor * (value - isomin) / isorange, 0), 1)
+            adjusted_opacity = clamped_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange)
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
                 adjusted_a_color = color_components[:3] + [adjusted_opacity]
                 new_color = alpha_composite(adjusted_a_color, current_color)
+                new_color[3] = binned_opacity(new_color[3], n_opacity_bins)
                 occupied_voxels[indices_tpl] = new_color
             else:
+                adjusted_opacity = binned_opacity(adjusted_opacity, n_opacity_bins)
                 occupied_voxels[indices_tpl] = color_components[:3] + [adjusted_opacity]
 
     materials_map = {}
@@ -192,6 +203,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = option.opacity_cutoff
+        n_opacity_bins = option.opacity_bins
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
         isomin = isomin_for_layer(viewer_state, layer_state)
@@ -209,14 +221,16 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            adjusted_opacity = min(max(layer_state.alpha * opacity_factor * (value - isomin) / isorange, 0), 1)
+            adjusted_opacity = clamped_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange)
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
                 adjusted_a_color = color_components[:3] + [adjusted_opacity]
                 new_color = alpha_composite(adjusted_a_color, current_color)
+                new_color[3] = binned_opacity(new_color[3], n_opacity_bins)
                 occupied_voxels[indices_tpl] = new_color
             elif adjusted_opacity >= opacity_cutoff:
+                adjusted_opacity = binned_opacity(adjusted_opacity, n_opacity_bins)
                 occupied_voxels[indices_tpl] = color_components[:3] + [adjusted_opacity]
     materials_map = {}
     mesh = None
