@@ -9,7 +9,7 @@ from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARVoxelExportOptions
 from glue_ar.usd_utils import material_for_color
-from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamped_opacity, \
+from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamp, clamped_opacity, \
                           frb_for_layer, get_resolution, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color, unique_id, xyz_bounds
 
@@ -78,7 +78,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = option.opacity_cutoff
-        opacity_resolution = option.opacity_resolution
+        opacity_resolution = clamp(option.opacity_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
         isomin = isomin_for_layer(viewer_state, layer_state)
@@ -194,7 +194,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = option.opacity_cutoff
-        opacity_resolution = option.opacity_resolution
+        opacity_resolution = clamp(option.opacity_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
         isomin = isomin_for_layer(viewer_state, layer_state)
