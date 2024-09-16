@@ -1,3 +1,4 @@
+from numbers import Number
 from os.path import abspath, dirname, join
 from uuid import uuid4
 from typing import Iterator, Literal, overload, Iterable, List, Optional, Tuple, Union
@@ -278,3 +279,16 @@ def get_resolution(viewer_state: Viewer3DState) -> int:
         pass
 
     return 256
+
+
+# TODO: What is the right typing here?
+def clamp(value: Number, minimum: Number, maximum: Number) -> Number:
+    return min(max(value, minimum), maximum)
+
+
+def clamped_opacity(opacity: float) -> float:
+    return clamp(opacity, 0, 1)
+
+
+def binned_opacity(raw_opacity: float, resolution: float) -> float:
+    return clamped_opacity(round(raw_opacity / resolution) * resolution)

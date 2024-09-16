@@ -11,3 +11,4 @@ class ARIsosurfaceExportOptions(State):
 
 class ARVoxelExportOptions(State):
     opacity_cutoff = CallbackProperty(0.05)
+    opacity_resolution = CallbackProperty(0.01)

@@ -9,8 +9,9 @@ from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARVoxelExportOptions
 from glue_ar.usd_utils import material_for_color
-from glue_ar.utils import BoundsWithResolution, alpha_composite, frb_for_layer, get_resolution, hex_to_components, \
-                          isomin_for_layer, isomax_for_layer, layer_color, unique_id, xyz_bounds
+from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamp, clamped_opacity, \
+                          frb_for_layer, get_resolution, hex_to_components, isomin_for_layer, \
+                          isomax_for_layer, layer_color, unique_id, xyz_bounds
 
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, \
                                clip_linear_transformations, index_mins, index_maxes
@@ -76,7 +77,8 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     occupied_voxels = {}
 
     for layer_state, option in zip(layer_states, options):
-        opacity_cutoff = option.opacity_cutoff
+        opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
+        opacity_resolution = clamp(option.opacity_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
         isomin = isomin_for_layer(viewer_state, layer_state)
@@ -94,7 +96,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            adjusted_opacity = min(max(layer_state.alpha * opacity_factor * (value - isomin) / isorange, 0), 1)
+            adjusted_opacity = clamped_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange)
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
@@ -137,7 +139,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
             mins=pt_mins,
             maxes=pt_maxes,
         )
-        rgba_tpl = tuple(rgba)
+        rgba_tpl = tuple(rgba[:3] + [binned_opacity(rgba[3], opacity_resolution)])
         if rgba_tpl in materials_map:
             material_index = materials_map[rgba_tpl]
         else:
@@ -191,7 +193,8 @@ def add_voxel_layers_usd(builder: USDBuilder,
     occupied_voxels = {}
 
     for layer_state, option in zip(layer_states, options):
-        opacity_cutoff = option.opacity_cutoff
+        opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
+        opacity_resolution = clamp(option.opacity_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
         isomin = isomin_for_layer(viewer_state, layer_state)
@@ -209,7 +212,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            adjusted_opacity = min(max(layer_state.alpha * opacity_factor * (value - isomin) / isorange, 0), 1)
+            adjusted_opacity = clamped_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange)
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
@@ -226,7 +229,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
             continue
 
         center = tuple((index + 0.5) * side for index, side in zip(indices, clip_sides))
-        rgba_tpl = tuple(rgba)
+        rgba_tpl = tuple(rgba[:3] + [binned_opacity(rgba[3], opacity_resolution)])
         if rgba_tpl in materials_map:
             material = materials_map[rgba_tpl]
         else:
