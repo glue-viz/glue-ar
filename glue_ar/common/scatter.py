@@ -1,22 +1,18 @@
 from functools import partial
 from numpy import clip, isfinite, isnan, ndarray, ones, sqrt
-try:
-    from types import NoneType
-except ImportError:
-    NoneType = type(None)
 from typing import Callable, Dict, List, Optional, Tuple, Union
-
 
 from glue.utils import ensure_numerical
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
+
+from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation, \
+                                  sphere_points, sphere_triangles
+from glue_ar.utils import Bounds, NoneType, Viewer3DState, mask_for_bounds
+
 try:
     from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
 except ImportError:
     Scatter3DLayerState = NoneType
-
-from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation, \
-                                  sphere_points, sphere_triangles
-from glue_ar.utils import Bounds, Viewer3DState, mask_for_bounds
 
 ScatterLayerState3D = Union[ScatterLayerState, Scatter3DLayerState]
 
