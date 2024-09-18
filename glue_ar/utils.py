@@ -19,6 +19,11 @@ try:
 except ImportError:
     ViewerState3D = Vispy3DViewerState
 
+# Backwards compatibility for Python < 3.10
+try:
+    from types import NoneType  # noqa
+except ImportError:
+    NoneType = type(None)
 
 PACKAGE_DIR = dirname(abspath(__file__))
 AR_ICON = abspath(join(dirname(__file__), "ar.png"))

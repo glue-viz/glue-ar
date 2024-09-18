@@ -4,17 +4,7 @@ from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
 from numpy import array, isfinite, ndarray
 from numpy.linalg import norm
 
-# Backwards compatibility for Python < 3.10
-try:
-    from types import NoneType
-except ImportError:
-    NoneType = type(None)
 from typing import List, Literal, Optional, Tuple
-
-try:
-    from glue_jupyter.common.state3d import ViewerState3D
-except ImportError:
-    ViewerState3D = NoneType
 
 
 from glue_ar.common.export_options import ar_layer_export
@@ -28,7 +18,12 @@ from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
                                    PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
                                    IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, radius_for_scatter_layer, \
-                                   scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter
+                                   scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter, NoneType
+
+try:
+    from glue_jupyter.common.state3d import ViewerState3D
+except ImportError:
+    ViewerState3D = NoneType
 
 
 def add_vectors_gltf(builder: GLTFBuilder,

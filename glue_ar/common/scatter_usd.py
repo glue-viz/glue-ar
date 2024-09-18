@@ -1,16 +1,5 @@
-# Backwards compatibility for Python < 3.10
-try:
-    from types import NoneType
-except ImportError:
-    NoneType = type(None)
 from typing import List, Optional, Tuple
 
-try:
-    from glue_jupyter.common.state3d import ViewerState3D
-    from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
-except ImportError:
-    ViewerState3D = NoneType
-    Scatter3DLayerState = NoneType
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
 from numpy import array, ndarray
@@ -25,8 +14,15 @@ from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
 from glue_ar.utils import Viewer3DState, export_label_for_layer, iterable_has_nan, hex_to_components, \
-                          layer_color, xyz_for_layer, Bounds
+                          layer_color, xyz_for_layer, Bounds, NoneType
 from glue_ar.usd_utils import material_for_color
+
+try:
+    from glue_jupyter.common.state3d import ViewerState3D
+    from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
+except ImportError:
+    ViewerState3D = NoneType
+    Scatter3DLayerState = NoneType
 
 
 def add_vectors_usd(builder: USDBuilder,
