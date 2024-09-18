@@ -1,5 +1,7 @@
 from functools import partial
 from numpy import clip, isfinite, isnan, ndarray, ones, sqrt
+
+# Backwards compatibility for Python < 3.10
 try:
     from types import NoneType
 except ImportError:

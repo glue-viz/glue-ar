@@ -1,7 +1,16 @@
+# Backwards compatibility for Python < 3.10
+try:
+    from types import NoneType
+except ImportError:
+    NoneType = type(None)
 from typing import List, Optional, Tuple
 
-from glue_jupyter.common.state3d import ViewerState3D
-from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
+try:
+    from glue_jupyter.common.state3d import ViewerState3D
+    from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
+except ImportError:
+    ViewerState3D = NoneType
+    Scatter3DLayerState = NoneType
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
 from numpy import array, ndarray
