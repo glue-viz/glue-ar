@@ -7,8 +7,8 @@ __all__ = ["ARVispyScatterExportOptions"]
 
 class ARVispyScatterExportOptions(State):
 
-    theta_resolution = CallbackProperty(8)
-    phi_resolution = CallbackProperty(8)
+    theta_resolution = CallbackProperty(10)
+    phi_resolution = CallbackProperty(10)
 
 
 class ARIpyvolumeScatterExportOptions(State):
