@@ -15,8 +15,11 @@ class USDBuilder:
         self._create_stage(filepath)
         self._material_map: Dict[MaterialInfo, UsdShade.Shader] = {}
 
+    def _sanitize(self, identifier: str) -> str:
+        return identifier.replace("-", "_")
+
     def _create_stage(self, filepath: str):
-        self.stage = Usd.Stage.CreateNew(filepath)
+        self.stage = Usd.Stage.CreateNew(self._sanitize(filepath))
 
         # TODO: Do we want to make changing this an option?
         UsdGeom.SetStageUpAxis(self.stage, UsdGeom.Tokens.y)
@@ -63,6 +66,7 @@ class USDBuilder:
         for other meshes that we create.
         """
         identifier = identifier or unique_id()
+        identifier = self._sanitize(identifier)
         count = self._mesh_counts[identifier]
         xform_key = f"{self.default_prim_key}/xform_{identifier}_{count}"
         UsdGeom.Xform.Define(self.stage, xform_key)
@@ -87,6 +91,7 @@ class USDBuilder:
                                  identifier: Optional[str] = None) -> UsdGeom.Mesh:
         prim = mesh.GetPrim()
         identifier = identifier or unique_id()
+        identifier = self._sanitize(identifier)
         count = self._mesh_counts[identifier]
         xform_key = f"{self.default_prim_key}/xform_{identifier}_{count}"
         UsdGeom.Xform.Define(self.stage, xform_key)
