@@ -96,8 +96,8 @@ class TestVolumeExportTool:
             scatter_method, scatter_state = state_dict["Scatter Data"]
             assert scatter_method == "Scatter"
             assert isinstance(scatter_state, ARVispyScatterExportOptions)
-            assert scatter_state.theta_resolution == 8
-            assert scatter_state.phi_resolution == 8
+            assert scatter_state.theta_resolution == 10
+            assert scatter_state.phi_resolution == 10
 
             volume_method, volume_state = state_dict["Volume Data"]
             assert volume_method == "Isosurface"

@@ -91,5 +91,5 @@ class TestScatterExportTool:
                 assert len(value) == 2
                 assert value[0] == "Scatter"
                 assert isinstance(value[1], ARVispyScatterExportOptions)
-                assert value[1].theta_resolution == 8
-                assert value[1].phi_resolution == 8
+                assert value[1].theta_resolution == 10
+                assert value[1].phi_resolution == 10
