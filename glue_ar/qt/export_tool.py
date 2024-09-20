@@ -18,6 +18,7 @@ __all__ = ["ARToolMenu", "QtARExportTool"]
 _FILETYPE_NAMES = {
     "gltf": "glTF",
     "glb": "glB",
+    "usdz": "USDZ",
     "usdc": "USDC",
     "usda": "USDA",
 }
