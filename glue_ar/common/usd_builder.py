@@ -1,8 +1,11 @@
 from collections import defaultdict
-from pxr import Usd, UsdGeom, UsdLux, UsdShade
-from typing import Dict, Iterable, Optional, Tuple
-from glue_ar.usd_utils import material_for_color, material_for_mesh
+from os import extsep, remove
+from os.path import splitext
 
+from pxr import Usd, UsdGeom, UsdLux, UsdShade, UsdUtils
+from typing import Dict, Iterable, Optional, Tuple
+
+from glue_ar.usd_utils import material_for_color, material_for_mesh
 from glue_ar.utils import unique_id
 
 
@@ -12,6 +15,9 @@ MaterialInfo = Tuple[int, int, int, float, float, float]
 class USDBuilder:
 
     def __init__(self, filepath: str):
+        base, ext = splitext(filepath)
+        if ext == ".usdz":
+            filepath = f"{base}{extsep}usdc"
         self._create_stage(filepath)
         self._material_map: Dict[MaterialInfo, UsdShade.Shader] = {}
 
@@ -113,8 +119,15 @@ class USDBuilder:
 
         return mesh
 
-    def export(self, filepath):
-        self.stage.GetRootLayer().Export(filepath)
+    def export(self, filepath: str):
+        base, ext = splitext(filepath)
+        if ext == ".usdz":
+            usdc_path = f"{base}{extsep}usdc"
+            self.stage.GetRootLayer().Export(usdc_path)
+            UsdUtils.CreateNewUsdzPackage(usdc_path, filepath)
+            remove(usdc_path)
+        else:
+            self.stage.GetRootLayer().Export(filepath)
 
     def build_and_export(self, filepath):
         self.export(filepath)

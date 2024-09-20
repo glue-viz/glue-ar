@@ -188,7 +188,7 @@ def add_scatter_layer_usd(
         )
 
 
-@ar_layer_export(ScatterLayerState, "Scatter", ARVispyScatterExportOptions, ("usdc", "usda"))
+@ar_layer_export(ScatterLayerState, "Scatter", ARVispyScatterExportOptions, ("usdz", "usdc", "usda"))
 def add_vispy_scatter_layer_usd(builder: USDBuilder,
                                 viewer_state: Vispy3DViewerState,
                                 layer_state: ScatterLayerState,
@@ -211,7 +211,7 @@ def add_vispy_scatter_layer_usd(builder: USDBuilder,
                           clip_to_bounds=clip_to_bounds)
 
 
-@ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("usdc", "usda"))
+@ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("usdz", "usdc", "usda"))
 def add_ipyvolume_scatter_layer_usd(builder: USDBuilder,
                                     viewer_state: ViewerState3D,
                                     layer_state: Scatter3DLayerState,

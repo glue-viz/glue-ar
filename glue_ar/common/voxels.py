@@ -162,7 +162,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     builder.add_file_resource(triangles_bin, data=triangles_barr)
 
 
-@ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ("usda", "usdc"), multiple=True)
+@ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ("usda", "usdc", "usdz"), multiple=True)
 def add_voxel_layers_usd(builder: USDBuilder,
                          viewer_state: Vispy3DVolumeViewerState,
                          layer_states: Iterable[VolumeLayerState],
@@ -252,6 +252,6 @@ try:
     ar_layer_export.add(IPVVolumeLayerState, "Voxel", ARVoxelExportOptions,
                         ("gltf", "glb"), True, add_voxel_layers_gltf)
     ar_layer_export.add(IPVVolumeLayerState, "Voxel", ARVoxelExportOptions,
-                        ("usda", "usdc"), True, add_voxel_layers_usd)
+                        ("usda", "usdc", "usdz"), True, add_voxel_layers_usd)
 except ImportError:
     pass

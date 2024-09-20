@@ -114,7 +114,7 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
         builder.add_file_resource(level_bin, data=barr)
 
 
-@ar_layer_export(VolumeLayerState, "Isosurface", ARIsosurfaceExportOptions, ("usdc", "usda"))
+@ar_layer_export(VolumeLayerState, "Isosurface", ARIsosurfaceExportOptions, ("usdz", "usdc", "usda"))
 def add_isosurface_layer_usd(
     builder: USDBuilder,
     viewer_state: Vispy3DVolumeViewerState,
@@ -171,6 +171,6 @@ try:
     ar_layer_export.add(IPVVolumeLayerState, "Isosurface", ARIsosurfaceExportOptions,
                         ("gltf", "glb"), False, add_isosurface_layer_gltf)
     ar_layer_export.add(IPVVolumeLayerState, "Isosurface", ARIsosurfaceExportOptions,
-                        ("usda", "usdc"), False, add_isosurface_layer_usd)
+                        ("usda", "usdc", "usdz"), False, add_isosurface_layer_usd)
 except ImportError:
     pass
