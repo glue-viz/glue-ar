@@ -129,5 +129,5 @@ class USDBuilder:
         else:
             self.stage.GetRootLayer().Export(filepath)
 
-    def build_and_export(self, filepath):
+    def build_and_export(self, filepath: str):
         self.export(filepath)
