@@ -28,7 +28,8 @@ _BUILDERS = {
     "gltf": GLTFBuilder,
     "glb": GLTFBuilder,
     "usda": USDBuilder,
-    "usdc": USDBuilder
+    "usdc": USDBuilder,
+    "usdz": USDBuilder,
 }
 
 

@@ -49,8 +49,9 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         assert self.dialog.filetype_items == [
             {"text": "glB", "value": 0},
             {"text": "glTF", "value": 1},
-            {"text": "USDC", "value": 2},
-            {"text": "USDA", "value": 3}
+            {"text": "USDZ", "value": 2},
+            {"text": "USDC", "value": 3},
+            {"text": "USDA", "value": 4},
         ]
         assert self.dialog.filetype_selected == 0
         assert set([item["text"] for item in self.dialog.method_items]) == {"Isosurface", "Voxel"}

@@ -55,7 +55,7 @@ class TestScatterExportTool:
         assert len([subtool for subtool in tool.subtools if isinstance(subtool, QtARExportTool)]) == 1
 
     @pytest.mark.parametrize("extension,compression",
-                             product(("glB", "glTF", "USDA", "USDC"), ("None", "Draco", "Meshoptimizer")))
+                             product(("glB", "glTF", "USDA", "USDC", "USDZ"), ("None", "Draco", "Meshoptimizer")))
     def test_tool_export_call(self, extension, compression):
         auto_accept = dialog_auto_accept_with_options(filetype=extension, compression=compression)
         with patch("qtpy.compat.getsavefilename") as fd, \
