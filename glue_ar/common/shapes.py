@@ -28,29 +28,29 @@ def rectangular_prism_points(center: Iterable[float], sides: Iterable[float]) ->
 
 def rectangular_prism_triangulation(start_index: int = 0) -> List[Tuple[int, int, int]]:
     triangles = [
-        # side
-        (start_index + 0, start_index + 2, start_index + 1),
-        (start_index + 1, start_index + 2, start_index + 3),
+        # x = low
+        (start_index + 5, start_index + 1, start_index + 7),
+        (start_index + 7, start_index + 1, start_index + 3),
 
-        # side
-        (start_index + 4, start_index + 7, start_index + 6),
-        (start_index + 7, start_index + 4, start_index + 5),
-
-        # bottom
-        (start_index + 7, start_index + 3, start_index + 2),
-        (start_index + 7, start_index + 2, start_index + 6),
-
-        # top
-        (start_index + 5, start_index + 4, start_index + 1),
-        (start_index + 4, start_index + 0, start_index + 1),
-
-        # side
+        # x = high
         (start_index + 6, start_index + 2, start_index + 4),
         (start_index + 0, start_index + 4, start_index + 2),
 
-        # side
-        (start_index + 5, start_index + 1, start_index + 7),
-        (start_index + 7, start_index + 1, start_index + 3),
+        # y = high
+        (start_index + 0, start_index + 2, start_index + 1),
+        (start_index + 1, start_index + 2, start_index + 3),
+
+        # y = low
+        (start_index + 4, start_index + 7, start_index + 6),
+        (start_index + 7, start_index + 4, start_index + 5),
+
+        # z = low
+        (start_index + 7, start_index + 3, start_index + 2),
+        (start_index + 7, start_index + 2, start_index + 6),
+
+        # z = high
+        (start_index + 5, start_index + 4, start_index + 1),
+        (start_index + 4, start_index + 0, start_index + 1),
     ]
 
     return triangles
