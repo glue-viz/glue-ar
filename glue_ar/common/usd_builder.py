@@ -22,7 +22,10 @@ class USDBuilder:
         self._material_map: Dict[MaterialInfo, UsdShade.Shader] = {}
 
     def _sanitize(self, identifier: str) -> str:
-        return identifier.replace("-", "_")
+        # TODO: Do this in a single pass
+        for char in ("-", "(", ")"):
+            identifier = identifier.replace(char, "_")
+        return identifier
 
     def _create_stage(self, filepath: str):
         self.stage = Usd.Stage.CreateNew(self._sanitize(filepath))
