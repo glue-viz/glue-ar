@@ -8,12 +8,10 @@ file formats include [glTF/glB](https://www.khronos.org/gltf/) and [USD](https:/
 
 ## Installation
 
-This package is not (yet) listed on PyPI, so to install you'll need to clone this repository and install from source.
+This package is pip-installable:
 
 ```
-git clone https://github.com/Carifio24/glue-ar
-cd glue-ar
-pip install .  # Use `pip install -e .` to install in editable mode
+pip install glue-ar
 ```
 
 Installation requires Node.js to be installed on your system, as we currently use JavaScript packages for performing

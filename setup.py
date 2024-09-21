@@ -727,10 +727,15 @@ cmdclass = create_cmdclass(
 )
 cmdclass["js-content"] = js_content_command
 
+with open("README.md", 'r') as f:
+    description = f.read()
+
 # TODO: Add the rest of the package data
 setup_args = dict(
     name=name,
     cmdclass=cmdclass,
+    long_description=description,
+    long_description_content_type="text/markdown",
     python_requires=">=3.9",
     zip_safe=False,
     packages=find_packages(name, exclude=["js"]),
