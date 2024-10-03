@@ -279,7 +279,8 @@ def get_resolution(viewer_state: Viewer3DState) -> int:
     try:
         from glue_jupyter.common.state3d import VolumeViewerState
         if isinstance(viewer_state, VolumeViewerState):
-            return max((getattr(state, 'max_resolution', 256) for state in viewer_state.layers), default=256)
+            resolutions = tuple(getattr(state, 'max_resolution', None) for state in viewer_state.layers)
+            return max((res for res in resolutions if res is not None), default=256)
     except ImportError:
         pass
 
