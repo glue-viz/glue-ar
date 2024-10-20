@@ -5,7 +5,7 @@ from glue_qt.utils import load_ui
 from qtpy.QtWidgets import QDialog
 from qtpy.QtGui import QPixmap
 
-from glue_ar.qt.qr import create_qr
+from glue_ar.common.qr import create_qr
 
 
 class QRDialog(QDialog):
