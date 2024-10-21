@@ -60,13 +60,9 @@ def setup():
     try:
         setup_qt()
     except ImportError:
-        print("Qt setup error")
-        print(traceback.format_exc())
         pass
 
     try:
         setup_jupyter()
     except ImportError:
-        print("Jupyter setup error")
-        print(traceback.format_exc())
         pass

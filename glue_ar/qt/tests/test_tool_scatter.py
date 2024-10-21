@@ -4,6 +4,8 @@ from random import randint, random, seed
 from typing import cast
 from unittest.mock import patch
 
+pytest.importorskip("glue_qt")
+
 from glue.core import Data
 from glue.core.link_helpers import LinkSame
 from glue_qt.app import GlueApplication
