@@ -77,7 +77,10 @@ def _viewer_class(app_type: str, viewer_type: str) -> ScatterViewer:
 
 # TODO: Making this a fixture caused problems with the wrapped C/C++ object
 # defining the viewer being deleted. Can we fix that?
-def _scatter_mask_viewer(application: Application, scatter_mask_data: Data, app_type: str, viewer_type: str) -> ScatterViewer:
+def _scatter_mask_viewer(application: Application,
+                         scatter_mask_data: Data,
+                         app_type: str,
+                         viewer_type: str) -> ScatterViewer:
     application.data_collection.append(scatter_mask_data)
     viewer_cls = _viewer_class(app_type, viewer_type)
     viewer = cast(viewer_cls, application.new_data_viewer(viewer_cls, data=scatter_mask_data))
@@ -95,6 +98,8 @@ def _scatter_mask_viewer(application: Application, scatter_mask_data: Data, app_
 
 scatter_mask_options = product(product((True, False), repeat=3), APP_VIEWER_OPTIONS)
 scatter_mask_options = [[item for lst in lsts for item in lst] for lsts in scatter_mask_options]
+
+
 @pytest.mark.parametrize("clip,size,color,app_type,viewer_type", scatter_mask_options)
 def test_scatter_mask_bounds(scatter_mask_data, clip, size, color, app_type, viewer_type):
     application = _create_application(app_type)
