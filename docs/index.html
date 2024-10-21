@@ -113,17 +113,55 @@
 
     <section class="container">
       <h2>Examples</h2>
-      <p>Below are some examples of files generated using glue-ar:</p>
+      <p>Below are some examples of files generated using glue-ar. Scan the QR codes to see the figures in AR on your phone!</p>
+      <!-- 
+        If you need to change these QR codes in the future, they were generated using glue-ar's QR code utility
+        `glue_ar.common.qr.create_qr`
+      -->
+
       <div class="row 200%">
-        <section class="6u 12u(narrower)">
-          <div class="box highlight">
-            <a class="img-link" href="examples/edenhofer-voxel-350.html"><img height=200 src="assets/img/edenhofer_voxel.png"/></a>
+        <section class="12u">
+          <div class="10u 12u(narrower) box highlight inline">
+            <img width="75%" class="image" src="assets/img/edenhofer_voxel.png"/>
+            <p>A voxelized rendering of a parsec-scale galactic 3D dustmap from <a href="https://arxiv.org/abs/2308.01295">Edenhofer et. al.</a></p>
+          </div><div class="2u 12u(narrower) inline">
+            <a class="image qr-code img-link inline" href="/examples/edenhofer-voxel-350.html">
+              <img
+                width="100%"
+                href="/examples/edenhofer-voxel-350.html"
+                src="/examples/edenhofer_voxel_qr_black.png"
+                onmouseover="this.src='/examples/edenhofer_voxel_qr_red.png'"
+                onmouseout="this.src='/examples/edenhofer_voxel_qr_black.png'"
+              />
+            </a>
+          </div>
+        </section>
+      </div>
+
+
+        <section class="9u 12u(narrower) box highlight">
+          <div>
+            <img width=500 src="assets/img/edenhofer_voxel.png"/>
             <p>A voxelized rendering of a parsec-scale galactic 3D dustmap from <a href="https://arxiv.org/abs/2308.01295">Edenhofer et. al.</a></p>
           </div>
         </section>
+        <section class="3u 12u(narrower) box highlight">
+
+        </section>
+      </div>
+      <div>
+
         <section class="6u 12u(narrower)">
           <div class="box highlight">
-            <a class="img-link" href="examples/edenhofer-isosurface-256-nocomp.html"><img height=200 src="assets/img/edenhofer_isosurface.png"/></a>
+            <img height=200 src="assets/img/edenhofer_isosurface.png"/>
+            <a class="img-link" href="/examples/edenhofer-isosurface-256-nocomp.html">
+              <img
+                width=150
+                src="/examples/edenhofer_isosurface_qr_black.png"
+                onmouseover="this.src='/examples/edenhofer_isosurface_qr_red.png'"
+                onmouseout="this.src='/examples/edenhofer_isosurface_qr_black.png'"
+              />
+            </a>
             <p>An isosurface rendering of the same dustmap</p>
           </div>
         </section>
@@ -131,7 +169,15 @@
       <div class="row 200%">
         <section class="6u 12u(narrower)">
           <div class="box highlight">
-            <a class="img-link" href="examples/pertau_voxel.html"><img width=200 src="assets/img/pertau_voxel.png"/></a>
+            <img width=200 src="assets/img/pertau_voxel.png"/>
+            <a class="img-link" href="/examples/edenhofer-voxel-350.html">
+              <img
+                width=150
+                src="/examples/pertau_voxel_qr_black.png"
+                onmouseover="this.src='/examples/pertau_voxel_qr_red.png'"
+                onmouseout="this.src='/examples/pertau_voxel_qr_black.png'"
+              />
+            </a>
             <p>A voxelized rendering of the <a href="https://iopscience.iop.org/article/10.3847/2041-8213/ac1f95">Per-Tau Shell</a>, using a voxelized method for dust clouds</a></p>
           </div>
         </section>

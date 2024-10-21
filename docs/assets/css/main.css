@@ -3182,6 +3182,21 @@
 
 .img-link {
   border-bottom: none;
+  width: fit-content;
+}
+
+.inline {
+  display: inline-block;
+}
+
+.qr-code {
+  border: solid 2px black;
+  transition: all 0s;
+  box-sizing: content-box;
+}
+
+.qr-code:hover {
+  border: solid 2px red;
 }
 
 /*
