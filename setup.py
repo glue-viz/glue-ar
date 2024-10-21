@@ -763,11 +763,12 @@ setup_args = dict(
         "jupyter": [
             "glue-jupyter",
             "ipyfilechooser",
-            "ipyvuetify"
+            "ipyvuetify",
+            "glue-vispy-viewers[jupyter]",
         ],
         "qr": [
             "ngrok",
-            "segno"
+            "segno",
         ]
     },
     entry_points={
