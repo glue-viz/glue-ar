@@ -32,20 +32,26 @@ jobs:
           - libegl1-mesa
           - libhdf5-dev
       envs: |
-        - linux: py39-test
-        - linux: py310-test
-        - linux: py311-test
-        - linux: py312-test
+        - linux: py39-test-all
+        - linux: py310-test-all
+        - linux: py311-test-all
+        - linux: py312-test-all
+        - linux: py312-test-qt
+        - linux: py312-test-jupyter
 
-        - macos: py39-test
-        - macos: py310-test
-        - macos: py311-test
-        - macos: py312-test
+        - macos: py39-test-all
+        - macos: py310-test-all
+        - macos: py311-test-all
+        - macos: py312-test-all
+        - macos: py312-test-qt
+        # - macos: py312-test-jupyter
 
-        - windows: py39-test
-        - windows: py310-test
-        - windows: py311-test
-        - windows: py312-test
+        - windows: py39-test-all
+        - windows: py310-test-all
+        - windows: py311-test-all
+        - windows: py312-test-all
+        - windows: py312-test-qt
+        - windows: py312-test-jupyter
 
 
   deploy-examples:

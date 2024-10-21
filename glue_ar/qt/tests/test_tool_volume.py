@@ -1,14 +1,16 @@
 from itertools import product
+import pytest
 from random import random, seed
 from typing import cast
 from unittest.mock import patch
+
+pytest.importorskip("glue_qt")
 
 from glue.core import Data
 from glue.core.link_helpers import LinkSame
 from glue_qt.app import GlueApplication
 from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
 from numpy import arange, ones
-import pytest
 
 from glue_ar.common.export import export_viewer
 from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions

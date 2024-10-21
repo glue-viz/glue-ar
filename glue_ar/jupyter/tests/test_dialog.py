@@ -1,5 +1,8 @@
+from pytest import importorskip
 from unittest.mock import MagicMock
 from typing import cast
+
+importorskip("glue_jupyter")
 
 from glue_jupyter import JupyterApplication
 # We can't use the Jupyter vispy widget for these tests until

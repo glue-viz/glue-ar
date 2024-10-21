@@ -16,7 +16,7 @@ from glue_ar.utils import AR_ICON, export_label_for_layer, xyz_bounds
 from glue_ar.common.export import export_modelviewer, export_viewer
 from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
 from glue_ar.common.volume_export_options import ARIsosurfaceExportOptions
-from glue_ar.qt.qr import get_local_ip
+from glue_ar.common.qr import get_local_ip
 from glue_ar.qt.qr_dialog import QRDialog
 from glue_ar.qt.server import run_ar_server
 

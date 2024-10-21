@@ -1,5 +1,4 @@
 from pkg_resources import get_distribution, DistributionNotFound
-import traceback
 
 try:
     __version__ = get_distribution(__name__).version
@@ -60,13 +59,9 @@ def setup():
     try:
         setup_qt()
     except ImportError:
-        print("Qt setup error")
-        print(traceback.format_exc())
         pass
 
     try:
         setup_jupyter()
     except ImportError:
-        print("Jupyter setup error")
-        print(traceback.format_exc())
         pass

@@ -8,6 +8,7 @@ import pytest
 from glue_ar.common.export import export_viewer
 from glue_ar.common.shapes import sphere_points_count, sphere_triangles, sphere_triangles_count
 from glue_ar.common.tests.gltf_helpers import count_indices, count_vertices, unpack_vertices
+from glue_ar.common.tests.helpers import APP_VIEWER_OPTIONS
 from glue_ar.common.tests.test_scatter import BaseScatterTest
 from glue_ar.utils import export_label_for_layer, hex_to_components, layers_to_export, mask_for_bounds, \
                           xyz_bounds, xyz_for_layer
@@ -16,7 +17,7 @@ from glue_ar.utils import export_label_for_layer, hex_to_components, layers_to_e
 class TestScatterGLTF(BaseScatterTest):
 
     # TODO: How can we test the properties of compressed files?
-    @pytest.mark.parametrize("app_type,viewer_type", (("qt", "vispy"), ("jupyter", "vispy"), ("jupyter", "ipyvolume")))
+    @pytest.mark.parametrize("app_type,viewer_type", APP_VIEWER_OPTIONS)
     def test_basic_export(self, app_type: str, viewer_type: str):
         if app_type == "jupyter" and viewer_type == "vispy" and platform == "win32":
             return

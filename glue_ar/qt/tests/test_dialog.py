@@ -1,5 +1,9 @@
 from typing import cast
 
+from pytest import importorskip
+
+importorskip("glue_qt")
+
 from glue_qt.app import GlueApplication
 from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
 from qtpy.QtGui import QDoubleValidator, QIntValidator
