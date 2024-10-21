@@ -9,10 +9,27 @@ from typing import cast, Dict, Tuple, Type, Union
 from glue.core import Data
 from glue.core.state_objects import State
 from glue.viewers.common.viewer import Viewer
-from glue_jupyter import JupyterApplication
-from glue_jupyter.ipyvolume.scatter import IpyvolumeScatterView
-from glue_qt.app import GlueApplication
-from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
+from glue_ar.common.tests.helpers import APP_VIEWER_OPTIONS
+from glue_ar.utils import NoneType
+
+try:
+    from glue_jupyter import JupyterApplication
+    from glue_jupyter.ipyvolume.scatter import IpyvolumeScatterView
+    from glue_vispy_viewers.scatter.jupyter import JupyterVispyScatterViewer
+except ImportError:
+    JupyterApplication = NoneType
+    IpyvolumeScatterView = NoneType
+    JupyterVispyScatterViewer = NoneType
+try:
+    from glue_qt.app import GlueApplication
+    from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
+except ImportError:
+    GlueApplication = NoneType
+    VispyScatterViewer = NoneType
+
+
+Application = Union[GlueApplication, JupyterApplication]
+ScatterViewer = Union[Type[VispyScatterViewer], Type[JupyterVispyScatterViewer], Type[IpyvolumeScatterView]]
 
 from glue_ar.common.scatter import scatter_layer_mask
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
@@ -40,11 +57,30 @@ def scatter_mask_data():
                 color=color_values, size=size_values)
 
 
+def _create_application(app_type: str) -> Application:
+    if app_type == "qt":
+        return GlueApplication()
+    elif app_type == "jupyter":
+        return JupyterApplication()
+    else:
+        raise ValueError("Application type should be either qt or jupyter")
+
+
+def _viewer_class(app_type: str, viewer_type: str) -> ScatterViewer:
+    if viewer_type == "vispy":
+        return VispyScatterViewer if app_type == "qt" else JupyterVispyScatterViewer
+    elif viewer_type == "ipyvolume":
+        return IpyvolumeScatterView
+    else:
+        raise ValueError("Viewer type should be either vispy or ipyvolume")
+
+
 # TODO: Making this a fixture caused problems with the wrapped C/C++ object
 # defining the viewer being deleted. Can we fix that?
-def _scatter_mask_viewer(application: GlueApplication, scatter_mask_data: Data) -> VispyScatterViewer:
+def _scatter_mask_viewer(application: Application, scatter_mask_data: Data, app_type: str, viewer_type: str) -> ScatterViewer:
     application.data_collection.append(scatter_mask_data)
-    viewer = cast(VispyScatterViewer, application.new_data_viewer(VispyScatterViewer, data=scatter_mask_data))
+    viewer_cls = _viewer_class(app_type, viewer_type)
+    viewer = cast(viewer_cls, application.new_data_viewer(viewer_cls, data=scatter_mask_data))
     viewer.state.x_att = scatter_mask_data.id['x']
     viewer.state.y_att = scatter_mask_data.id['y']
     viewer.state.z_att = scatter_mask_data.id['z']
@@ -57,23 +93,31 @@ def _scatter_mask_viewer(application: GlueApplication, scatter_mask_data: Data) 
     return viewer
 
 
-@pytest.mark.parametrize("clip,size,color", product((True, False), repeat=3))
-def test_scatter_mask_bounds(scatter_mask_data, clip, size, color):
-    application = GlueApplication()
-    viewer = _scatter_mask_viewer(application, scatter_mask_data)
+scatter_mask_options = product(product((True, False), repeat=3), APP_VIEWER_OPTIONS)
+scatter_mask_options = [[item for lst in lsts for item in lst] for lsts in scatter_mask_options]
+@pytest.mark.parametrize("clip,size,color,app_type,viewer_type", scatter_mask_options)
+def test_scatter_mask_bounds(scatter_mask_data, clip, size, color, app_type, viewer_type):
+    application = _create_application(app_type)
+    viewer = _scatter_mask_viewer(application, scatter_mask_data, app_type, viewer_type)
+    vispy = viewer_type == "vispy"
     expected = ones(30).astype(bool)
+    layer_state = viewer.layers[0].state
     if clip:
         expected_x = array([(t >= 10 and t <= 35) for t in scatter_mask_data['x']])
         expected_y = array([(t >= 100 and t <= 150) for t in scatter_mask_data['y']])
         expected_z = array([t >= -45 and t <= -20 for t in scatter_mask_data['z']])
         expected &= (expected_x & expected_y & expected_z)
     if size:
-        viewer.layers[0].state.size_attribute = scatter_mask_data.id['size']
-        viewer.layers[0].state.size_mode = "Linear"
+        size_att = "size_attribute" if vispy else "size_att"
+        setattr(layer_state, size_att, scatter_mask_data.id['size'])
+        layer_state.size_mode = "Linear"
         expected &= array([i not in (2, 5, 6, 11) for i in range(scatter_mask_data.size)])
     if color:
-        viewer.layers[0].state.cmap_attribute = scatter_mask_data.id['color']
-        viewer.layers[0].state.color_mode = "Linear"
+        cmap_att = "cmap_attribute" if vispy else "cmap_att"
+        cmap_mode_att = "color_mode" if vispy else "cmap_mode"
+        setattr(layer_state, cmap_att, scatter_mask_data.id['color'])
+        setattr(layer_state, cmap_mode_att, "Linear")
+        layer_state.color_mode = "Linear"
         expected &= array([i not in (1, 5, 6, 24) for i in range(scatter_mask_data.size)])
     viewer_state = viewer.state
     bounds = [
@@ -81,7 +125,7 @@ def test_scatter_mask_bounds(scatter_mask_data, clip, size, color):
         (viewer_state.y_min, viewer_state.y_max),
         (viewer_state.z_min, viewer_state.z_max)]
     mask = scatter_layer_mask(viewer.state,
-                              viewer.layers[0].state,
+                              layer_state,
                               bounds=bounds,
                               clip_to_bounds=clip)
     if any((clip, size, color)):
@@ -106,9 +150,9 @@ class BaseScatterTest:
         z1 = [randint(1, 30) for _ in range(self.n)]
         self.data1 = Data(x=x1, y=y1, z=z1, label="Scatter Data 1")
         self.data1.style.color = "#fedcba"
-        self.app = self._create_application(self.app_type)
+        self.app = _create_application(self.app_type)
         self.app.data_collection.append(self.data1)
-        self.viewer: Viewer = self.app.new_data_viewer(self._viewer_class(self.viewer_type))
+        self.viewer: Viewer = self.app.new_data_viewer(_viewer_class(self.app_type, self.viewer_type))
         self.viewer.add_data(self.data1)
 
         x2 = [random() * 7 for _ in range(self.n)]
@@ -133,22 +177,6 @@ class BaseScatterTest:
             if hasattr(self.app, 'close'):
                 self.app.close()
         self.app = None
-
-    def _create_application(self, app_type: str) -> Union[GlueApplication, JupyterApplication]:
-        if app_type == "qt":
-            return GlueApplication()
-        elif app_type == "jupyter":
-            return JupyterApplication()
-        else:
-            raise ValueError("Application type should be either qt or jupyter")
-
-    def _viewer_class(self, viewer_type: str) -> Union[Type[VispyScatterViewer], Type[IpyvolumeScatterView]]:
-        if viewer_type == "vispy":
-            return VispyScatterViewer
-        elif viewer_type == "ipyvolume":
-            return IpyvolumeScatterView
-        else:
-            raise ValueError("Viewer type should be either vispy or ipyvolume")
 
     def _basic_state_dictionary(self, viewer_type: str) -> Dict[str, Tuple[str, State]]:
         if viewer_type == "vispy":
