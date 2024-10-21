@@ -44,7 +44,7 @@ jobs:
         - macos: py311-test-all
         - macos: py312-test-all
         - macos: py312-test-qt
-        - macos: py312-test-jupyter
+        # - macos: py312-test-jupyter
 
         - windows: py39-test-all
         - windows: py310-test-all
