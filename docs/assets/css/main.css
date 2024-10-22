@@ -246,7 +246,7 @@
 		}
 
 		.container {
-			width: 100% !important;
+			width: 90% !important;
 		}
 
 	}
@@ -2783,12 +2783,6 @@
 				width: 20%;
 			}
 
-		/* Header */
-
-			#header {
-				display: none;
-			}
-
 		/* Banner */
 
 			#banner {
@@ -3123,7 +3117,8 @@
 		/* Box */
 
 			.box.highlight {
-				padding-left: calc(4em + 30px);
+				/*padding-left: calc(4em + 30px);*/
+                padding-left: 0;
 			}
 
 			.box.post .inner {
@@ -3182,6 +3177,9 @@
   border: solid 2px black;
   transition: all 0s;
   box-sizing: border-box;
+  min-width: 100px;
+  width: 100%;
+  margin: auto;
 }
 
 .qr-code:hover {
@@ -3196,6 +3194,25 @@
 
 .divider {
   width: 80%;
+}
+
+.example-img {
+    width: 75%;
+    min-width: 200px;
+}
+
+@media screen and (max-width: 840px) {
+    #nav {
+        display: none;
+    }
+
+    .flex-row {
+        display: block;
+    }
+
+    .qr-code {
+        width: 75%;
+    }
 }
 
 
