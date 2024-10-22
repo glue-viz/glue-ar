@@ -30,14 +30,14 @@
       <hr>
     </div>
 
-    <section class="container">
+    <section id="what-is-it" class="container">
       <h2>What is it?</h2>
       <p>glue-ar is a plugin for the <a href="https://glueviz.org">glue</a> visualization software which allows exporting views from glue's 3D viewers to augmented reality (AR)-compatible file formats.</p>
     </section>
 
     <hr class="divider">
 
-    <section class="container">
+    <section id="file-formats" class="container">
       <h2>Supported file formats</h2>
       <p>Currently glue-ar supports exporting to two industry-standard 3D file formats:</p>
       <div class="row 200%">
@@ -70,7 +70,7 @@
 
     <hr class="divider">
 
-    <section class="container">
+    <section id="installation" class="container">
       <h2>Installation</h2>
       <p>glue-ar is installable via pip:</p>
   
@@ -83,7 +83,7 @@
 
     <hr class="divider">
 
-    <section class="container">
+    <section id="where-can-i-use" class="container">
       <h2>Where can I use it?</h2>
       <p>glue-ar can be used with both major frontends for glue: the Qt desktop application, and the glue-jupyter viewers which can be used in Jupyter notebooks.</p>
 
@@ -92,7 +92,7 @@
           <div class="box highlight">
             <h3>Qt desktop application</h3>
             <p>In Qt glue, the glue-ar export tool is exposed in the toolbar as sub-tools of the "save" meta-tool, and can be accessed from its dropdown menu.</p>
-            <img src="assets/img/viewer_tool.gif"/>
+            <img src="assets/img/viewer_tool.gif" width="80%"/>
           </div>
         </section>
 
@@ -100,7 +100,7 @@
           <div class="box highlight">
             <h3>Jupyter</h3>
             <p>The glue Jupyter viewers don't yet support subtools, so in these viewers the glue-ar export tool is exposed at the top level of the toolbar.</p>
-            <img src="assets/img/viewer_tool_jupyter.png"/>
+            <img src="assets/img/viewer_tool_jupyter.png" width="100%"/>
           </div>
         </section>
       </div>
@@ -115,14 +115,14 @@
 
     <hr class="divider">
 
-    <section class="container">
+    <section id="model-viewer" class="container">
       <h2>model-viewer</h2>
       <p>If glTF is selected as the export file format, glue-ar will also export an HTML file in addition to the glTF. This HTML file provides a display of the exported figure using the <a href="https://modelviewer.dev">model-viewer</a> web component. This model-viewer page provides a THREE.js-powered glTF viewer that, on an AR-capable device (such as an Android or iOS phone) allows viewing the glTF file using the hardware's AR capability. This exported HTML has no additional dependencies and can be served using static file hosting.</p>
     </section>
 
     <hr class="divider">
 
-    <section class="container">
+    <section id="cospaces" class="container">
       <h2>CoSpaces</h2>
       <p>A popular option for sharing 3D files in augmented reality is <a href="https://www.cospaces.io/">CoSpaces</a>, which allows viewing 3D files on a mobile device via a dedicated app. The CoSpaces app allows viewing figures in AR on a flat surface directly, or using the <a href="https://mergeedu.com/cube">Merge Cube</a> to allow for a more tangible AR experience.</p>
       <p>CoSpaces supports the glTF and glB formats, so it's possible to output from glue-ar and share via CoSpaces directly. It's our goal to eventually allow automatic CoSpaces upload, but for now sharing your AR figures to CoSpaces requires some manual steps (as well as a CoSpaces account.</p>
@@ -149,7 +149,7 @@
 
     <hr class="divider">
 
-    <section class="container">
+    <section id="examples" class="container">
       <h2>Examples</h2>
       <p>Below are some examples of files generated using glue-ar. Scan the QR codes to see the figures in AR on your phone!</p>
       <!-- 
