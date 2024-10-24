@@ -4,12 +4,20 @@ from glue_vispy_viewers.common.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 
 from glue_ar.common.export_options import ar_layer_export
-from glue_ar.common.scatter import PointsGetter, ScatterLayerState3D, radius_for_scatter_layer, \
+from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, PointsGetter, \
+                                   ScatterLayerState3D, box_points_getter, radius_for_scatter_layer, \
                                    scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter
-from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
-from glue_ar.common.shapes import sphere_triangles
+from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
+from glue_ar.common.shapes import rectangular_prism_triangulation, sphere_triangles
 from glue_ar.common.stl_builder import STLBuilder
-from glue_ar.utils import Bounds, Viewer3DState, xyz_bounds, xyz_for_layer
+from glue_ar.utils import Bounds, NoneType, Viewer3DState, xyz_bounds, xyz_for_layer
+
+try:
+    from glue_jupyter.common.state3d import ViewerState3D
+    from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
+except ImportError:
+    ViewerState3D = NoneType
+    Scatter3DLayerState = NoneType
 
 
 def add_scatter_layer_stl(builder: STLBuilder,
@@ -50,12 +58,33 @@ def add_vispy_scatter_layer_stl(builder: STLBuilder,
                                 options: ARVispyScatterExportOptions,
                                 bounds: Bounds,
                                 clip_to_bounds: bool = True):
-
     triangles = sphere_triangles(theta_resolution=options.theta_resolution,
                                  phi_resolution=options.phi_resolution)
 
     points_getter = sphere_points_getter(theta_resolution=options.theta_resolution,
                                          phi_resolution=options.phi_resolution)
+
+    add_scatter_layer_stl(builder=builder,
+                          viewer_state=viewer_state,
+                          layer_state=layer_state,
+                          points_getter=points_getter,
+                          triangles=triangles,
+                          bounds=bounds,
+                          clip_to_bounds=clip_to_bounds)
+
+
+@ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("stl",))
+def add_ipyvolume_scatter_layer_usd(builder: STLBuilder,
+                                    viewer_state: ViewerState3D,
+                                    layer_state: Scatter3DLayerState,
+                                    options: ARIpyvolumeScatterExportOptions,
+                                    bounds: Bounds,
+                                    clip_to_bounds: bool = True):
+    # TODO: What to do for circle2d?
+    geometry = str(layer_state.geo)
+    triangle_getter = IPYVOLUME_TRIANGLE_GETTERS.get(geometry, rectangular_prism_triangulation)
+    triangles = triangle_getter()
+    points_getter = IPYVOLUME_POINTS_GETTERS.get(geometry, box_points_getter)
 
     add_scatter_layer_stl(builder=builder,
                           viewer_state=viewer_state,
