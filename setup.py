@@ -729,6 +729,39 @@ cmdclass["js-content"] = js_content_command
 with open("README.md", 'r') as f:
     description = f.read()
 
+dependencies=[
+    "gltflib",
+    "glue-core",
+    "glue-vispy-viewers",
+    "pillow",
+    "PyMCubes",
+    "usd-core",
+]
+
+extras_require = {
+    "test": [
+        "flake8",
+        "pytest",
+        "pytest-cov",
+    ],
+    "qt": [
+        "glue-qt",
+        "PyQt5",
+    ],
+    "jupyter": [
+        "glue-jupyter",
+        "ipyfilechooser",
+        "ipyvuetify",
+        "glue-vispy-viewers[jupyter]",
+    ],
+    "qr": [
+        "ngrok",
+        "segno",
+    ]
+}
+
+extras_require["all"] = sum(extras_require.values(), [])
+
 # TODO: Add the rest of the package data
 setup_args = dict(
     name=name,
@@ -742,35 +775,8 @@ setup_args = dict(
         "glue_ar": ["py.typed", "resources/**", "**/*.vue", "**/*.ui"],
     },
     include_package_data=True,
-    install_requires=[
-        "gltflib",
-        "glue-core",
-        "glue-vispy-viewers",
-        "pillow",
-        "PyMCubes",
-        "usd-core",
-    ],
-    extras_require={
-        "test": [
-            "flake8",
-            "pytest",
-            "pytest-cov",
-        ],
-        "qt": [
-            "glue-qt",
-            "PyQt5",
-        ],
-        "jupyter": [
-            "glue-jupyter",
-            "ipyfilechooser",
-            "ipyvuetify",
-            "glue-vispy-viewers[jupyter]",
-        ],
-        "qr": [
-            "ngrok",
-            "segno",
-        ]
-    },
+    install_requires=dependencies,
+    extras_require=extras_require,
     entry_points={
         "glue.plugins": "glue_ar = glue_ar:setup"
     }
