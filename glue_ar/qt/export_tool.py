@@ -21,6 +21,7 @@ _FILETYPE_NAMES = {
     "usdz": "USDZ",
     "usdc": "USDC",
     "usda": "USDA",
+    "stl": "STL",
 }
 
 

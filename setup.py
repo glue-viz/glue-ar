@@ -733,6 +733,7 @@ dependencies=[
     "gltflib",
     "glue-core",
     "glue-vispy-viewers",
+    "numpy-stl",
     "pillow",
     "PyMCubes",
     "usd-core",

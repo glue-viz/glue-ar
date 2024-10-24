@@ -49,7 +49,7 @@ class BaseExportDialogTest:
         assert state.layer == "Volume Data"
         assert state.method in {"Isosurface", "Voxel"}
 
-        assert state.filetype_helper.choices == ['glB', 'glTF', 'USDZ', 'USDC', 'USDA']
+        assert state.filetype_helper.choices == ['glB', 'glTF', 'USDZ', 'USDC', 'USDA', 'STL']
         assert state.compression_helper.choices == ['None', 'Draco', 'Meshoptimizer']
         assert state.layer_helper.choices == ["Volume Data", "Scatter Data"]
         assert set(state.method_helper.choices) == {"Isosurface", "Voxel"}

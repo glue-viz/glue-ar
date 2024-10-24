@@ -55,6 +55,7 @@ class TestJupyterExportDialog(BaseExportDialogTest):
             {"text": "USDZ", "value": 2},
             {"text": "USDC", "value": 3},
             {"text": "USDA", "value": 4},
+            {"text": "STL", "value": 5},
         ]
         assert self.dialog.filetype_selected == 0
         assert set([item["text"] for item in self.dialog.method_items]) == {"Isosurface", "Voxel"}
@@ -76,8 +77,8 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         state.filetype = "USDA"
         assert not self.dialog.show_compression
 
-        state.filetype = "glB"
-        assert self.dialog.show_compression
+        state.filetype = "STL"
+        assert not self.dialog.show_compression
 
         state.filetype = "glTF"
         assert self.dialog.show_compression

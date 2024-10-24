@@ -65,9 +65,9 @@ class TestQtExportDialog(BaseExportDialogTest):
         assert not ui.combosel_compression.isVisible()
         assert not ui.label_compression_message.isVisible()
 
-        state.filetype = "glB"
-        assert ui.combosel_compression.isVisible()
-        assert ui.label_compression_message.isVisible()
+        state.filetype = "STL"
+        assert not ui.combosel_compression.isVisible()
+        assert not ui.label_compression_message.isVisible()
 
         state.filetype = "glTF"
         assert ui.combosel_compression.isVisible()
