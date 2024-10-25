@@ -6,14 +6,10 @@ import pytest
 from stl import Mesh
 
 from glue_ar.common.export import export_viewer
-from glue_ar.common.shapes import sphere_triangles_count
+from glue_ar.common.shapes import sphere_points_count, sphere_triangles_count
 from glue_ar.common.tests.helpers import APP_VIEWER_OPTIONS
 from glue_ar.common.tests.test_scatter import BaseScatterTest
 from glue_ar.utils import export_label_for_layer, layers_to_export, mask_for_bounds, xyz_bounds, xyz_for_layer
-
-
-def unique_along_axis(arr, axis):
-    return np.apply_along_axis(np.unique, axis, arr)
 
 
 class TestScatterSTL(BaseScatterTest):
@@ -47,7 +43,7 @@ class TestScatterSTL(BaseScatterTest):
 
         # Check that the center of each sphere mesh matches the
         # corresponding data point
-        tolerance = 1e-7
+        tolerance = 1e-6
         layer_label = export_label_for_layer(layer)
         method, options = self.state_dictionary[layer_label]
         assert method == "Scatter"
@@ -56,13 +52,14 @@ class TestScatterSTL(BaseScatterTest):
         # But we should make this more robust
         theta_resolution: int = getattr(options, "theta_resolution", 3)
         phi_resolution: int = getattr(options, "phi_resolution", 3)
+        points_count = sphere_points_count(theta_resolution, phi_resolution)
         triangle_count = sphere_triangles_count(theta_resolution, phi_resolution)
         for index in range(self.data1.size):
-            point = sum([sum(stl.vectors[i]) for i in range(triangle_count)]) / (3 * triangle_count)
+            lower_vector_index = index * triangle_count
+            upper_vector_index = lower_vector_index + triangle_count
+            vectors = stl.vectors[lower_vector_index:upper_vector_index]
+            vectors = vectors.reshape(vectors.shape[0] * vectors.shape[1], vectors.shape[2])
+            points = np.unique(vectors, axis=0)
             data_point = data[index]
-            for i in range(point.shape[0]):
-                print(point[i], data_point[i])
-                print("======")
-            # assert all(abs(point[i] - data_point[i]) < tolerance for i in range(point.shape[0]))
-
-        assert False
+            center = sum(points) / points_count
+            assert all(abs(center[i] - data_point[i]) < tolerance for i in range(center.shape[0]))
