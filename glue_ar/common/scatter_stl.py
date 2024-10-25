@@ -4,7 +4,7 @@ from glue_vispy_viewers.common.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 
 from glue_ar.common.export_options import ar_layer_export
-from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, PointsGetter, \
+from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, PointsGetter, \
                                    ScatterLayerState3D, box_points_getter, radius_for_scatter_layer, \
                                    scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
