@@ -97,7 +97,7 @@ class TestScatterGLTF(BaseScatterTest):
                              scaled=True)
         data = data[:, [1, 2, 0]]
 
-        # Unpack the center of each sphere mesh matches the
+        # Check that the center of each sphere mesh matches the
         # corresponding data point
         tolerance = 1e-7
         for index, mesh in enumerate(model.meshes):

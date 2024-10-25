@@ -1,13 +1,19 @@
 from sys import platform
 from tempfile import NamedTemporaryFile
 
+import numpy as np
 import pytest
 from stl import Mesh
 
 from glue_ar.common.export import export_viewer
+from glue_ar.common.shapes import sphere_triangles_count
 from glue_ar.common.tests.helpers import APP_VIEWER_OPTIONS
 from glue_ar.common.tests.test_scatter import BaseScatterTest
-from glue_ar.utils import layers_to_export, mask_for_bounds, xyz_bounds, xyz_for_layer
+from glue_ar.utils import export_label_for_layer, layers_to_export, mask_for_bounds, xyz_bounds, xyz_for_layer
+
+
+def unique_along_axis(arr, axis):
+    return np.apply_along_axis(np.unique, axis, arr)
 
 
 class TestScatterSTL(BaseScatterTest):
@@ -30,12 +36,33 @@ class TestScatterSTL(BaseScatterTest):
 
         stl = Mesh.from_file(self.tmpfile.name)
 
+        layer = self.viewer.layers[0]
         mask = mask_for_bounds(self.viewer.state, layer.state, bounds)
         data = xyz_for_layer(self.viewer.state, layer.state,
                              preserve_aspect=self.viewer.state.native_aspect,
                              mask=mask,
                              scaled=True)
 
-        print(self.data1['x'][0], self.data1['y'][0], self.data1['z'][0])
-        print(stl.points[:82])
+        data = data[:, [1, 2, 0]]
+
+        # Check that the center of each sphere mesh matches the
+        # corresponding data point
+        tolerance = 1e-7
+        layer_label = export_label_for_layer(layer)
+        method, options = self.state_dictionary[layer_label]
+        assert method == "Scatter"
+
+        # TODO: 3 is the value for ipyvolume's diamond, which is the ipv default
+        # But we should make this more robust
+        theta_resolution: int = getattr(options, "theta_resolution", 3)
+        phi_resolution: int = getattr(options, "phi_resolution", 3)
+        triangle_count = sphere_triangles_count(theta_resolution, phi_resolution)
+        for index in range(self.data1.size):
+            point = sum([sum(stl.vectors[i]) for i in range(triangle_count)]) / (3 * triangle_count)
+            data_point = data[index]
+            for i in range(point.shape[0]):
+                print(point[i], data_point[i])
+                print("======")
+            # assert all(abs(point[i] - data_point[i]) < tolerance for i in range(point.shape[0]))
+
         assert False
