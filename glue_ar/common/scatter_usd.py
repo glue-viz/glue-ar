@@ -196,11 +196,13 @@ def add_vispy_scatter_layer_usd(builder: USDBuilder,
                                 bounds: Bounds,
                                 clip_to_bounds: bool = True):
 
-    triangles = sphere_triangles(theta_resolution=options.theta_resolution,
-                                 phi_resolution=options.phi_resolution)
+    theta_resolution = int(options.theta_resolution)
+    phi_resolution = int(options.phi_resolution)
+    triangles = sphere_triangles(theta_resolution=theta_resolution,
+                                 phi_resolution=phi_resolution)
 
-    points_getter = sphere_points_getter(theta_resolution=options.theta_resolution,
-                                         phi_resolution=options.phi_resolution)
+    points_getter = sphere_points_getter(theta_resolution=theta_resolution,
+                                         phi_resolution=phi_resolution)
 
     add_scatter_layer_usd(builder=builder,
                           viewer_state=viewer_state,
