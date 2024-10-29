@@ -6,8 +6,7 @@ from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, scatter_layer_mask
 from glue_ar.gltf_utils import add_points_to_bytearray, index_mins, index_maxes
-from glue_ar.usd_utils import color_identifier
-from glue_ar.utils import Bounds, NoneType, Viewer3DState, hex_to_components, layer_color, unique_id, xyz_bounds, xyz_for_layer
+from glue_ar.utils import Bounds, NoneType, Viewer3DState, color_identifier, hex_to_components, layer_color, unique_id, xyz_bounds, xyz_for_layer
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter_export_options import ARPointExportOptions
 
@@ -29,7 +28,6 @@ def add_points_layer_gltf(builder: GLTFBuilder,
     bounds = xyz_bounds(viewer_state, with_resolution=False)
 
     vispy_layer_state = isinstance(layer_state, ScatterLayerState)
-    fixed_size = layer_state.size_mode == "Fixed"
     color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
     fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
 
@@ -144,11 +142,11 @@ def add_vispy_points_layer_gltf(builder: GLTFBuilder,
 
 @ar_layer_export(Scatter3DLayerState, "Points", ARPointExportOptions, ("gltf", "glb"))
 def add_ipyvolume_points_layer_gltf(builder: GLTFBuilder,
-                                viewer_state: Vispy3DViewerState,
-                                layer_state: ScatterLayerState,
-                                options: ARPointExportOptions,
-                                bounds: Bounds,
-                                clip_to_bounds: bool = True):
+                                    viewer_state: Vispy3DViewerState,
+                                    layer_state: ScatterLayerState,
+                                    options: ARPointExportOptions,
+                                    bounds: Bounds,
+                                    clip_to_bounds: bool = True):
     add_points_layer_gltf(builder=builder,
                           viewer_state=viewer_state,
                           layer_state=layer_state,
