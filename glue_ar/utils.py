@@ -298,3 +298,7 @@ def clamped_opacity(opacity: float) -> float:
 
 def binned_opacity(raw_opacity: float, resolution: float) -> float:
     return clamped_opacity(round(raw_opacity / resolution) * resolution)
+
+
+def color_identifier(color: Tuple[int, int, int], opacity: float = 1.0) -> str:
+    return f"{'_'.join(str(c) for c in color)}_{opacity}".replace(".", "_")

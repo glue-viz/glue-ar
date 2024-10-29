@@ -2,9 +2,7 @@ from typing import Optional, Tuple
 
 from pxr import Sdf, Usd, UsdGeom, UsdShade
 
-
-def color_identifier(color: Tuple[int, int, int], opacity: float = 1.0) -> str:
-    return f"{'_'.join(str(c) for c in color)}_{opacity}".replace(".", "_")
+from glue_ar.utils import color_identifier
 
 
 def material_for_color(stage: Usd.Stage,
