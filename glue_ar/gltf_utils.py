@@ -8,7 +8,6 @@ __all__ = [
     "slope_intercept_between",
     "clip_linear_transformations",
     "bring_into_clip",
-    "offset_triangles",
     "create_material_for_color",
     "add_points_to_bytearray",
     "add_triangles_to_bytearray",
@@ -42,10 +41,6 @@ def clip_linear_transformations(bounds, clip_size=1):
 
 def bring_into_clip(points, transforms):
     return [tuple(transform[0] * c + transform[1] for transform, c in zip(transforms, pt)) for pt in points]
-
-
-def offset_triangles(triangle_indices, offset):
-    return [tuple(idx + offset for idx in triangle) for triangle in triangle_indices]
 
 
 def create_material_for_color(
