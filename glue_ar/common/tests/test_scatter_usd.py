@@ -1,7 +1,7 @@
 from sys import platform
 from tempfile import NamedTemporaryFile
 
-from pxr import Sdf, Usd
+from pxr import Usd
 import pytest
 
 from glue_ar.common.export import export_viewer
