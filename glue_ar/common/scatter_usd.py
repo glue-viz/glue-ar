@@ -16,7 +16,6 @@ from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, 
                                   normalize, rectangular_prism_triangulation, sphere_triangles
 from glue_ar.utils import Viewer3DState, export_label_for_layer, iterable_has_nan, hex_to_components, \
                           layer_color, offset_triangles, xyz_for_layer, Bounds, NoneType
-from glue_ar.usd_utils import material_for_color
 
 try:
     from glue_jupyter.common.state3d import ViewerState3D
@@ -147,7 +146,7 @@ def add_scatter_layer_usd(
             tris.append(pt_triangles)
 
         mesh_points = [pt for pts in points for pt in pts]
-        mesh_triangles = [tri for sphere in tris for tri in sphere] 
+        mesh_triangles = [tri for sphere in tris for tri in sphere]
         builder.add_mesh(mesh_points,
                          mesh_triangles,
                          color=color_components,
@@ -169,7 +168,7 @@ def add_scatter_layer_usd(
         for color, points in points_by_color.items():
             tris = triangles_by_color[color]
             mesh_points = [pt for pts in points for pt in pts]
-            mesh_triangles = [tri for sphere in tris for tri in sphere] 
+            mesh_triangles = [tri for sphere in tris for tri in sphere]
             builder.add_mesh(mesh_points,
                              mesh_triangles,
                              color=color,
