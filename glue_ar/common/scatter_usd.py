@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import List, Optional, Tuple
 
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
@@ -14,8 +15,7 @@ from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
 from glue_ar.utils import Viewer3DState, export_label_for_layer, iterable_has_nan, hex_to_components, \
-                          layer_color, xyz_for_layer, Bounds, NoneType
-from glue_ar.usd_utils import material_for_color
+                          layer_color, offset_triangles, xyz_for_layer, Bounds, NoneType
 
 try:
     from glue_jupyter.common.state3d import ViewerState3D
@@ -131,37 +131,49 @@ def add_scatter_layer_usd(
         normalized = [max(min((cval - layer_state.cmap_vmin) / crange, 1), 0) for cval in cmap_vals]
         colors = [tuple(int(256 * c) for c in cmap(norm)[:3]) for norm in normalized]
 
-    # If we're in fixed-size mode, we can reuse the same prim and translate it
-    if fixed_size:
-        first_point = data[0]
-        points = points_getter(first_point, radius)
-        mesh = builder.add_mesh(points,
-                                triangles,
-                                color=color_components,
-                                opacity=layer_state.alpha,
-                                identifier=identifier)
-
-        for i in range(1, len(data)):
-            point = data[i]
-            translation = tuple(p - fp for p, fp in zip(point, first_point))
-            if fixed_color:
-                material = None
-            else:
-                material = material_for_color(builder.stage, colors[i], layer_state.alpha)
-            builder.add_translated_reference(mesh,
-                                             translation,
-                                             material=material,
-                                             identifier=identifier)
-
-    else:
+    # If we're in fixed-color mode, we can use one mesh for everything
+    opacity = float(layer_state.alpha)
+    if fixed_color:
+        points = []
+        tris = []
+        triangle_offset = 0
         for i, point in enumerate(data):
-            points = points_getter(point, sizes[i])
-            color = color_components
-            if not fixed_color:
-                cval = cmap_vals[i]
-                normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
-                color = tuple(int(256 * c) for c in cmap(normalized)[:3])
-            builder.add_mesh(points, triangles, color=color, opacity=layer_state.alpha)
+            size = radius if fixed_size else sizes[i]
+            pts = points_getter(point, size)
+            points.append(pts)
+            pt_triangles = offset_triangles(triangles, triangle_offset)
+            triangle_offset += len(pts)
+            tris.append(pt_triangles)
+
+        mesh_points = [pt for pts in points for pt in pts]
+        mesh_triangles = [tri for sphere in tris for tri in sphere]
+        builder.add_mesh(mesh_points,
+                         mesh_triangles,
+                         color=color_components,
+                         opacity=opacity,
+                         identifier=identifier)
+    else:
+        points_by_color = defaultdict(list)
+        triangles_by_color = defaultdict(list)
+        triangle_offsets = defaultdict(int)
+        for i, point in enumerate(data):
+            color = colors[i]
+            size = radius if fixed_size else sizes[i]
+            pts = points_getter(point, size)
+            pt_triangles = offset_triangles(triangles, triangle_offsets[color])
+            triangle_offsets[color] += len(pts)
+            points_by_color[color].append(pts)
+            triangles_by_color[color].append(pt_triangles)
+
+        for color, points in points_by_color.items():
+            tris = triangles_by_color[color]
+            mesh_points = [pt for pts in points for pt in pts]
+            mesh_triangles = [tri for sphere in tris for tri in sphere]
+            builder.add_mesh(mesh_points,
+                             mesh_triangles,
+                             color=color,
+                             opacity=opacity,
+                             identifier=identifier)
 
     for axis in ("x", "y", "z"):
         if getattr(layer_state, f"{axis}err_visible", False):
