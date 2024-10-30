@@ -134,17 +134,17 @@ def add_scatter_layer_usd(
 
     # If we're in fixed-color mode, we can use one mesh for everything
     opacity = float(layer_state.alpha)
-    triangle_offset = 0
     if fixed_color:
         points = []
         tris = []
-        for point in data:
+        triangle_offset = 0
+        for i, point in enumerate(data):
             size = radius if fixed_size else sizes[i]
             pts = points_getter(point, size)
             points.append(pts)
             pt_triangles = offset_triangles(triangles, triangle_offset)
             triangle_offset += len(pts)
-            triangles.append(pt_triangles)
+            tris.append(pt_triangles)
 
         mesh_points = [pt for pts in points for pt in pts]
         mesh_triangles = [tri for sphere in tris for tri in sphere] 
@@ -156,11 +156,13 @@ def add_scatter_layer_usd(
     else:
         points_by_color = defaultdict(list)
         triangles_by_color = defaultdict(list)
-        for point, color in zip(data, colors):
+        triangle_offsets = defaultdict(int)
+        for i, point in enumerate(data):
+            color = colors[i]
             size = radius if fixed_size else sizes[i]
             pts = points_getter(point, size)
-            pt_triangles = offset_triangles(triangles, triangle_offset)
-            triangle_offset += len(pts)
+            pt_triangles = offset_triangles(triangles, triangle_offsets[color])
+            triangle_offsets[color] += len(pts)
             points_by_color[color].append(pts)
             triangles_by_color[color].append(pt_triangles)
 
