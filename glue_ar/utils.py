@@ -25,6 +25,20 @@ try:
 except ImportError:
     NoneType = type(None)
 
+
+__all__ = [
+    "NoneType", "PACKAGE_DIR", "AR_ICON", "RESOURCES_DIR", "data_count",
+    "export_label_for_layer", "layers_to_export", "isomin_for_layer",
+    "isomax_for_layer", "xyz_bounds", "bounds_3d_from_layers",
+    "slope_intercept_between", "layer_color", "bring_into_clip",
+    "mask_for_bounds", "xyz_for_layer", "hex_to_components",
+    "unique_id", "alpha_composite", "data_for_layer", "frb_for_layer",
+    "ndarray_has_nan", "iterable_has_nan", "iterator_count",
+    "is_volume_viewer", "get_resolution", "clamp", "clamped_opacity",
+    "binned_opacity", "offset_triangles",
+]
+
+
 PACKAGE_DIR = dirname(abspath(__file__))
 AR_ICON = abspath(join(dirname(__file__), "ar.png"))
 RESOURCES_DIR = join(PACKAGE_DIR, "resources")
@@ -302,3 +316,7 @@ def binned_opacity(raw_opacity: float, resolution: float) -> float:
 
 def color_identifier(color: Tuple[int, int, int], opacity: float = 1.0) -> str:
     return f"{'_'.join(str(c) for c in color)}_{opacity}".replace(".", "_")
+
+  
+def offset_triangles(triangle_indices, offset):
+    return [tuple(idx + offset for idx in triangle) for triangle in triangle_indices]

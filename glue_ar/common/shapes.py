@@ -4,7 +4,7 @@ from typing import Iterable, List, Tuple, Union
 
 from numpy import cross, pi
 
-from glue_ar.gltf_utils import offset_triangles
+from glue_ar.utils import offset_triangles
 
 __all__ = [
     "rectangular_prism_points",
