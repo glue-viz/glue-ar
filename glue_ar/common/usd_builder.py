@@ -141,9 +141,9 @@ class USDBuilder:
         widths_var = geom.CreateWidthsAttr()
         widths = [1.0 for _ in points]
         widths_var.Set(widths)
-        # primvars = UsdGeom.PrimvarsAPI(geom.GetPrim())
-        # colorvar = primvars.CreatePrimvar("displayColor", Sdf.ValueTypeNames.Color3f)
-        # colorvar.Set([Gf.Vec3f(*color) for color in colors])
+        primvars = UsdGeom.PrimvarsAPI(geom.GetPrim())
+        colorvar = primvars.CreatePrimvar("displayColor", Sdf.ValueTypeNames.Color3f)
+        colorvar.Set([Gf.Vec3f(*tuple(c / 255 for c in color)) for color in colors])
 
         return geom
 
