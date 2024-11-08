@@ -86,6 +86,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         link_glue_choices(self, self.state, 'compression')
         link_glue_choices(self, self.state, 'filetype')
         link_glue_choices(self, self.state, 'method')
+        link((self, 'modelviewer'), (self.state, 'modelviewer'))
 
         self.dialog_open = display
         self.on_cancel = on_cancel
