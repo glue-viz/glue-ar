@@ -40,7 +40,8 @@ def export_viewer(viewer_state: Vispy3DViewerState,
                   bounds: Union[Bounds, BoundsWithResolution],
                   state_dictionary: Dict[str, Tuple[str, State]],
                   filepath: str,
-                  compression: Optional[str]):
+                  compression: Optional[str] = "None",
+                  model_viewer: bool = False):
 
     base, ext = splitext(filepath)
     ext = ext[1:]
@@ -71,8 +72,9 @@ def export_viewer(viewer_state: Vispy3DViewerState,
     if ext in ("gltf", "glb"):
         if (compression is not None) and (compression != "None"):
             compress_gl(filepath, method=compression)
-        mv_path = f"{base}{extsep}html"
-        export_modelviewer(mv_path, filepath, viewer_state.title)
+        if model_viewer:
+            mv_path = f"{base}{extsep}html"
+            export_modelviewer(mv_path, filepath, viewer_state.title)
 
 
 def compress_gltf_pipeline(filepath: str):

@@ -51,6 +51,12 @@
           <v-btn class="mx-2" color="error" @click="cancel_dialog">Cancel</v-btn>
           <v-btn class="mx-2" color="success" @click="export_viewer">Export</v-btn>
         </v-row>
+        <v-row>
+          <v-checkbox
+            v-if="show_modelviewer"
+            v-model="modelviewer"
+          />
+        </v-row>
       </v-container>
     </v-card>
   </v-dialog>

@@ -67,21 +67,27 @@ class TestJupyterExportDialog(BaseExportDialogTest):
 
         state.filetype = "USDC"
         assert not self.dialog.show_compression
+        assert not self.dialog.show_modelviewer
 
         state.filetype = "USDA"
         assert not self.dialog.show_compression
+        assert not self.dialog.show_modelviewer
 
         state.filetype = "glTF"
         assert self.dialog.show_compression
+        assert self.dialog.show_modelviewer
 
         state.filetype = "USDA"
         assert not self.dialog.show_compression
+        assert not self.dialog.show_modelviewer
 
         state.filetype = "STL"
         assert not self.dialog.show_compression
+        assert not self.dialog.show_modelviewer
 
         state.filetype = "glTF"
         assert self.dialog.show_compression
+        assert self.dialog.show_modelviewer
 
     def test_widgets_for_property(self):
         state = DummyState()

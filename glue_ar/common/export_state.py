@@ -1,4 +1,4 @@
-from echo import SelectionCallbackProperty
+from echo import CallbackProperty, SelectionCallbackProperty
 from glue.core.data_combo_helper import ComboHelper
 from glue.core.state_objects import State
 from glue_vispy_viewers.common.layer_state import LayerState
@@ -17,6 +17,7 @@ class ARExportDialogState(State):
     layer = SelectionCallbackProperty()
     compression = SelectionCallbackProperty()
     method = SelectionCallbackProperty()
+    modelviewer = CallbackProperty(True)
 
     def __init__(self, layers: Iterable[LayerState]):
 
