@@ -100,6 +100,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         gl = filetype.lower() in ("gltf", "glb")
         self.ui.combosel_compression.setVisible(gl)
         self.ui.label_compression_message.setVisible(gl)
+        self.ui.bool_modelviewer.setVisible(gl)
 
     def _on_method_change(self, method_name: str):
         super()._on_method_change(method_name)

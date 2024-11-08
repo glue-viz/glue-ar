@@ -47,6 +47,13 @@
           v-model="compression_selected"
         />
         <v-row>
+          <v-checkbox
+            v-if="show_modelviewer"
+            v-model="modelviewer"
+            label="Export model-viewer HTML"
+          />
+        </v-row>
+        <v-row>
           <v-spacer></v-spacer>
           <v-btn class="mx-2" color="error" @click="cancel_dialog">Cancel</v-btn>
           <v-btn class="mx-2" color="success" @click="export_viewer">Export</v-btn>

@@ -68,6 +68,9 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
     layer_layout = traitlets.Instance(v.Container).tag(sync=True, **widget_serialization)
     has_layer_options = traitlets.Bool().tag(sync=True)
 
+    modelviewer = traitlets.Bool(True).tag(sync=True)
+    show_modelviewer = traitlets.Bool(True).tag(sync=True)
+
     def __init__(self,
                  viewer: Viewer,
                  display: Optional[bool] = False,
@@ -83,6 +86,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         link_glue_choices(self, self.state, 'compression')
         link_glue_choices(self, self.state, 'filetype')
         link_glue_choices(self, self.state, 'method')
+        link((self, 'modelviewer'), (self.state, 'modelviewer'))
 
         self.dialog_open = display
         self.on_cancel = on_cancel
@@ -112,6 +116,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         super()._on_filetype_change(filetype)
         gl = filetype.lower() in ("gltf", "glb")
         self.show_compression = gl
+        self.show_modelviewer = gl
 
     def widgets_for_property(self,
                              instance: HasCallbackProperties,

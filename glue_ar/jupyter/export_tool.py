@@ -116,4 +116,5 @@ class JupyterARExportTool(Tool):
                       bounds=bounds,
                       state_dictionary=state_dict,
                       filepath=filepath,
-                      compression=self.export_dialog.state.compression)
+                      compression=self.export_dialog.state.compression,
+                      model_viewer=self.export_dialog.state.modelviewer)

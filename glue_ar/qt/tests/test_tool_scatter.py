@@ -88,6 +88,7 @@ class TestScatterExportTool:
             assert kwargs["bounds"] == bounds
             assert kwargs["filepath"] == filepath
             assert kwargs["compression"] == compression
+            assert kwargs["model_viewer"]
             state_dict = kwargs["state_dictionary"]
             assert tuple(state_dict.keys()) == ("Scatter Data 1", "Scatter Data 2")
             for value in state_dict.values():
