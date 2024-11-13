@@ -19,7 +19,7 @@ class BuilderRegistry(DictRegistry):
     def __call__(self, extensions: str | Tuple[str]):
         def adder(builder: Type):
             self.add(extensions, builder)
-        return adder 
+        return adder
 
 
 builder = BuilderRegistry()
