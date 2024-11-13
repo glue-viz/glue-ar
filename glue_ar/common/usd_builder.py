@@ -5,6 +5,7 @@ from os.path import splitext
 from pxr import Usd, UsdGeom, UsdLux, UsdShade, UsdUtils
 from typing import Dict, Iterable, Optional, Tuple
 
+from glue_ar.registries import builder
 from glue_ar.usd_utils import material_for_color, material_for_mesh
 from glue_ar.utils import unique_id
 
@@ -12,6 +13,7 @@ from glue_ar.utils import unique_id
 MaterialInfo = Tuple[int, int, int, float, float, float]
 
 
+@builder(("usda", "usdc", "usdz"))
 class USDBuilder:
 
     def __init__(self, filepath: str):
