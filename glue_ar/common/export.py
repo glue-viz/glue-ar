@@ -18,9 +18,6 @@ from typing import List, Tuple, Union
 
 NODE_MODULES_DIR = join(PACKAGE_DIR, "js", "node_modules")
 
-GLTF_PIPELINE_FILEPATH = join(NODE_MODULES_DIR, "gltf-pipeline", "bin", "gltf-pipeline.js")
-GLTFPACK_FILEPATH = join(NODE_MODULES_DIR, "gltfpack", "cli.js")
-
 
 def export_viewer(viewer_state: Vispy3DViewerState,
                   layer_states: List[VolumeLayerState],
