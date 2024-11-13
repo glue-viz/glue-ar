@@ -12,8 +12,8 @@ from glue_ar.common.stl_builder import STLBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARIsosurfaceExportOptions
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, \
-                               clip_linear_transformations, index_mins, index_maxes
-from glue_ar.utils import BoundsWithResolution, frb_for_layer, hex_to_components, isomin_for_layer, \
+                               index_mins, index_maxes
+from glue_ar.utils import BoundsWithResolution, clip_linear_transformations, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color
 
 

@@ -138,10 +138,21 @@ def bounds_3d_from_layers(viewer_state: Viewer3DState,
     return bounds
 
 
-def slope_intercept_between(a: List[float], b: List[float]) -> Tuple[float, float]:
+def slope_intercept_between(a: Union[List[float], Tuple[float,float]], b: Union[List[float], Tuple[float,float]]) -> Tuple[float, float]:
     slope = (b[1] - a[1]) / (b[0] - a[0])
     intercept = b[1] - slope * b[0]
     return slope, intercept
+
+
+def clip_linear_transformations(bounds: Union[Bounds, BoundsWithResolution], clip_sizes: Tuple[float,float,float]= (1.0,1.0,1.0)):
+    ranges = [abs(bds[1] - bds[0]) for bds in bounds]
+    max_range = max(ranges)
+    line_data = []
+    for bds, rg, size in zip(bounds, ranges, clip_sizes):
+        frac = rg / max_range
+        target = frac * size
+        line_data.append(slope_intercept_between((bds[0], -target), (bds[1], target)))
+    return line_data
 
 
 # TODO: Make this better?
@@ -154,16 +165,18 @@ def layer_color(layer_state: LayerState) -> str:
     return layer_color
 
 
-def bring_into_clip(data, bounds: Union[Bounds, BoundsWithResolution], preserve_aspect: bool = True):
+def bring_into_clip(data,
+                    bounds: Union[Bounds, BoundsWithResolution],
+                    clip_size: float = 1.0,
+                    preserve_aspect: bool = True,
+                    stretches: Tuple[float,float,float] = (1.0, 1.0, 1.0)
+):
+    max_stretch = max(stretches)
+    clip_bounds = tuple(clip_size * stretch / max_stretch for stretch in stretches)
     if preserve_aspect:
-        ranges = [abs(bds[1] - bds[0]) for bds in bounds]
-        max_range = max(ranges)
-        line_data = []
-        for bds, rg in zip(bounds, ranges):
-            frac = rg / max_range
-            line_data.append(slope_intercept_between([bds[0], -frac], [bds[1], frac]))
+        line_data = clip_linear_transformations(bounds, clip_bounds)
     else:
-        line_data = [slope_intercept_between([bds[0], -1], [bds[1], 1]) for bds in bounds]
+        line_data = [slope_intercept_between([bds[0], -stretch / 2], [bds[1], stretch / 2]) for bds, stretch in zip(bounds, stretches)]
 
     scaled = [[m * d + b for d in data[idx]] for idx, (m, b) in enumerate(line_data)]
 
