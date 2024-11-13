@@ -144,13 +144,15 @@ def slope_intercept_between(a: Union[List[float], Tuple[float,float]], b: Union[
     return slope, intercept
 
 
-def clip_linear_transformations(bounds: Union[Bounds, BoundsWithResolution], clip_sizes: Tuple[float,float,float]= (1.0,1.0,1.0)):
+def clip_linear_transformations(bounds: Union[Bounds, BoundsWithResolution],
+                                clip_size: float = 1.0,
+                                stretches: Tuple[float, float, float] = (1.0, 1.0, 1.0)):
     ranges = [abs(bds[1] - bds[0]) for bds in bounds]
-    max_range = max(ranges)
+    max_side = max(rg * stretch for rg, stretch in zip(ranges, stretches))
     line_data = []
-    for bds, rg, size in zip(bounds, ranges, clip_sizes):
-        frac = rg / max_range
-        target = frac * size
+    for bds, rg, stretch in zip(bounds, ranges, stretches):
+        frac = rg * stretch / max_side 
+        target = frac * clip_size
         line_data.append(slope_intercept_between((bds[0], -target), (bds[1], target)))
     return line_data
 
@@ -165,18 +167,47 @@ def layer_color(layer_state: LayerState) -> str:
     return layer_color
 
 
+def clip_sides(viewer_state: Viewer3DState,
+               clip_size: float = 1.0) -> Tuple[float,float,float]:
+
+    stretches = tuple(
+        getattr(viewer_state, f"{axis}_stretch", 1.0)
+        for axis in ("x", "y", "z")
+    )
+
+    world_bounds = (
+        (viewer_state.y_min, viewer_state.y_max),
+        (viewer_state.x_min, viewer_state.x_max),
+        (viewer_state.z_min, viewer_state.z_max),
+    )
+    resolution = get_resolution(viewer_state) 
+    x_range = viewer_state.x_max - viewer_state.x_min
+    y_range = viewer_state.y_max - viewer_state.y_min
+    z_range = viewer_state.z_max - viewer_state.z_min
+    x_spacing = x_range / resolution
+    y_spacing = y_range / resolution
+    z_spacing = z_range / resolution
+    sides = (z_spacing, x_spacing, y_spacing)
+    if viewer_state.native_aspect:
+        clip_transforms = clip_linear_transformations(world_bounds,
+                                                      clip_size=clip_size,
+                                                      stretches=stretches)
+        return tuple(s * transform[0] for s, transform in zip(sides, clip_transforms))
+    else:
+        max_stretch = max(stretches)
+        return tuple(2 * stretch / max_stretch for stretch in stretches)
+
+
 def bring_into_clip(data,
                     bounds: Union[Bounds, BoundsWithResolution],
                     clip_size: float = 1.0,
                     preserve_aspect: bool = True,
                     stretches: Tuple[float,float,float] = (1.0, 1.0, 1.0)
 ):
-    max_stretch = max(stretches)
-    clip_bounds = tuple(clip_size * stretch / max_stretch for stretch in stretches)
     if preserve_aspect:
-        line_data = clip_linear_transformations(bounds, clip_bounds)
+        line_data = clip_linear_transformations(bounds=bounds, clip_size=clip_size, stretches=stretches)
     else:
-        line_data = [slope_intercept_between([bds[0], -stretch / 2], [bds[1], stretch / 2]) for bds, stretch in zip(bounds, stretches)]
+        line_data = [slope_intercept_between([bds[0], -stretch], [bds[1], stretch]) for bds, stretch in zip(bounds, stretches)]
 
     scaled = [[m * d + b for d in data[idx]] for idx, (m, b) in enumerate(line_data)]
 
@@ -209,8 +240,12 @@ def xyz_for_layer(viewer_state: Viewer3DState,
     vals = [xs, ys, zs]
 
     if scaled:
+        stretches = tuple(
+            getattr(viewer_state, f"{axis}_stretch", 1.0)
+            for axis in ("x", "y", "z")
+        )
         bounds = xyz_bounds(viewer_state, with_resolution=False)
-        vals = bring_into_clip(vals, bounds, preserve_aspect=preserve_aspect)
+        vals = bring_into_clip(vals, bounds, preserve_aspect=preserve_aspect, stretches=stretches)
 
     return array(list(zip(*vals)))
 
@@ -306,8 +341,8 @@ def get_resolution(viewer_state: Viewer3DState) -> int:
     try:
         from glue_jupyter.common.state3d import VolumeViewerState
         if isinstance(viewer_state, VolumeViewerState):
-            resolutions = tuple(getattr(state, 'max_resolution', None) for state in viewer_state.layers)
-            return max((res for res in resolutions if res is not None), default=256)
+            return max((resolution for state in viewer_state.layers if (resolution := getattr(state, "max_resolution", None)) is not None),
+                        default=256)
     except ImportError:
         pass
 

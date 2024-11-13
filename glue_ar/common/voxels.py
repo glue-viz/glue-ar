@@ -1,3 +1,4 @@
+from glue_vispy_viewers.common import layer_state
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from numpy import isfinite, argwhere, transpose
 from typing import Iterable, Optional
@@ -11,11 +12,11 @@ from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARVoxelExportOptions
 from glue_ar.usd_utils import material_for_color
 from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamp, clamped_opacity, \
-                          frb_for_layer, get_resolution, hex_to_components, isomin_for_layer, \
+                          clip_sides, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color, unique_id, xyz_bounds
 
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, \
-                               clip_linear_transformations, index_mins, index_maxes
+                               index_mins, index_maxes
 from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation
 
 from gltflib import AccessorType, BufferTarget, ComponentType
@@ -28,23 +29,8 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                           options: Iterable[ARVoxelExportOptions],
                           bounds: Optional[BoundsWithResolution] = None):
 
-    resolution = get_resolution(viewer_state)
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
-    x_range = viewer_state.x_max - viewer_state.x_min
-    y_range = viewer_state.y_max - viewer_state.y_min
-    z_range = viewer_state.z_max - viewer_state.z_min
-    x_spacing = x_range / resolution
-    y_spacing = y_range / resolution
-    z_spacing = z_range / resolution
-    sides = (x_spacing, y_spacing, z_spacing)
-
-    world_bounds = xyz_bounds(viewer_state, with_resolution=False)
-    if viewer_state.native_aspect:
-        clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
-        clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
-        clip_sides = [clip_sides[1], clip_sides[2], clip_sides[0]]
-    else:
-        clip_sides = [2 / resolution for _ in range(3)]
+    sides = clip_sides(viewer_state, clip_size=1)
 
     point_index = 0
     points_barr = bytearray()
@@ -112,9 +98,9 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
         if rgba[-1] < opacity_cutoff:
             continue
 
-        center = tuple((-1 + (index + 0.5) * side) for index, side in zip(indices, clip_sides))
+        center = tuple((-1 + (index + 0.5) * side) for index, side in zip(indices, sides))
 
-        pts = rectangular_prism_points(center, clip_sides)
+        pts = rectangular_prism_points(center, sides)
         prev_ptbarr_len = len(points_barr)
         point_index += len(pts)
         add_points_to_bytearray(points_barr, pts)
@@ -170,23 +156,8 @@ def add_voxel_layers_usd(builder: USDBuilder,
                          options: Iterable[ARVoxelExportOptions],
                          bounds: Optional[BoundsWithResolution] = None):
 
-    resolution = get_resolution(viewer_state)
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
-    x_range = viewer_state.x_max - viewer_state.x_min
-    y_range = viewer_state.y_max - viewer_state.y_min
-    z_range = viewer_state.z_max - viewer_state.z_min
-    x_spacing = x_range / resolution
-    y_spacing = y_range / resolution
-    z_spacing = z_range / resolution
-    sides = (x_spacing, y_spacing, z_spacing)
-
-    world_bounds = xyz_bounds(viewer_state, with_resolution=False)
-    if viewer_state.native_aspect:
-        clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
-        clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
-        clip_sides = [clip_sides[1], clip_sides[2], clip_sides[0]]
-    else:
-        clip_sides = [2 / resolution for _ in range(3)]
+    sides = clip_sides(viewer_state, clip_size=1)
 
     triangles = rectangular_prism_triangulation()
 
@@ -229,7 +200,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
         if rgba[-1] < opacity_cutoff:
             continue
 
-        center = tuple((index + 0.5) * side for index, side in zip(indices, clip_sides))
+        center = tuple((index + 0.5) * side for index, side in zip(indices, sides))
         rgba_tpl = tuple(rgba[:3] + [binned_opacity(rgba[3], opacity_resolution)])
         if rgba_tpl in materials_map:
             material = materials_map[rgba_tpl]
@@ -237,7 +208,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
             material = material_for_color(builder.stage, rgba[:3], rgba[3])
             materials_map[rgba_tpl] = material
 
-        points = rectangular_prism_points(center, clip_sides)
+        points = rectangular_prism_points(center, sides)
         if mesh is None:
             mesh = builder.add_mesh(points, triangles, rgba[:3], rgba[3])
             first_point = center
@@ -255,23 +226,8 @@ def add_voxel_layers_stl(builder: STLBuilder,
                          options: Iterable[ARVoxelExportOptions],
                          bounds: Optional[BoundsWithResolution] = None):
 
-    resolution = get_resolution(viewer_state)
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
-    x_range = viewer_state.x_max - viewer_state.x_min
-    y_range = viewer_state.y_max - viewer_state.y_min
-    z_range = viewer_state.z_max - viewer_state.z_min
-    x_spacing = x_range / resolution
-    y_spacing = y_range / resolution
-    z_spacing = z_range / resolution
-    sides = (x_spacing, y_spacing, z_spacing)
-
-    world_bounds = xyz_bounds(viewer_state, with_resolution=False)
-    if viewer_state.native_aspect:
-        clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
-        clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
-        clip_sides = [clip_sides[1], clip_sides[2], clip_sides[0]]
-    else:
-        clip_sides = [2 / resolution for _ in range(3)]
+    sides = clip_sides(viewer_state, clip_size=1)
 
     triangles = rectangular_prism_triangulation()
 
@@ -311,8 +267,8 @@ def add_voxel_layers_stl(builder: STLBuilder,
         if rgba[-1] < opacity_cutoff:
             continue
 
-        center = tuple((index + 0.5) * side for index, side in zip(indices, clip_sides))
-        points = rectangular_prism_points(center, clip_sides)
+        center = tuple((index + 0.5) * side for index, side in zip(indices, sides))
+        points = rectangular_prism_points(center, sides)
         builder.add_mesh(points, triangles)
 
     return builder
