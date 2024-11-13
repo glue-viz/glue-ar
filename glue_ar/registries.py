@@ -19,6 +19,7 @@ class BuilderRegistry(DictRegistry):
     def __call__(self, extensions: Union[str, Tuple[str]]):
         def adder(builder: Type):
             self.add(extensions, builder)
+            return builder
         return adder
 
 
@@ -33,6 +34,7 @@ class CompressorRegistry(DictRegistry):
     def __call__(self, name: str):
         def adder(compressor: Callable[[str], None]):
             self.add(name, compressor)
+            return compressor
         return adder
 
 
