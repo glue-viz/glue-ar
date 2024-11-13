@@ -31,6 +31,9 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
     sides = clip_sides(viewer_state, clip_size=1)
+    print("Sides before reindexing", sides)
+    sides = tuple(sides[i] for i in (1, 2, 0))
+    print("Sides", sides)
 
     point_index = 0
     points_barr = bytearray()
@@ -158,6 +161,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
     sides = clip_sides(viewer_state, clip_size=1)
+    sides = tuple(sides[i] for i in (1, 2, 0))
 
     triangles = rectangular_prism_triangulation()
 
@@ -228,6 +232,7 @@ def add_voxel_layers_stl(builder: STLBuilder,
 
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
     sides = clip_sides(viewer_state, clip_size=1)
+    sides = tuple(sides[i] for i in (1, 2, 0))
 
     triangles = rectangular_prism_triangulation()
 

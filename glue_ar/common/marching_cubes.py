@@ -36,6 +36,8 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
     color_components = hex_to_components(color)
     builder.add_material(color_components, opacity=opacity)
     sides = clip_sides(viewer_state, clip_size=1)
+    print("Sides:")
+    print(sides)
 
     for level in levels[1:]:
         barr = bytearray()

@@ -149,10 +149,14 @@ def clip_linear_transformations(bounds: Union[Bounds, BoundsWithResolution],
                                 stretches: Tuple[float, float, float] = (1.0, 1.0, 1.0)):
     ranges = [abs(bds[1] - bds[0]) for bds in bounds]
     max_side = max(rg * stretch for rg, stretch in zip(ranges, stretches))
+    print("Max side")
+    print(max_side)
     line_data = []
     for bds, rg, stretch in zip(bounds, ranges, stretches):
         frac = rg * stretch / max_side 
         target = frac * clip_size
+        print("Target")
+        print(target)
         line_data.append(slope_intercept_between((bds[0], -target), (bds[1], target)))
     return line_data
 
@@ -175,11 +179,7 @@ def clip_sides(viewer_state: Viewer3DState,
         for axis in ("x", "y", "z")
     )
 
-    world_bounds = (
-        (viewer_state.y_min, viewer_state.y_max),
-        (viewer_state.x_min, viewer_state.x_max),
-        (viewer_state.z_min, viewer_state.z_max),
-    )
+    bounds = xyz_bounds(viewer_state, with_resolution=False)
     resolution = get_resolution(viewer_state) 
     x_range = viewer_state.x_max - viewer_state.x_min
     y_range = viewer_state.y_max - viewer_state.y_min
@@ -187,15 +187,17 @@ def clip_sides(viewer_state: Viewer3DState,
     x_spacing = x_range / resolution
     y_spacing = y_range / resolution
     z_spacing = z_range / resolution
-    sides = (z_spacing, x_spacing, y_spacing)
+    sides = (x_spacing, y_spacing, z_spacing)
+    print("Sides in clip_sides:")
+    print(sides)
     if viewer_state.native_aspect:
-        clip_transforms = clip_linear_transformations(world_bounds,
+        clip_transforms = clip_linear_transformations(bounds,
                                                       clip_size=clip_size,
                                                       stretches=stretches)
         return tuple(s * transform[0] for s, transform in zip(sides, clip_transforms))
     else:
         max_stretch = max(stretches)
-        return tuple(2 * stretch / max_stretch for stretch in stretches)
+        return tuple(2 * stretch / (max_stretch * resolution) for stretch in stretches)
 
 
 def bring_into_clip(data,
@@ -284,6 +286,7 @@ def frb_for_layer(viewer_state: ViewerState,
                   bounds: BoundsWithResolution) -> ndarray:
 
     bounds = list(reversed(bounds))
+    print(bounds)
     data = data_for_layer(layer_or_state)
     layer_state = layer_or_state if isinstance(layer_or_state, LayerState) else layer_or_state.state
     is_data_layer = data is layer_or_state.layer
