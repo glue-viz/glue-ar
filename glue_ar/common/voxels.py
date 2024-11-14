@@ -1,4 +1,3 @@
-from glue_vispy_viewers.common import layer_state
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from numpy import isfinite, argwhere, transpose
 from typing import Iterable, Optional
