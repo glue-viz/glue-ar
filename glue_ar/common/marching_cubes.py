@@ -12,8 +12,8 @@ from glue_ar.common.stl_builder import STLBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARIsosurfaceExportOptions
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, \
-                               clip_linear_transformations, index_mins, index_maxes
-from glue_ar.utils import BoundsWithResolution, frb_for_layer, hex_to_components, isomin_for_layer, \
+                               index_mins, index_maxes
+from glue_ar.utils import BoundsWithResolution, clip_sides, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color
 
 
@@ -35,25 +35,8 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
     builder.add_material(color_components, opacity=opacity)
-
-    world_bounds = (
-        (viewer_state.y_min, viewer_state.y_max),
-        (viewer_state.x_min, viewer_state.x_max),
-        (viewer_state.z_min, viewer_state.z_max),
-    )
-    resolution = getattr(viewer_state, 'resolution', None) or getattr(layer_state, 'max_resolution')
-    x_range = viewer_state.x_max - viewer_state.x_min
-    y_range = viewer_state.y_max - viewer_state.y_min
-    z_range = viewer_state.z_max - viewer_state.z_min
-    x_spacing = x_range / resolution
-    y_spacing = y_range / resolution
-    z_spacing = z_range / resolution
-    sides = (z_spacing, x_spacing, y_spacing)
-    if viewer_state.native_aspect:
-        clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
-        clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
-    else:
-        clip_sides = [2 / resolution for _ in range(3)]
+    sides = clip_sides(viewer_state, clip_size=1)
+    sides = tuple(sides[i] for i in (2, 1, 0))
 
     for level in levels[1:]:
         barr = bytearray()
@@ -63,7 +46,7 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
         if len(points) == 0:
             continue
 
-        points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, clip_sides)) for pt in points]
+        points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, sides)) for pt in points]
         points = [[p[1], p[0], p[2]] for p in points]
         add_points_to_bytearray(barr, points)
         point_len = len(barr)
@@ -136,25 +119,8 @@ def add_isosurface_layer_usd(
     opacity = layer_state.alpha
     color = layer_color(layer_state)
     color_components = tuple(hex_to_components(color))
-
-    world_bounds = (
-        (viewer_state.y_min, viewer_state.y_max),
-        (viewer_state.x_min, viewer_state.x_max),
-        (viewer_state.z_min, viewer_state.z_max),
-    )
-    resolution = getattr(viewer_state, 'resolution', None) or getattr(layer_state, 'max_resolution')
-    x_range = viewer_state.x_max - viewer_state.x_min
-    y_range = viewer_state.y_max - viewer_state.y_min
-    z_range = viewer_state.z_max - viewer_state.z_min
-    x_spacing = x_range / resolution
-    y_spacing = y_range / resolution
-    z_spacing = z_range / resolution
-    sides = (z_spacing, x_spacing, y_spacing)
-    if viewer_state.native_aspect:
-        clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
-        clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
-    else:
-        clip_sides = [2 / resolution for _ in range(3)]
+    sides = clip_sides(viewer_state, clip_size=1)
+    sides = tuple(sides[i] for i in (2, 1, 0))
 
     for i, level in enumerate(levels[1:]):
         alpha = (3 * i + isosurface_count) / (4 * isosurface_count) * opacity
@@ -162,7 +128,7 @@ def add_isosurface_layer_usd(
         if len(points) == 0:
             continue
 
-        points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, clip_sides)) for pt in points]
+        points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, sides)) for pt in points]
         points = [[p[1], p[0], p[2]] for p in points]
         builder.add_mesh(points, triangles, color_components, alpha)
 
@@ -185,25 +151,8 @@ def add_isosurface_layer_stl(
 
     isosurface_count = int(options.isosurface_count)
     levels = linspace(isomin, isomax, isosurface_count)
-
-    world_bounds = (
-        (viewer_state.y_min, viewer_state.y_max),
-        (viewer_state.x_min, viewer_state.x_max),
-        (viewer_state.z_min, viewer_state.z_max),
-    )
-    resolution = getattr(viewer_state, 'resolution', None) or getattr(layer_state, 'max_resolution')
-    x_range = viewer_state.x_max - viewer_state.x_min
-    y_range = viewer_state.y_max - viewer_state.y_min
-    z_range = viewer_state.z_max - viewer_state.z_min
-    x_spacing = x_range / resolution
-    y_spacing = y_range / resolution
-    z_spacing = z_range / resolution
-    sides = (z_spacing, x_spacing, y_spacing)
-    if viewer_state.native_aspect:
-        clip_transforms = clip_linear_transformations(world_bounds, clip_size=1)
-        clip_sides = [s * transform[0] for s, transform in zip(sides, clip_transforms)]
-    else:
-        clip_sides = [2 / resolution for _ in range(3)]
+    sides = clip_sides(viewer_state, clip_size=1)
+    sides = tuple(sides[i] for i in (2, 1, 0))
 
     for i, level in enumerate(levels[1:]):
         # alpha = (3 * i + isosurface_count) / (4 * isosurface_count) * opacity
@@ -211,7 +160,7 @@ def add_isosurface_layer_stl(
         if len(points) == 0:
             continue
 
-        points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, clip_sides)) for pt in points]
+        points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, sides)) for pt in points]
         points = [[p[1], p[0], p[2]] for p in points]
         builder.add_mesh(points, triangles)
 

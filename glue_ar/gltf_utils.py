@@ -5,9 +5,6 @@ from typing import Callable, Iterable, List, Optional, Type, TypeVar, Union
 from gltflib import Material, PBRMetallicRoughness
 
 __all__ = [
-    "slope_intercept_between",
-    "clip_linear_transformations",
-    "bring_into_clip",
     "create_material_for_color",
     "add_points_to_bytearray",
     "add_triangles_to_bytearray",
@@ -20,27 +17,6 @@ GLTF_COMPRESSION_EXTENSIONS = {
     "draco": "KHR_draco_mesh_compression",
     "meshoptimizer": "EXT_meshopt_compression",
 }
-
-
-def slope_intercept_between(a, b):
-    slope = (b[1] - a[1]) / (b[0] - a[0])
-    intercept = b[1] - slope * b[0]
-    return slope, intercept
-
-
-def clip_linear_transformations(bounds, clip_size=1):
-    ranges = [abs(bds[1] - bds[0]) for bds in bounds]
-    max_range = max(ranges)
-    line_data = []
-    for bds, rg in zip(bounds, ranges):
-        frac = rg / max_range
-        target = frac * clip_size
-        line_data.append(slope_intercept_between((bds[0], -target), (bds[1], target)))
-    return line_data
-
-
-def bring_into_clip(points, transforms):
-    return [tuple(transform[0] * c + transform[1] for transform, c in zip(transforms, pt)) for pt in points]
 
 
 def create_material_for_color(
