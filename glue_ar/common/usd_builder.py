@@ -6,7 +6,7 @@ from pxr import Usd, UsdGeom, UsdLux, UsdShade, UsdUtils
 from typing import Dict, Iterable, Optional, Tuple
 
 from glue_ar.registries import builder
-from glue_ar.usd_utils import material_for_color, material_for_mesh
+from glue_ar.usd_utils import material_for_color, material_for_mesh, sanitize_path
 from glue_ar.utils import unique_id
 
 
@@ -23,14 +23,8 @@ class USDBuilder:
         self._create_stage(filepath)
         self._material_map: Dict[MaterialInfo, UsdShade.Shader] = {}
 
-    def _sanitize(self, identifier: str) -> str:
-        # TODO: Do this in a single pass
-        for char in ("-", "(", ")"):
-            identifier = identifier.replace(char, "_")
-        return identifier
-
     def _create_stage(self, filepath: str):
-        self.stage = Usd.Stage.CreateNew(self._sanitize(filepath))
+        self.stage = Usd.Stage.CreateNew(sanitize_path(filepath))
 
         # TODO: Do we want to make changing this an option?
         UsdGeom.SetStageUpAxis(self.stage, UsdGeom.Tokens.y)
@@ -76,8 +70,7 @@ class USDBuilder:
         This breaks the builder pattern but we'll potentially want this reference to it
         for other meshes that we create.
         """
-        identifier = identifier or unique_id()
-        identifier = self._sanitize(identifier)
+        identifier = sanitize_path(identifier or unique_id())
         count = self._mesh_counts[identifier]
         xform_key = f"{self.default_prim_key}/xform_{identifier}_{count}"
         UsdGeom.Xform.Define(self.stage, xform_key)
@@ -101,8 +94,7 @@ class USDBuilder:
                                  material: Optional[UsdShade.Material] = None,
                                  identifier: Optional[str] = None) -> UsdGeom.Mesh:
         prim = mesh.GetPrim()
-        identifier = identifier or unique_id()
-        identifier = self._sanitize(identifier)
+        identifier = sanitize_path(identifier or unique_id())
         count = self._mesh_counts[identifier]
         xform_key = f"{self.default_prim_key}/xform_{identifier}_{count}"
         UsdGeom.Xform.Define(self.stage, xform_key)
