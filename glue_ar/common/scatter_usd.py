@@ -38,7 +38,7 @@ def add_vectors_usd(builder: USDBuilder,
                     colors: Optional[List[Tuple[int, int, int]]] = None,
                     mask: Optional[ndarray] = None):
 
-    vector_data = clip_vector_data(viewer_state, layer_state, bounds, mask) 
+    vector_data = clip_vector_data(viewer_state, layer_state, bounds, mask)
     offset = VECTOR_OFFSETS[layer_state.vector_origin]
     if layer_state.vector_origin == "tip":
         offset += tip_height

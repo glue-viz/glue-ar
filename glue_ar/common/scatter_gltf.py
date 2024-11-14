@@ -1,7 +1,7 @@
 from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
 from glue_vispy_viewers.common.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
-from numpy import array, isfinite, ndarray
+from numpy import isfinite, ndarray
 from numpy.linalg import norm
 
 from typing import List, Literal, Optional, Tuple
@@ -17,8 +17,9 @@ from glue_ar.utils import Viewer3DState, get_stretches, iterable_has_nan, hex_to
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
                                    PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
-                                   IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, clip_vector_data, radius_for_scatter_layer, \
-                                   scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter, NoneType 
+                                   IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, clip_vector_data, \
+                                   radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, \
+                                   sphere_points_getter, NoneType
 
 try:
     from glue_jupyter.common.state3d import ViewerState3D
@@ -155,11 +156,11 @@ def add_error_bars_gltf(builder: GLTFBuilder,
 
     stretches = get_stretches(viewer_state)
     if viewer_state.native_aspect:
-        max_side = max(abs(b[1] - b[0]) * s for b, s  in zip(bounds, stretches))
-        factor = 1 / max_side 
+        max_side = max(abs(b[1] - b[0]) * s for b, s in zip(bounds, stretches))
+        factor = 1 / max_side
     else:
         axis_factor = abs(bounds[index][1] - bounds[index][0]) * stretches[index]
-        factor = 1 / axis_factor 
+        factor = 1 / axis_factor
     err_values *= factor
 
     barr = bytearray()
