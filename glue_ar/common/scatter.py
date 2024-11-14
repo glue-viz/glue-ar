@@ -1,5 +1,5 @@
 from functools import partial
-from numpy import clip, isfinite, isnan, ndarray, ones, sqrt
+from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from glue.utils import ensure_numerical
@@ -7,7 +7,7 @@ from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 
 from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation, \
                                   sphere_points, sphere_triangles
-from glue_ar.utils import Bounds, NoneType, Viewer3DState, mask_for_bounds
+from glue_ar.utils import Bounds, NoneType, Viewer3DState, get_stretches, mask_for_bounds
 
 try:
     from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
@@ -91,6 +91,28 @@ def sizes_for_scatter_layer(layer_state: ScatterLayerState3D,
         sizes[isnan(sizes)] = 0.
 
     return sizes
+
+
+def clip_vector_data(viewer_state: Viewer3DState,
+                     layer_state: ScatterLayerState3D,
+                     bounds: Bounds,
+                     mask: Optional[ndarray] = None) -> ndarray:
+    if isinstance(layer_state, ScatterLayerState):
+        atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
+    else:
+        atts = [layer_state.vx_att, layer_state.vy_att, layer_state.vz_att]
+    vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
+
+    stretches = get_stretches(viewer_state)
+    if viewer_state.native_aspect:
+        factor = max((abs(b[1] - b[0]) * s for b, s in zip(bounds, stretches)))
+        vector_data = [[0.5 * t / factor for t in v] for v in vector_data]
+    else:
+        bound_factors = [abs(b[1] - b[0]) * s for b, s in zip(bounds, stretches)]
+        vector_data = [[0.5 * t / b for t in v] for v, b in zip(vector_data, bound_factors)]
+    vector_data = array(list(zip(*vector_data)))
+
+    return vector_data
 
 
 def sphere_points_getter(theta_resolution: int,
