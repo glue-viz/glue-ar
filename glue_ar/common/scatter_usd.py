@@ -3,12 +3,12 @@ from typing import List, Optional, Tuple
 
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
-from numpy import array, ndarray
+from numpy import ndarray
 from numpy.linalg import norm
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, PointsGetter, \
-                                   ScatterLayerState3D, box_points_getter, radius_for_scatter_layer, \
+                                   ScatterLayerState3D, box_points_getter, clip_vector_data, radius_for_scatter_layer, \
                                    scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.usd_builder import USDBuilder
@@ -38,20 +38,7 @@ def add_vectors_usd(builder: USDBuilder,
                     colors: Optional[List[Tuple[int, int, int]]] = None,
                     mask: Optional[ndarray] = None):
 
-    if isinstance(layer_state, ScatterLayerState):
-        atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
-    else:
-        atts = [layer_state.vx_att, layer_state.vy_att, layer_state.vz_att]
-    vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
-
-    if viewer_state.native_aspect:
-        factor = max((abs(b[1] - b[0]) for b in bounds))
-        vector_data = [[0.5 * t / factor for t in v] for v in vector_data]
-    else:
-        bound_factors = [abs(b[1] - b[0]) for b in bounds]
-        vector_data = [[0.5 * t / b for t in v] for v, b in zip(vector_data, bound_factors)]
-    vector_data = array(list(zip(*vector_data)))
-
+    vector_data = clip_vector_data(viewer_state, layer_state, bounds, mask)
     offset = VECTOR_OFFSETS[layer_state.vector_origin]
     if layer_state.vector_origin == "tip":
         offset += tip_height

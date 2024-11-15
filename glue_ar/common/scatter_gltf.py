@@ -1,7 +1,7 @@
 from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
 from glue_vispy_viewers.common.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
-from numpy import array, isfinite, ndarray
+from numpy import isfinite, ndarray
 from numpy.linalg import norm
 
 from typing import List, Literal, Optional, Tuple
@@ -12,13 +12,14 @@ from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOption
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
-from glue_ar.utils import Viewer3DState, iterable_has_nan, hex_to_components, layer_color, \
+from glue_ar.utils import Viewer3DState, get_stretches, iterable_has_nan, hex_to_components, layer_color, \
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
                                    PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
-                                   IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, radius_for_scatter_layer, \
-                                   scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter, NoneType
+                                   IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, clip_vector_data, \
+                                   radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, \
+                                   sphere_points_getter, NoneType
 
 try:
     from glue_jupyter.common.state3d import ViewerState3D
@@ -39,20 +40,7 @@ def add_vectors_gltf(builder: GLTFBuilder,
                      materials: Optional[List[int]] = None,
                      mask: Optional[ndarray] = None):
 
-    if isinstance(layer_state, ScatterLayerState):
-        atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
-    else:
-        atts = [layer_state.vx_att, layer_state.vy_att, layer_state.vz_att]
-    vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
-
-    if viewer_state.native_aspect:
-        factor = max((abs(b[1] - b[0]) for b in bounds))
-        vector_data = [[0.5 * t / factor for t in v] for v in vector_data]
-    else:
-        bound_factors = [abs(b[1] - b[0]) for b in bounds]
-        vector_data = [[0.5 * t / b for t in v] for v, b in zip(vector_data, bound_factors)]
-    vector_data = array(list(zip(*vector_data)))
-
+    vector_data = clip_vector_data(viewer_state, layer_state, bounds, mask)
     offset = VECTOR_OFFSETS[layer_state.vector_origin]
     if layer_state.vector_origin == "tip":
         offset += tip_height
@@ -166,12 +154,13 @@ def add_error_bars_gltf(builder: GLTFBuilder,
     # NB: This ordering is intentional to account for glTF coordinate system
     gltf_index = ['z', 'y', 'x'].index(axis)
 
-    axis_range = abs(bounds[index][1] - bounds[index][0])
+    stretches = get_stretches(viewer_state)
     if viewer_state.native_aspect:
-        max_range = max((abs(b[1] - b[0]) for b in bounds))
-        factor = 1 / max_range
+        max_side = max(abs(b[1] - b[0]) * s for b, s in zip(bounds, stretches))
+        factor = 1 / max_side
     else:
-        factor = 1 / axis_range
+        axis_factor = abs(bounds[index][1] - bounds[index][0]) * stretches[index]
+        factor = 1 / axis_factor
     err_values *= factor
 
     barr = bytearray()

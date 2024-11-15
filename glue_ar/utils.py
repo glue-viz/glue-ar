@@ -171,11 +171,7 @@ def layer_color(layer_state: LayerState) -> str:
 def clip_sides(viewer_state: Viewer3DState,
                clip_size: float = 1.0) -> Tuple[float, float, float]:
 
-    stretches = tuple(
-        getattr(viewer_state, f"{axis}_stretch", 1.0)
-        for axis in ("x", "y", "z")
-    )
-
+    stretches = get_stretches(viewer_state)
     bounds = xyz_bounds(viewer_state, with_resolution=False)
     resolution = get_resolution(viewer_state)
     x_range = viewer_state.x_max - viewer_state.x_min
@@ -224,6 +220,13 @@ def mask_for_bounds(viewer_state: Viewer3DState,
            (data[viewer_state.z_att] <= bounds[2][1])
 
 
+def get_stretches(viewer_state: Viewer3DState) -> Tuple[float, float, float]:
+    return tuple(
+            getattr(viewer_state, f"{axis}_stretch", 1.0)
+            for axis in ("x", "y", "z")
+    )
+
+
 # TODO: Worry about efficiency later
 # and just generally make this better
 def xyz_for_layer(viewer_state: Viewer3DState,
@@ -237,10 +240,7 @@ def xyz_for_layer(viewer_state: Viewer3DState,
     vals = [xs, ys, zs]
 
     if scaled:
-        stretches = tuple(
-            getattr(viewer_state, f"{axis}_stretch", 1.0)
-            for axis in ("x", "y", "z")
-        )
+        stretches = get_stretches(viewer_state)
         bounds = xyz_bounds(viewer_state, with_resolution=False)
         vals = bring_into_clip(vals, bounds, preserve_aspect=preserve_aspect, stretches=stretches)
 
