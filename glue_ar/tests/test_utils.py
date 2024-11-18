@@ -140,10 +140,6 @@ def test_clip_sides_native():
         assert clip_sides(viewer_state, clip_size=clip_size) == (max_size, max_size / 2, max_size / 4)
 
 
-def test_bring_into_clip():
-    pass
-    
-
 def test_mask_for_bounds():
     app = GlueApplication()
     x_values = range(10, 25)
@@ -186,8 +182,23 @@ def test_unique_id():
 
 
 def test_alpha_composite():
-    over = [255, 10, 176]
+
+    over = [110, 206, 15, 0.3]
+    under = [89, 97, 202, 0.4]
+    alpha_combined = 0.3 + 0.4 * 0.7
+    rgb_new = [(o * 0.3 + u * 0.4 * 0.7) / alpha_combined for o, u in zip(over[:3], under[:3])]
+    assert alpha_composite(over, under) == rgb_new + [alpha_combined]
+
+    over = [110, 206, 15, 0.6]
+    under = [89, 97, 202, 0.7]
+    alpha_combined = 0.6 + 0.7 * 0.4
+    rgb_new = [(o * 0.6 + u * 0.7 * 0.4) / alpha_combined for o, u in zip(over[:3], under[:3])]
+    assert alpha_composite(over, under) == rgb_new + [alpha_combined]
+
+    # Here over has full opacity, so the composition should just be the over color
+    over = [255, 10.5, 176]
     under = [12, 116, 175, 0.5]
+    assert alpha_composite(over, under) == over + [1]
     
 
 def test_data_for_layer():
