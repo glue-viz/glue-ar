@@ -4,13 +4,13 @@ import pytest
 
 from glue.core import Data
 from glue.viewers.common.viewer import LayerArtist
-from glue_vispy_viewers.volume.volume_viewer import Vispy3DVolumeViewerState, VispyVolumeViewerMixin
+from glue_vispy_viewers.volume.volume_viewer import Vispy3DVolumeViewerState
 
 from glue_ar.utils import alpha_composite, binned_opacity, clamp, clamped_opacity, \
                           clip_linear_transformations, clip_sides, data_count, data_for_layer, \
                           export_label_for_layer, get_resolution, hex_to_components, is_volume_viewer, \
                           iterable_has_nan, iterator_count, layer_color, mask_for_bounds, ndarray_has_nan, \
-                          offset_triangles, slope_intercept_between, unique_id, xyz_bounds, NoneType
+                          offset_triangles, slope_intercept_between, unique_id, xyz_bounds
 
 
 def package_installed(package):
@@ -31,7 +31,6 @@ except ImportError:
 
 try:
     from glue_jupyter.app import JupyterApplication
-    from glue_jupyter.common.state3d import VolumeViewerState
     from glue_jupyter.ipyvolume import IpyvolumeScatterView, IpyvolumeVolumeView
     from glue_vispy_viewers.scatter.jupyter.scatter_viewer import JupyterVispyScatterViewer
     from glue_vispy_viewers.volume.jupyter.volume_viewer import JupyterVispyVolumeViewer
@@ -172,7 +171,7 @@ def test_mask_for_bounds():
         app = GlueApplication()
         app.add_data(data)
         viewer = app.new_data_viewer(VispyScatterViewer, data=data)
-    except:
+    except NameError:
         app = JupyterApplication()
         app.add_data(data)
         viewer = app.new_data_viewer(JupyterVispyScatterViewer, data=data)
@@ -256,7 +255,8 @@ def test_iterator_count():
     assert iterator_count(iter(range(11))) == 11
 
 
-@pytest.mark.skipif(not GLUE_QT_INSTALLED, reason="Requires glue-qt to test Qt VisPy volume viewer")
+@pytest.mark.skipif(not GLUE_QT_INSTALLED,
+                    reason="Requires glue-qt to test Qt VisPy volume viewer")
 def test_is_volume_viewer_qt():
     qt_app = GlueApplication()
     vispy_scatter = qt_app.new_data_viewer(VispyScatterViewer)
@@ -265,10 +265,11 @@ def test_is_volume_viewer_qt():
     assert is_volume_viewer(vispy_volume)
 
 
-@pytest.mark.skipif(not GLUE_JUPYTER_INSTALLED, reason="Requires glue-jupyter to test Jupyter VisPy and ipyvolume viewers")
+@pytest.mark.skipif(not GLUE_JUPYTER_INSTALLED,
+                    reason="Requires glue-jupyter to test Jupyter VisPy and ipyvolume viewers")
 def test_is_volume_viewer_jupyter():
     jupyter_app = JupyterApplication()
-    
+
     vispy_scatter = jupyter_app.new_data_viewer(JupyterVispyScatterViewer)
     vispy_volume = jupyter_app.new_data_viewer(JupyterVispyVolumeViewer)
     assert not is_volume_viewer(vispy_scatter)
@@ -280,7 +281,8 @@ def test_is_volume_viewer_jupyter():
     assert is_volume_viewer(ipv_volume)
 
 
-@pytest.mark.skipif(not GLUE_QT_INSTALLED, reason="Requires glue-qt to test Qt VisPy volume viewer")
+@pytest.mark.skipif(not GLUE_QT_INSTALLED,
+                    reason="Requires glue-qt to test Qt VisPy volume viewer")
 def test_get_resolution_qt():
     qt_app = GlueApplication()
 
@@ -293,7 +295,8 @@ def test_get_resolution_qt():
     assert get_resolution(vispy_scatter) == 256
 
 
-@pytest.mark.skipif(not GLUE_JUPYTER_INSTALLED, reason="Requires glue-jupyter to test Jupyter VisPy and ipyvolume viewers")
+@pytest.mark.skipif(not GLUE_JUPYTER_INSTALLED,
+                    reason="Requires glue-jupyter to test Jupyter VisPy and ipyvolume viewers")
 def test_get_resolution_jupyter():
     jupyter_app = JupyterApplication()
     volume_data1 = Data(label='Volume Data',
