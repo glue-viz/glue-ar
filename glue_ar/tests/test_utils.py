@@ -10,9 +10,12 @@ from glue_jupyter.common.state3d import VolumeViewerState
 from glue_jupyter.ipyvolume import IpyvolumeScatterView, IpyvolumeVolumeView
 from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
 from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
-from ..utils import *
-from ..utils import clip_linear_transformations
-from ..utils import clip_sides
+
+from glue_ar.utils import alpha_composite, binned_opacity, clamp, clamped_opacity, \
+                          clip_linear_transformations, clip_sides, data_count, data_for_layer, \
+                          export_label_for_layer, get_resolution, hex_to_components, is_volume_viewer, \
+                          iterable_has_nan, iterator_count, layer_color, mask_for_bounds, ndarray_has_nan, \
+                          offset_triangles, slope_intercept_between, unique_id, xyz_bounds
 
 
 def test_data_count():
@@ -60,7 +63,7 @@ def test_slope_intercept_between():
 
 def test_clip_linear_transformations():
     bounds = [(0, 2), (0, 8), (2, 6)]
-    
+
     assert clip_linear_transformations(bounds) == [
         (0.25, -0.25),
         (0.25, -1),
@@ -112,11 +115,11 @@ def test_clip_sides_non_native():
     viewer_state.y_max = 2
     viewer_state.z_min = -1
     viewer_state.z_max = 1
-    
+
     resolutions = (32, 64, 128, 256, 512)
     clip_sizes = (1, 2, 3, 5, 10)
     for resolution, clip_size in product(resolutions, clip_sizes):
-        viewer_state.resolution = resolution 
+        viewer_state.resolution = resolution
         size = 2 * clip_size / resolution
         assert clip_sides(viewer_state, clip_size=clip_size) == (size, size, size)
 
@@ -135,7 +138,7 @@ def test_clip_sides_native():
     resolutions = (32, 64, 128, 256, 512)
     clip_sizes = (1, 2, 3, 5, 10)
     for resolution, clip_size in product(resolutions, clip_sizes):
-        viewer_state.resolution = resolution 
+        viewer_state.resolution = resolution
         max_size = 2 * clip_size / resolution
         assert clip_sides(viewer_state, clip_size=clip_size) == (max_size, max_size / 2, max_size / 4)
 
@@ -160,7 +163,7 @@ def test_mask_for_bounds():
     viewer.state.y_max = 141  # Cuts off the last three points
     viewer.state.z_min = -70
     viewer.state.z_max = -30
-    
+
     bounds = xyz_bounds(viewer.state, with_resolution=False)
     mask = array([i not in (0, 1, 12, 13, 14) for i in range(15)])
     assert array_equal(mask_for_bounds(viewer.state, layer_state, bounds), mask)
@@ -199,7 +202,7 @@ def test_alpha_composite():
     over = [255, 10.5, 176]
     under = [12, 116, 175, 0.5]
     assert alpha_composite(over, under) == over + [1]
-    
+
 
 def test_data_for_layer():
     data = Data(label="Data")
