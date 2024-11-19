@@ -59,8 +59,9 @@ def add_vispy_scatter_layer_stl(builder: STLBuilder,
                                 bounds: Bounds,
                                 clip_to_bounds: bool = True):
 
-    theta_resolution = int(options.theta_resolution)
-    phi_resolution = int(options.phi_resolution)
+    resolution = int(options.resolution)
+    theta_resolution = resolution
+    phi_resolution = resolution
     triangles = sphere_triangles(theta_resolution=theta_resolution,
                                  phi_resolution=phi_resolution)
 
