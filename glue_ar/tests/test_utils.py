@@ -1,27 +1,48 @@
 from itertools import product
-from glue_vispy_viewers.volume.volume_viewer import Vispy3DVolumeViewerState
 from numpy import arange, array, array_equal, nan, ones
+import pytest
 
 from glue.core import Data
 from glue.viewers.common.viewer import LayerArtist
-from glue_qt.app import GlueApplication
-from glue_jupyter.app import JupyterApplication
-from glue_jupyter.common.state3d import VolumeViewerState
-from glue_jupyter.ipyvolume import IpyvolumeScatterView, IpyvolumeVolumeView
-from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
-from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
+from glue_vispy_viewers.volume.volume_viewer import Vispy3DVolumeViewerState, VispyVolumeViewerMixin
 
 from glue_ar.utils import alpha_composite, binned_opacity, clamp, clamped_opacity, \
                           clip_linear_transformations, clip_sides, data_count, data_for_layer, \
                           export_label_for_layer, get_resolution, hex_to_components, is_volume_viewer, \
                           iterable_has_nan, iterator_count, layer_color, mask_for_bounds, ndarray_has_nan, \
-                          offset_triangles, slope_intercept_between, unique_id, xyz_bounds
+                          offset_triangles, slope_intercept_between, unique_id, xyz_bounds, NoneType
+
+
+def package_installed(package):
+    from importlib.util import find_spec
+    return find_spec(package) is not None
+
+
+GLUE_QT_INSTALLED = package_installed("glue_qt")
+GLUE_JUPYTER_INSTALLED = package_installed("glue_jupyter")
+
+
+try:
+    from glue_qt.app import GlueApplication
+    from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
+    from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
+except ImportError:
+    pass
+
+try:
+    from glue_jupyter.app import JupyterApplication
+    from glue_jupyter.common.state3d import VolumeViewerState
+    from glue_jupyter.ipyvolume import IpyvolumeScatterView, IpyvolumeVolumeView
+    from glue_vispy_viewers.scatter.jupyter.scatter_viewer import JupyterVispyScatterViewer
+    from glue_vispy_viewers.volume.jupyter.volume_viewer import JupyterVispyVolumeViewer
+except ImportError:
+    pass
 
 
 def test_data_count():
     data1 = Data(label="Data 1")
     data2 = Data(label="Data 2")
-    viewer_state = VolumeViewerState()
+    viewer_state = Vispy3DVolumeViewerState()
 
     layer1 = LayerArtist(viewer_state, layer=data1)
     layer1_2 = LayerArtist(viewer_state, layer=data1)
@@ -42,7 +63,7 @@ def test_data_count():
 def test_export_label_for_layer():
     data = Data(label="Data")
     subset = data.new_subset(label="Subset")
-    viewer_state = VolumeViewerState()
+    viewer_state = Vispy3DVolumeViewerState()
     data_layer = LayerArtist(viewer_state, layer=data)
     subset_layer = LayerArtist(viewer_state, layer=subset)
 
@@ -54,7 +75,6 @@ def test_export_label_for_layer():
 
 
 def test_slope_intercept_between():
-
     assert slope_intercept_between((3, 3), (1, 1)) == (1, 0)
     assert slope_intercept_between((3, 4), (1, 2)) == (1, 1)
     assert slope_intercept_between((-1, 5), (1, 5)) == (0, 5)
@@ -92,7 +112,7 @@ def test_clip_linear_transformations():
 
 def test_layer_color():
     data = Data(label="Data")
-    viewer_state = VolumeViewerState()
+    viewer_state = Vispy3DVolumeViewerState()
     layer = LayerArtist(viewer_state, layer=data)
     layer.state.color = "#abcdef"
 
@@ -144,13 +164,18 @@ def test_clip_sides_native():
 
 
 def test_mask_for_bounds():
-    app = GlueApplication()
     x_values = range(10, 25)
     y_values = range(130, 145)
     z_values = range(-50, -35)
     data = Data(x=x_values, y=y_values, z=z_values)
-    app.add_data(data)
-    viewer = app.new_data_viewer(VispyScatterViewer, data=data)
+    try:
+        app = GlueApplication()
+        app.add_data(data)
+        viewer = app.new_data_viewer(VispyScatterViewer, data=data)
+    except:
+        app = JupyterApplication()
+        app.add_data(data)
+        viewer = app.new_data_viewer(JupyterVispyScatterViewer, data=data)
     viewer.state.x_att = data.id['x']
     viewer.state.y_att = data.id['y']
     viewer.state.z_att = data.id['z']
@@ -185,7 +210,6 @@ def test_unique_id():
 
 
 def test_alpha_composite():
-
     over = [110, 206, 15, 0.3]
     under = [89, 97, 202, 0.4]
     alpha_combined = 0.3 + 0.4 * 0.7
@@ -207,7 +231,7 @@ def test_alpha_composite():
 def test_data_for_layer():
     data = Data(label="Data")
     subset = data.new_subset(label="Subset")
-    viewer_state = VolumeViewerState()
+    viewer_state = Vispy3DVolumeViewerState()
     data_layer = LayerArtist(viewer_state, layer=data)
     subset_layer = LayerArtist(viewer_state, layer=subset)
 
@@ -232,35 +256,58 @@ def test_iterator_count():
     assert iterator_count(iter(range(11))) == 11
 
 
-def test_is_volume_viewer():
+@pytest.mark.skipif(not GLUE_QT_INSTALLED, reason="Requires glue-qt to test Qt VisPy volume viewer")
+def test_is_volume_viewer_qt():
     qt_app = GlueApplication()
     vispy_scatter = qt_app.new_data_viewer(VispyScatterViewer)
     vispy_volume = qt_app.new_data_viewer(VispyVolumeViewer)
     assert not is_volume_viewer(vispy_scatter)
     assert is_volume_viewer(vispy_volume)
 
+
+@pytest.mark.skipif(not GLUE_JUPYTER_INSTALLED, reason="Requires glue-jupyter to test Jupyter VisPy and ipyvolume viewers")
+def test_is_volume_viewer_jupyter():
     jupyter_app = JupyterApplication()
+    
+    vispy_scatter = jupyter_app.new_data_viewer(JupyterVispyScatterViewer)
+    vispy_volume = jupyter_app.new_data_viewer(JupyterVispyVolumeViewer)
+    assert not is_volume_viewer(vispy_scatter)
+    assert is_volume_viewer(vispy_volume)
+
     ipv_scatter = jupyter_app.new_data_viewer(IpyvolumeScatterView)
     ipv_volume = jupyter_app.new_data_viewer(IpyvolumeVolumeView)
     assert not is_volume_viewer(ipv_scatter)
     assert is_volume_viewer(ipv_volume)
 
 
-def test_get_resolution():
+@pytest.mark.skipif(not GLUE_QT_INSTALLED, reason="Requires glue-qt to test Qt VisPy volume viewer")
+def test_get_resolution_qt():
     qt_app = GlueApplication()
 
     vispy_volume = qt_app.new_data_viewer(VispyVolumeViewer)
     vispy_volume.state.resolution = 64
     assert get_resolution(vispy_volume.state) == 64
 
-    jupyter_app = JupyterApplication()
-    ipv_volume = jupyter_app.new_data_viewer(IpyvolumeVolumeView)
+    # Check default behavior
+    vispy_scatter = qt_app.new_data_viewer(VispyScatterViewer)
+    assert get_resolution(vispy_scatter) == 256
 
+
+@pytest.mark.skipif(not GLUE_JUPYTER_INSTALLED, reason="Requires glue-jupyter to test Jupyter VisPy and ipyvolume viewers")
+def test_get_resolution_jupyter():
+    jupyter_app = JupyterApplication()
     volume_data1 = Data(label='Volume Data',
                         x=arange(24).reshape((2, 3, 4)),
                         y=ones((2, 3, 4)),
                         z=arange(100, 124).reshape((2, 3, 4)))
     jupyter_app.add_data(volume_data1)
+
+    vispy_volume = jupyter_app.new_data_viewer(JupyterVispyVolumeViewer)
+    vispy_volume.add_data(volume_data1)
+    vispy_volume.state.resolution = 32
+    assert get_resolution(vispy_volume.state) == 32
+
+    ipv_volume = jupyter_app.new_data_viewer(IpyvolumeVolumeView)
     ipv_volume.add_data(volume_data1)
     ipv_volume.layers[-1].state.max_resolution = 128
     assert get_resolution(ipv_volume.state) == 128
@@ -270,16 +317,14 @@ def test_get_resolution():
                         y=ones((2, 3, 4)),
                         z=arange(100, 124).reshape((2, 3, 4)))
     jupyter_app.add_data(volume_data2)
+    vispy_volume.add_data(volume_data2)
     ipv_volume.add_data(volume_data2)
     ipv_volume.layers[-1].state.max_resolution = 64
+    assert get_resolution(vispy_volume.state) == 32
     assert get_resolution(ipv_volume.state) == 128
 
     ipv_volume.layers[-1].state.max_resolution = 512
     assert get_resolution(ipv_volume.state) == 512
-
-    # Check default behavior
-    vispy_scatter = qt_app.new_data_viewer(VispyScatterViewer)
-    assert get_resolution(vispy_scatter) == 256
 
 
 def test_clamp():
