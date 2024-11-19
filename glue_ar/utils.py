@@ -188,7 +188,7 @@ def clip_sides(viewer_state: Viewer3DState,
         return tuple(s * transform[0] for s, transform in zip(sides, clip_transforms))
     else:
         max_stretch = max(stretches)
-        return tuple(2 * stretch / (max_stretch * resolution) for stretch in stretches)
+        return tuple(2 * clip_size * stretch / (max_stretch * resolution) for stretch in stretches)
 
 
 def bring_into_clip(data,
@@ -256,8 +256,8 @@ def unique_id() -> str:
 
 
 def alpha_composite(over: List[float], under: List[float]) -> List[float]:
-    alpha_o = over[3] if len(over) == 4 else over[2]
-    alpha_u = under[3] if len(under) == 4 else under[2]
+    alpha_o = over[3] if len(over) == 4 else 1
+    alpha_u = under[3] if len(under) == 4 else 1
     rgb_o = over[:3]
     rgb_u = under[:3]
     alpha_new = alpha_o + alpha_u * (1 - alpha_o)
