@@ -96,9 +96,13 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
             link((instance, property), (widget, 'value'))
             return [widget]
         elif t in (int, float):
-            step = 0.01 if t is float else 1
-            min = step
-            max = min * 100
+            instance_type = type(instance)
+            cb_property = getattr(instance_type, property)
+            min = getattr(cb_property, 'min_value', 1 if t is int else 0.01)
+            max = getattr(cb_property, 'max_value', 100 * min)
+            step = getattr(cb_property, 'resolution', None)
+            if step is None:
+                step = 1 if t is int else 0.01
             widget = v.Slider(min=min,
                               max=max,
                               step=step,

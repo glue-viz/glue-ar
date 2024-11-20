@@ -1,9 +1,9 @@
 <template>
   <v-dialog
     v-model="dialog_open"
-    width="500px"
+    width="600px"
   >
-    <v-card>
+    <v-card class="pa-3">
       <v-card-title>
         Export 3D File
       </v-card-title>

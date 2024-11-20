@@ -1,7 +1,9 @@
+from math import floor, log
 import os
 from typing import List
 
 from echo import HasCallbackProperties, add_callback
+from echo.core import remove_callback
 from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_value
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
@@ -51,21 +53,33 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             policy.setHorizontalPolicy(QSizePolicy.Policy.Expanding)
             policy.setVerticalPolicy(QSizePolicy.Policy.Fixed)
             widget.setOrientation(Qt.Orientation.Horizontal)
-            widget.setMinimum(1)
-            widget.setMaximum(100)
 
             widget.setSizePolicy(policy)
 
             value_label = QLabel()
+            instance_type = type(instance)
+            cb_property = getattr(instance_type, property)
+            min = getattr(cb_property, 'min_value', 1 if t is int else 0.01)
+            max = getattr(cb_property, 'max_value', 100 * min)
+            step = getattr(cb_property, 'resolution', None)
+            if step is None:
+                step = 1 if t is int else 0.01
+            places = -floor(log(step, 10))
 
             def update_label(value):
-                value_label.setText(f"{value:g}")
+                value_label.setText(f"{value:.{places}f}")
+
+            def remove_label_callback(*args):
+                remove_callback(instance, property, update_label)
 
             update_label(value)
             add_callback(instance, property, update_label)
+            widget.destroyed.connect(remove_label_callback)
 
-            range = (1, 100) if t is int else (0.01, 1)
-            self._layer_connections.append(connect_value(instance, property, widget, value_range=range))
+            steps = round((max - min) / step)
+            widget.setMinimum(0)
+            widget.setMaximum(steps)
+            self._layer_connections.append(connect_value(instance, property, widget, value_range=(min, max)))
             return [label, widget, value_label]
         else:
             return []
