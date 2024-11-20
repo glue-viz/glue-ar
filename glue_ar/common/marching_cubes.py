@@ -30,7 +30,8 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
 
     data[~isfinite(data)] = isomin - 10
 
-    levels = linspace(isomin, isomax, num=int(options.isosurface_count))
+    isosurface_count = int(options.isosurface_count)
+    levels = linspace(isomin, isomax, num=isosurface_count + 2)
     opacity = 0.25 * layer_state.alpha
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
@@ -38,7 +39,7 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
     sides = clip_sides(viewer_state, clip_size=1)
     sides = tuple(sides[i] for i in (2, 1, 0))
 
-    for level in levels[1:]:
+    for level in levels[1:-1]:
         barr = bytearray()
         level_bin = f"layer_{layer_state.layer.uuid}_level_{level}.bin"
 
@@ -115,14 +116,14 @@ def add_isosurface_layer_usd(
     data[~isfinite(data)] = isomin - 10
 
     isosurface_count = int(options.isosurface_count)
-    levels = linspace(isomin, isomax, isosurface_count)
+    levels = linspace(isomin, isomax, num=isosurface_count + 2)
     opacity = layer_state.alpha
     color = layer_color(layer_state)
     color_components = tuple(hex_to_components(color))
     sides = clip_sides(viewer_state, clip_size=1)
     sides = tuple(sides[i] for i in (2, 1, 0))
 
-    for i, level in enumerate(levels[1:]):
+    for i, level in enumerate(levels[1:-1]):
         alpha = (3 * i + isosurface_count) / (4 * isosurface_count) * opacity
         points, triangles = marching_cubes(data, level)
         if len(points) == 0:
@@ -150,11 +151,11 @@ def add_isosurface_layer_stl(
     data[~isfinite(data)] = isomin - 10
 
     isosurface_count = int(options.isosurface_count)
-    levels = linspace(isomin, isomax, isosurface_count)
+    levels = linspace(isomin, isomax, num=isosurface_count + 2)
     sides = clip_sides(viewer_state, clip_size=1)
     sides = tuple(sides[i] for i in (2, 1, 0))
 
-    for i, level in enumerate(levels[1:]):
+    for level in levels[1:-1]:
         # alpha = (3 * i + isosurface_count) / (4 * isosurface_count) * opacity
         points, triangles = marching_cubes(data, level)
         if len(points) == 0:

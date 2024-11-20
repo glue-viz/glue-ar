@@ -356,8 +356,12 @@ def clamped_opacity(opacity: float) -> float:
     return clamp(opacity, 0, 1)
 
 
+def clamp_with_resolution(value: Number, minimum: Number, maximum: Number, resolution: Number) -> Number:
+    return clamp(round(value / resolution) * resolution, minimum, maximum)
+
+
 def binned_opacity(raw_opacity: float, resolution: float) -> float:
-    return clamped_opacity(round(raw_opacity / resolution) * resolution)
+    return clamp_with_resolution(raw_opacity, 0, 1, resolution)
 
 
 def offset_triangles(triangle_indices, offset):
