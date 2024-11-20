@@ -4,7 +4,7 @@ from ipywidgets import DOMWidget, widget_serialization
 import traitlets
 from typing import Callable, List, Optional
 
-from echo import HasCallbackProperties, add_callback
+from echo import HasCallbackProperties
 from glue.core.state_objects import State
 from glue.viewers.common.viewer import Viewer
 from glue_jupyter.link import link
@@ -105,11 +105,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
                               label=display_name,
                               thumb_label=f"{value:g}")
             link((instance, property),
-                 (widget, 'value'))
-
-            def update_label(value):
-                widget.thumb_label = f"{value:g}"
-            add_callback(instance, property, update_label)
+                 (widget, 'v_model'))
 
             return [widget]
         else:
