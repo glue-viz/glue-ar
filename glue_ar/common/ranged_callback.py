@@ -1,7 +1,10 @@
 from echo.core import CallbackProperty
-from typing import Callable, Optional
+from typing import Optional
 
 from glue_ar.utils import clamp, clamp_with_resolution
+
+
+__all__ = ["RangedCallbackProperty"]
 
 
 class RangedCallbackProperty(CallbackProperty):
