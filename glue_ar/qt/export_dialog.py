@@ -57,6 +57,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             widget.setSizePolicy(policy)
 
             value_label = QLabel()
+
             def update_label(value):
                 value_label.setText(f"{value:g}")
 
