@@ -162,6 +162,8 @@ def test_clip_sides_native():
         assert clip_sides(viewer_state, clip_size=clip_size) == (max_size, max_size / 2, max_size / 4)
 
 
+@pytest.mark.skipif(not (GLUE_QT_INSTALLED or GLUE_JUPYTER_INSTALLED),
+                    reason="Requires either glue-qt or glue-jupyter to create application")
 def test_mask_for_bounds():
     x_values = range(10, 25)
     y_values = range(130, 145)

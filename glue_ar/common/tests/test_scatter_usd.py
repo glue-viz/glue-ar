@@ -40,8 +40,8 @@ class TestVispyScatterUSD(BaseScatterTest):
         _, options = self.state_dictionary[label]
 
         # The default ipyvolume geometry type is diamond
-        theta_resolution: int = getattr(options, "theta_resolution", 3)
-        phi_resolution: int = getattr(options, "phi_resolution", 3)
+        theta_resolution: int = getattr(options, "resolution", 3)
+        phi_resolution: int = getattr(options, "resolution", 3)
         sphere_pts_count = sphere_points_count(theta_resolution=theta_resolution, phi_resolution=phi_resolution)
         sphere_tris_count = sphere_triangles_count(theta_resolution=theta_resolution, phi_resolution=phi_resolution)
         expected_vert_cts = [3] * sphere_tris_count * self.n
