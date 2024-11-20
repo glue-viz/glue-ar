@@ -1,14 +1,14 @@
 import os
 from typing import List
 
-from echo import HasCallbackProperties
-from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_float_text
+from echo import HasCallbackProperties, add_callback
+from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_value
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
 from glue_ar.common.export_dialog_base import ARExportDialogBase
 
-from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLayout, QLineEdit, QWidget
-from qtpy.QtGui import QIntValidator, QDoubleValidator
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
 
 
 __all__ = ['QtARExportDialog']
@@ -46,12 +46,26 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             label = QLabel()
             prompt = f"{display_name}:"
             label.setText(prompt)
-            widget = QLineEdit()
-            validator = QIntValidator() if t is int else QDoubleValidator()
-            widget.setText(str(value))
-            widget.setValidator(validator)
-            self._layer_connections.append(connect_float_text(instance, property, widget))
-            return [label, widget]
+            widget = QSlider()
+            policy = QSizePolicy()
+            policy.setHorizontalPolicy(QSizePolicy.Policy.Expanding)
+            policy.setVerticalPolicy(QSizePolicy.Policy.Fixed)
+            widget.setOrientation(Qt.Orientation.Horizontal)
+            widget.setMinimum(1)
+            widget.setMaximum(100)
+
+            widget.setSizePolicy(policy)
+
+            value_label = QLabel()
+            def update_label(value):
+                value_label.setText(f"{value:g}")
+
+            update_label(value)
+            add_callback(instance, property, update_label)
+
+            range = (1, 100) if t is int else (0.01, 1)
+            self._layer_connections.append(connect_value(instance, property, widget, value_range=range))
+            return [label, widget, value_label]
         else:
             return []
 
