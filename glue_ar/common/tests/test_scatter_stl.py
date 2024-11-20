@@ -50,8 +50,8 @@ class TestScatterSTL(BaseScatterTest):
 
         # TODO: 3 is the value for ipyvolume's diamond, which is the ipv default
         # But we should make this more robust
-        theta_resolution: int = getattr(options, "theta_resolution", 3)
-        phi_resolution: int = getattr(options, "phi_resolution", 3)
+        theta_resolution: int = getattr(options, "resolution", 3)
+        phi_resolution: int = getattr(options, "resolution", 3)
         points_count = sphere_points_count(theta_resolution, phi_resolution)
         triangle_count = sphere_triangles_count(theta_resolution, phi_resolution)
         for index in range(self.data1.size):

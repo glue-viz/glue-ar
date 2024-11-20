@@ -6,8 +6,7 @@ importorskip("glue_qt")
 
 from glue_qt.app import GlueApplication
 from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
-from qtpy.QtGui import QDoubleValidator, QIntValidator
-from qtpy.QtWidgets import QCheckBox, QLabel, QLineEdit
+from qtpy.QtWidgets import QCheckBox, QLabel, QSlider
 
 from glue_ar.common.tests.test_base_dialog import BaseExportDialogTest, DummyState
 from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
@@ -77,22 +76,24 @@ class TestQtExportDialog(BaseExportDialogTest):
         state = DummyState()
 
         int_widgets = self.dialog._widgets_for_property(state, "cb_int", "Int CB")
-        assert len(int_widgets) == 2
-        label, edit = int_widgets
+        assert len(int_widgets) == 3
+        label, slider, value_label = int_widgets
         assert isinstance(label, QLabel)
         assert label.text() == "Int CB:"
-        assert isinstance(edit, QLineEdit)
-        assert isinstance(edit.validator(), QIntValidator)
-        assert edit.text() == "0"
+        assert isinstance(slider, QSlider)
+        assert slider.value() == 2
+        assert isinstance(value_label, QLabel)
+        assert value_label.text() == "2"
 
         float_widgets = self.dialog._widgets_for_property(state, "cb_float", "Float CB")
-        assert len(float_widgets) == 2
-        label, edit = float_widgets
+        assert len(float_widgets) == 3
+        label, slider, value_label = float_widgets
         assert isinstance(label, QLabel)
         assert label.text() == "Float CB:"
-        assert isinstance(edit, QLineEdit)
-        assert isinstance(edit.validator(), QDoubleValidator)
-        assert edit.text() == "1.7"
+        assert isinstance(slider, QSlider)
+        assert slider.value() == 70
+        assert isinstance(value_label, QLabel)
+        assert value_label.text() == "0.7"
 
         bool_widgets = self.dialog._widgets_for_property(state, "cb_bool", "Bool CB")
         assert len(bool_widgets) == 1
@@ -108,7 +109,7 @@ class TestQtExportDialog(BaseExportDialogTest):
 
         state = ARVispyScatterExportOptions()
         self.dialog._update_layer_ui(state)
-        assert self.dialog.ui.layer_layout.rowCount() == 2
+        assert self.dialog.ui.layer_layout.rowCount() == 1
 
     def test_clear_layout(self):
         self.dialog._clear_layer_layout()

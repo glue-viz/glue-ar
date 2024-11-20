@@ -4,47 +4,13 @@ from ipywidgets import DOMWidget, widget_serialization
 import traitlets
 from typing import Callable, List, Optional
 
-from echo import HasCallbackProperties
+from echo import HasCallbackProperties, add_callback
 from glue.core.state_objects import State
 from glue.viewers.common.viewer import Viewer
 from glue_jupyter.link import link
 from glue_jupyter.vuetify_helpers import link_glue_choices
 
 from glue_ar.common.export_dialog_base import ARExportDialogBase
-
-
-# Based on https://github.com/widgetti/ipyvuetify/issues/241
-class NumberField(v.VuetifyTemplate):
-    label = traitlets.Unicode().tag(sync=True)
-    value = traitlets.Unicode().tag(sync=True)
-
-    temp_error = traitlets.Unicode(allow_none=True, default_value=None).tag(sync=True)
-
-    def __init__(self, type, label, error_message, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.number_type = type
-        self.label = label
-        self.error_message = error_message
-
-    @traitlets.default("template")
-    def _template(self):
-        return """
-            <v-text-field
-              :label="label"
-              type="number"
-              v-model="value"
-              @change="temp_rule"
-              :rules="[temp_error]"
-            >
-            </v-text-field>
-        """
-
-    def vue_temp_rule(self, value):
-        self.temp_error = None
-        try:
-            self.number_type(value)
-        except ValueError:
-            self.temp_error = self.error_message
 
 
 class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
@@ -103,7 +69,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         for property, _ in state.iter_callback_properties():
             name = self.display_name(property)
             widgets.extend(self.widgets_for_property(state, property, name))
-        self.input_widgets = [w for w in widgets if isinstance(w, NumberField)]
+        self.input_widgets = [w for w in widgets if isinstance(w, v.Slider)]
         self.layer_layout = v.Container(children=widgets, px_0=True, py_0=True)
         self.has_layer_options = len(self.layer_layout.children) > 0
 
@@ -130,12 +96,21 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
             link((instance, property), (widget, 'value'))
             return [widget]
         elif t in (int, float):
-            name = "integer" if t is int else "number"
-            widget = NumberField(type=t, label=display_name, error_message=f"You must enter a valid {name}")
+            step = 0.01 if t is float else 1
+            min = step
+            max = min * 100
+            widget = v.Slider(min=min,
+                              max=max,
+                              step=step,
+                              label=display_name,
+                              thumb_label=f"{value:g}")
             link((instance, property),
-                 (widget, 'value'),
-                 lambda value: str(value),
-                 lambda text: t(text))
+                 (widget, 'value'))
+
+            def update_label(value):
+                widget.thumb_label = f"{value:g}"
+            add_callback(instance, property, update_label)
+
             return [widget]
         else:
             return []
@@ -147,7 +122,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
             self.on_cancel()
 
     def vue_export_viewer(self, *args):
-        okay = all(widget.temp_error is None for widget in self.input_widgets)
+        okay = all(not widget.error for widget in self.input_widgets)
         if not okay:
             return
         self.dialog_open = False

@@ -9,8 +9,8 @@ from numpy import arange, ones
 
 
 class DummyState(State):
-    cb_int = CallbackProperty(0)
-    cb_float = CallbackProperty(1.7)
+    cb_int = CallbackProperty(2)
+    cb_float = CallbackProperty(0.7)
     cb_bool = CallbackProperty(False)
 
 
