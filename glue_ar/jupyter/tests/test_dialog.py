@@ -8,10 +8,10 @@ from glue_jupyter import JupyterApplication
 # We can't use the Jupyter vispy widget for these tests until
 # https://github.com/glue-viz/glue-vispy-viewers/pull/388 is released
 from glue_jupyter.ipyvolume.volume import IpyvolumeVolumeView
-from ipyvuetify import Checkbox
+from ipyvuetify import Checkbox, Slider
 
 from glue_ar.common.tests.test_base_dialog import BaseExportDialogTest, DummyState
-from glue_ar.jupyter.export_dialog import JupyterARExportDialog, NumberField
+from glue_ar.jupyter.export_dialog import JupyterARExportDialog
 
 
 class TestJupyterExportDialog(BaseExportDialogTest):
@@ -95,20 +95,16 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         int_widgets = self.dialog.widgets_for_property(state, "cb_int", "Int CB")
         assert len(int_widgets) == 1
         widget = int_widgets[0]
-        assert isinstance(widget, NumberField)
+        assert isinstance(widget, Slider)
         assert widget.label == "Int CB"
-        assert widget.value == "0"
-        assert widget.number_type is int
-        assert widget.error_message == "You must enter a valid integer"
+        assert widget.value == 2
 
         float_widgets = self.dialog.widgets_for_property(state, "cb_float", "Float CB")
         assert len(float_widgets) == 1
         widget = float_widgets[0]
-        assert isinstance(widget, NumberField)
+        assert isinstance(widget, Slider)
         assert widget.label == "Float CB"
-        assert widget.value == "1.7"
-        assert widget.number_type is float
-        assert widget.error_message == "You must enter a valid number"
+        assert widget.value == 0.7
 
         bool_widgets = self.dialog.widgets_for_property(state, "cb_bool", "Bool CB")
         assert len(bool_widgets) == 1
