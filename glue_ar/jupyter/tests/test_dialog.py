@@ -97,14 +97,14 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         widget = int_widgets[0]
         assert isinstance(widget, Slider)
         assert widget.label == "Int CB"
-        assert widget.value == 2
+        assert widget.v_model == 2
 
         float_widgets = self.dialog.widgets_for_property(state, "cb_float", "Float CB")
         assert len(float_widgets) == 1
         widget = float_widgets[0]
         assert isinstance(widget, Slider)
         assert widget.label == "Float CB"
-        assert widget.value == 0.7
+        assert widget.v_model == 0.7
 
         bool_widgets = self.dialog.widgets_for_property(state, "cb_bool", "Bool CB")
         assert len(bool_widgets) == 1

@@ -81,7 +81,7 @@ class TestQtExportDialog(BaseExportDialogTest):
         assert isinstance(label, QLabel)
         assert label.text() == "Int CB:"
         assert isinstance(slider, QSlider)
-        assert slider.value() == 2
+        assert slider.value() == 1  # 2 is the second (index 1) step value
         assert isinstance(value_label, QLabel)
         assert value_label.text() == "2"
 
