@@ -6,7 +6,7 @@ from glue.core import Data
 from glue.viewers.common.viewer import LayerArtist
 from glue_vispy_viewers.volume.volume_viewer import Vispy3DVolumeViewerState
 
-from glue_ar.utils import alpha_composite, binned_opacity, clamp, clamped_opacity, \
+from glue_ar.utils import alpha_composite, binned_opacity, clamp, clamp_with_resolution, clamped_opacity, \
                           clip_linear_transformations, clip_sides, data_count, data_for_layer, \
                           export_label_for_layer, get_resolution, hex_to_components, is_volume_viewer, \
                           iterable_has_nan, iterator_count, layer_color, mask_for_bounds, ndarray_has_nan, \
@@ -346,6 +346,14 @@ def test_clamped_opacity():
     assert clamped_opacity(0.77) == 0.77
     assert clamped_opacity(-2) == 0
     assert clamped_opacity(1.6) == 1
+
+
+def test_clamp_with_resolution():
+    assert clamp_with_resolution(2, 0, 1, 0.5) == 1
+    assert clamp_with_resolution(-1, 0, 1, 0.2) == 0
+    assert clamp_with_resolution(0.5, 0, 1, 0.3) == 0.6
+    assert clamp_with_resolution(16.2, 10, 20, 0.5) == 16
+    assert clamp_with_resolution(5.6, 4.8, 7.2, 1) == 6
 
 
 def test_binned_opacity():

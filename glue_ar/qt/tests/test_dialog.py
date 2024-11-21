@@ -81,7 +81,7 @@ class TestQtExportDialog(BaseExportDialogTest):
         assert isinstance(label, QLabel)
         assert label.text() == "Int CB:"
         assert isinstance(slider, QSlider)
-        assert slider.value() == 2
+        assert slider.value() == 1  # 2 is the second (index 1) step value
         assert isinstance(value_label, QLabel)
         assert value_label.text() == "2"
 
@@ -91,9 +91,9 @@ class TestQtExportDialog(BaseExportDialogTest):
         assert isinstance(label, QLabel)
         assert label.text() == "Float CB:"
         assert isinstance(slider, QSlider)
-        assert slider.value() == 70
+        assert slider.value() == 69  # Another value -> index thing (see above comment)
         assert isinstance(value_label, QLabel)
-        assert value_label.text() == "0.7"
+        assert value_label.text() == "0.70"
 
         bool_widgets = self.dialog._widgets_for_property(state, "cb_bool", "Bool CB")
         assert len(bool_widgets) == 1
