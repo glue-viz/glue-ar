@@ -2378,22 +2378,22 @@
 			}
 
 	#nav {
-        position: sticky;
-        top: 0;
-		cursor: default;
-        margin: 0;
-		padding: 0;
-        width: 100%;
-        display: block;
-        background-color: #EB1C24;
-        margin-bottom: 1.5em;
-        z-index: 10000;
-    }
+    position: sticky;
+    top: 0;
+    cursor: default;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    display: block;
+    background-color: #EB1C24;
+    margin-bottom: 1.5em;
+    z-index: 10000;
+  }
 
 		#nav > ul {
 			margin: 0;
-            display: flex;
-            justify-content: center;
+      display: flex;
+      justify-content: space-around;
 		}
 
 			#nav > ul > li {
