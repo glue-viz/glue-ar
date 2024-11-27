@@ -3185,8 +3185,8 @@
   transition: all 0s;
   box-sizing: border-box;
   min-width: 100px;
-  width: 100%;
-  margin: auto;
+  width: 150px;
+  height: 150px;
 }
 
 .qr-code:hover {
@@ -3204,8 +3204,21 @@
 }
 
 .example-img {
-    width: 75%;
-    min-width: 200px;
+  min-height: 150px;
+  max-height: 200px;
+  min-width: 200px;
+  max-width: calc(100% - 170px);
+  object-fit: contain;
+}
+
+.example-section {
+  display: flex;
+}
+
+#examples-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 20px;
 }
 
 @media screen and (max-width: 840px) {
@@ -3219,6 +3232,10 @@
 
     .qr-code {
         width: 75%;
+    }
+
+    #examples-grid {
+      grid-template-columns: 1fr;
     }
 }
 
