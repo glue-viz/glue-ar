@@ -20,6 +20,7 @@ class GLTFBuilder:
         self.buffer_views: List[BufferView] = []
         self.accessors: List[Accessor] = []
         self.file_resources: List[FileResource] = []
+        self.nodes: List[Node] = []
 
     def add_material(self,
                      color: Iterable[float],
@@ -118,6 +119,23 @@ class GLTFBuilder:
         )
         return self
 
+    def add_node(self,
+                 mesh: int,
+                 matrix: Optional[List[float]] = None,
+                 rotation: Optional[List[float]] = None,
+                 translation: Optional[List[float]] = None,
+                 scale: Optional[List[float]] = None,
+                 ) -> GLTFBuilder:
+        self.nodes.append(
+            Node(
+                mesh=mesh,
+                matrix=matrix,
+                rotation=rotation,
+                translation=translation,
+                scale=scale,
+            )
+        )
+
     @property
     def material_count(self) -> int:
         return len(self.materials)
@@ -139,7 +157,10 @@ class GLTFBuilder:
         return len(self.accessors)
 
     def build_model(self) -> GLTFModel:
-        nodes = [Node(mesh=i) for i in range(len(self.meshes))]
+        if self.nodes:
+            nodes = self.nodes
+        else:
+            nodes = [Node(mesh=i) for i in range(len(self.meshes))]
         node_indices = list(range(len(nodes)))
         scenes = [Scene(nodes=node_indices)]
         return GLTFModel(
