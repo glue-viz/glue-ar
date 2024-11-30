@@ -285,18 +285,40 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         maxes=point_maxes,
     )
 
-    material_index = builder.material_count - 1
-    builder.add_mesh(
-        position_accessor=builder.accessor_count-1,
-        indices_accessor=sphere_triangles_accessor,
-        material=material_index,
-    )
+    color_meshes = {}
+    if fixed_color:
+        material_index = builder.material_count - 1
+        builder.add_mesh(
+            position_accessor=builder.accessor_count-1,
+            indices_accessor=sphere_triangles_accessor,
+            material=material_index,
+        )
+    else:
+        for cval in cmap_vals:
+            normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+            cindex = int(normalized * 255)
+            color = cmap(cindex)
+            builder.add_material(color, layer_state.alpha)
+            builder.add_mesh(
+                position_accessor=builder.accessor_count-1,
+                indices_accessor=sphere_triangles_accessor,
+                material=builder.material_count - 1,
+            )
+            color_meshes[cindex] = builder.mesh_count - 1
 
     for i, point in enumerate(data):
 
         size = float(radius if fixed_size else sizes[i])
+        if fixed_color:
+            mesh_index = builder.mesh_count - 1
+        else:
+            cval = cmap_vals[i]
+            normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+            cindex = int(normalized * 255)
+            mesh_index = color_meshes[cindex]
+
         builder.add_node(
-            mesh=builder.mesh_count-1,
+            mesh=mesh_index,
             scale=[size, size, size],
             translation=[float(c) for c in point],
         )
