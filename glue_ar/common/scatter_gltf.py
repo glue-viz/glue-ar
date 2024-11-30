@@ -265,7 +265,8 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
     sizes = sizes_for_scatter_layer(layer_state, bounds, mask)
     origin: Point = (0, 0, 0)
-    pts = points_getter(origin, 1)
+    base_radius = radius if fixed_size else 1
+    pts = points_getter(origin, base_radius)
     add_points_to_bytearray(barr, pts)
     point_mins = index_mins(pts)
     point_maxes = index_maxes(pts)
@@ -306,6 +307,14 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             )
             color_meshes[cindex] = builder.mesh_count - 1
 
+
+    # This branching logic here is for output file size considerations
+    # There are two options for creating multiple scatter points:
+    # We can specify a separate mesh for each point, and a node for each of these meshes
+    # or
+    # We can reuse the same mesh with a scale/rotation matrix
+    # 
+    # Which one produces a larger output file depends on sizing
     for i, point in enumerate(data):
 
         size = float(radius if fixed_size else sizes[i])
@@ -317,11 +326,21 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             cindex = int(normalized * 255)
             mesh_index = color_meshes[cindex]
 
-        builder.add_node(
-            mesh=mesh_index,
-            scale=[size, size, size],
-            translation=[float(c) for c in point],
-        )
+        # We don't want to add a scale factor if the size is fixed
+        # It's not worth increasing the file size to put in a bunch
+        # of [1.0, 1.0, 1.0] scale vectors in the output
+        translation = [float(c) for c in point]
+        if fixed_size:
+            builder.add_node(
+                mesh=mesh_index,
+                translation=translation
+            )
+        else:
+            builder.add_node(
+                mesh=mesh_index,
+                scale=[size, size, size],
+                translation=translation,
+            )
 
         # if not fixed_color:
         #     cval = cmap_vals[i]
