@@ -1,4 +1,4 @@
-from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
+from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode, component_type
 from glue_vispy_viewers.common.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 from numpy import isfinite, ndarray
@@ -11,12 +11,12 @@ from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
-from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
+from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes, matrix
 from glue_ar.utils import Viewer3DState, get_stretches, iterable_has_nan, hex_to_components, layer_color, \
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
-                                   PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
+                                   PointsGetter, Point, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
                                    IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, clip_vector_data, \
                                    radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, \
                                    sphere_points_getter, NoneType
@@ -264,43 +264,71 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     uri = f"layer_{unique_id()}.bin"
 
     sizes = sizes_for_scatter_layer(layer_state, bounds, mask)
+    origin: Point = (0, 0, 0)
+    pts = points_getter(origin, 1)
+    add_points_to_bytearray(barr, pts)
+    point_mins = index_mins(pts)
+    point_maxes = index_maxes(pts)
+
+    builder.add_buffer_view(
+        buffer=buffer,
+        byte_length=len(barr)-triangles_len,
+        byte_offset=triangles_len,
+        target=BufferTarget.ARRAY_BUFFER,
+    )
+    builder.add_accessor(
+        buffer_view=builder.buffer_view_count-1,
+        component_type=ComponentType.FLOAT,
+        count=len(pts),
+        type=AccessorType.VEC3,
+        mins=point_mins,
+        maxes=point_maxes,
+    )
+
+    material_index = builder.material_count - 1
+    builder.add_mesh(
+        position_accessor=builder.accessor_count-1,
+        indices_accessor=sphere_triangles_accessor,
+        material=material_index,
+    )
+
     for i, point in enumerate(data):
 
-        prev_len = len(barr)
-        size = radius if fixed_size else sizes[i]
-        pts = points_getter(point, size)
-        add_points_to_bytearray(barr, pts)
-        point_mins = index_mins(pts)
-        point_maxes = index_maxes(pts)
-
-        if not fixed_color:
-            cval = cmap_vals[i]
-            normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
-            cindex = int(normalized * 255)
-            color = cmap(cindex)
-            builder.add_material(color, layer_state.alpha)
-
-        builder.add_buffer_view(
-            buffer=buffer,
-            byte_length=len(barr)-prev_len,
-            byte_offset=prev_len,
-            target=BufferTarget.ARRAY_BUFFER,
-        )
-        builder.add_accessor(
-            buffer_view=builder.buffer_view_count-1,
-            component_type=ComponentType.FLOAT,
-            count=len(pts),
-            type=AccessorType.VEC3,
-            mins=point_mins,
-            maxes=point_maxes,
+        size = float(radius if fixed_size else sizes[i])
+        builder.add_node(
+            mesh=builder.mesh_count-1,
+            scale=[size, size, size],
+            translation=[float(c) for c in point],
         )
 
-        material_index = builder.material_count - 1
-        builder.add_mesh(
-            position_accessor=builder.accessor_count-1,
-            indices_accessor=sphere_triangles_accessor,
-            material=material_index,
-        )
+        # if not fixed_color:
+        #     cval = cmap_vals[i]
+        #     normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+        #     cindex = int(normalized * 255)
+        #     color = cmap(cindex)
+        #     builder.add_material(color, layer_state.alpha)
+
+        # builder.add_buffer_view(
+        #     buffer=buffer,
+        #     byte_length=len(barr)-prev_len,
+        #     byte_offset=prev_len,
+        #     target=BufferTarget.ARRAY_BUFFER,
+        # )
+        # builder.add_accessor(
+        #     buffer_view=builder.buffer_view_count-1,
+        #     component_type=ComponentType.FLOAT,
+        #     count=len(pts),
+        #     type=AccessorType.VEC3,
+        #     mins=point_mins,
+        #     maxes=point_maxes,
+        # )
+
+        # material_index = builder.material_count - 1
+        # builder.add_mesh(
+        #     position_accessor=builder.accessor_count-1,
+        #     indices_accessor=sphere_triangles_accessor,
+        #     material=material_index,
+        # )
 
     builder.add_buffer(byte_length=len(barr), uri=uri)
     builder.add_file_resource(uri, data=barr)
