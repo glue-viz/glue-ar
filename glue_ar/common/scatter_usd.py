@@ -14,6 +14,7 @@ from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOption
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
+from glue_ar.usd_utils import sanitize_path
 from glue_ar.utils import Viewer3DState, export_label_for_layer, iterable_has_nan, hex_to_components, \
                           layer_color, offset_triangles, xyz_for_layer, Bounds, NoneType
 
@@ -94,7 +95,7 @@ def add_scatter_layer_usd(
     color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
     fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
 
-    identifier = export_label_for_layer(layer_state).replace(" ", "_")
+    identifier = sanitize_path(export_label_for_layer(layer_state))
 
     mask = scatter_layer_mask(viewer_state, layer_state, bounds, clip_to_bounds)
     data = xyz_for_layer(viewer_state, layer_state,

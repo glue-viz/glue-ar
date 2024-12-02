@@ -12,4 +12,4 @@ class ARIsosurfaceExportOptions(State):
 
 class ARVoxelExportOptions(State):
     opacity_cutoff = RangedCallbackProperty(default=0.1, min_value=0.01, max_value=1, resolution=0.01)
-    opacity_resolution = RangedCallbackProperty(default=0.02, min_value=0.01, max_value=1, resolution=0.01)
+    opacity_resolution = RangedCallbackProperty(default=0.02, min_value=0.005, max_value=1, resolution=0.005)
