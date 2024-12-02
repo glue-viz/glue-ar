@@ -4,6 +4,8 @@ from typing import Callable, Iterable, List, Optional, Type, TypeVar, Union
 
 from gltflib import Material, PBRMetallicRoughness
 
+from glue_ar.common.scatter import Point
+
 __all__ = [
     "create_material_for_color",
     "add_points_to_bytearray",
@@ -66,3 +68,13 @@ def index_mins(items, previous=None, type: Type[T] = float) -> List[List[T]]:
 
 def index_maxes(items, previous=None, type: Type[T] = float) -> List[List[T]]:
     return index_extrema(items, extremum=max, type=type, previous=previous)
+
+
+def matrix(origin: Point, destination: Point, scale_ratio: float) -> list[float]:
+    translation = tuple(d - o for d, o in zip(destination, origin))
+    return [
+        scale_ratio, 0, 0, 0,
+        0, scale_ratio, 0, 0,
+        0, 0, scale_ratio, 0,
+        translation[0], translation[1], translation[2], 1,
+    ]

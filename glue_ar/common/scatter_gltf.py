@@ -16,7 +16,7 @@ from glue_ar.utils import Viewer3DState, get_stretches, iterable_has_nan, hex_to
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
-                                   PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
+                                   PointsGetter, Point, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
                                    IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, clip_vector_data, \
                                    radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, \
                                    sphere_points_getter, NoneType
@@ -264,43 +264,111 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     uri = f"layer_{unique_id()}.bin"
 
     sizes = sizes_for_scatter_layer(layer_state, bounds, mask)
-    for i, point in enumerate(data):
+    origin: Point = (0, 0, 0)
+    base_radius = radius if fixed_size else 1
+    pts = points_getter(origin, base_radius)
+    add_points_to_bytearray(barr, pts)
+    point_mins = index_mins(pts)
+    point_maxes = index_maxes(pts)
 
-        prev_len = len(barr)
-        size = radius if fixed_size else sizes[i]
-        pts = points_getter(point, size)
-        add_points_to_bytearray(barr, pts)
-        point_mins = index_mins(pts)
-        point_maxes = index_maxes(pts)
+    builder.add_buffer_view(
+        buffer=buffer,
+        byte_length=len(barr)-triangles_len,
+        byte_offset=triangles_len,
+        target=BufferTarget.ARRAY_BUFFER,
+    )
+    builder.add_accessor(
+        buffer_view=builder.buffer_view_count-1,
+        component_type=ComponentType.FLOAT,
+        count=len(pts),
+        type=AccessorType.VEC3,
+        mins=point_mins,
+        maxes=point_maxes,
+    )
 
-        if not fixed_color:
-            cval = cmap_vals[i]
-            normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
-            cindex = int(normalized * 255)
-            color = cmap(cindex)
-            builder.add_material(color, layer_state.alpha)
-
-        builder.add_buffer_view(
-            buffer=buffer,
-            byte_length=len(barr)-prev_len,
-            byte_offset=prev_len,
-            target=BufferTarget.ARRAY_BUFFER,
-        )
-        builder.add_accessor(
-            buffer_view=builder.buffer_view_count-1,
-            component_type=ComponentType.FLOAT,
-            count=len(pts),
-            type=AccessorType.VEC3,
-            mins=point_mins,
-            maxes=point_maxes,
-        )
-
+    color_meshes = {}
+    if fixed_color:
         material_index = builder.material_count - 1
         builder.add_mesh(
             position_accessor=builder.accessor_count-1,
             indices_accessor=sphere_triangles_accessor,
             material=material_index,
         )
+    else:
+        for cval in cmap_vals:
+            normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+            cindex = int(normalized * 255)
+            color = cmap(cindex)
+            builder.add_material(color, layer_state.alpha)
+            builder.add_mesh(
+                position_accessor=builder.accessor_count-1,
+                indices_accessor=sphere_triangles_accessor,
+                material=builder.material_count - 1,
+            )
+            color_meshes[cindex] = builder.mesh_count - 1
+
+    # This branching logic here is for output file size considerations
+    # There are two options for creating multiple scatter points:
+    # We can specify a separate mesh for each point, and a node for each of these meshes
+    # or
+    # We can reuse the same mesh with a scale/rotation matrix
+    #
+    # Which one produces a larger output file depends on sizing
+    for i, point in enumerate(data):
+
+        size = float(radius if fixed_size else sizes[i])
+        if fixed_color:
+            mesh_index = builder.mesh_count - 1
+        else:
+            cval = cmap_vals[i]
+            normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+            cindex = int(normalized * 255)
+            mesh_index = color_meshes[cindex]
+
+        # We don't want to add a scale factor if the size is fixed
+        # It's not worth increasing the file size to put in a bunch
+        # of [1.0, 1.0, 1.0] scale vectors in the output
+        translation = [float(c) for c in point]
+        if fixed_size:
+            builder.add_node(
+                mesh=mesh_index,
+                translation=translation,
+            )
+        else:
+            builder.add_node(
+                mesh=mesh_index,
+                scale=[size, size, size],
+                translation=translation,
+            )
+
+        # if not fixed_color:
+        #     cval = cmap_vals[i]
+        #     normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+        #     cindex = int(normalized * 255)
+        #     color = cmap(cindex)
+        #     builder.add_material(color, layer_state.alpha)
+
+        # builder.add_buffer_view(
+        #     buffer=buffer,
+        #     byte_length=len(barr)-prev_len,
+        #     byte_offset=prev_len,
+        #     target=BufferTarget.ARRAY_BUFFER,
+        # )
+        # builder.add_accessor(
+        #     buffer_view=builder.buffer_view_count-1,
+        #     component_type=ComponentType.FLOAT,
+        #     count=len(pts),
+        #     type=AccessorType.VEC3,
+        #     mins=point_mins,
+        #     maxes=point_maxes,
+        # )
+
+        # material_index = builder.material_count - 1
+        # builder.add_mesh(
+        #     position_accessor=builder.accessor_count-1,
+        #     indices_accessor=sphere_triangles_accessor,
+        #     material=material_index,
+        # )
 
     builder.add_buffer(byte_length=len(barr), uri=uri)
     builder.add_file_resource(uri, data=barr)
