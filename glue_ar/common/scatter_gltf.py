@@ -333,7 +333,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         if fixed_size:
             builder.add_node(
                 mesh=mesh_index,
-                translation=translation
+                translation=translation,
             )
         else:
             builder.add_node(
