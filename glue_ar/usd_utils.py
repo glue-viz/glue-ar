@@ -39,4 +39,4 @@ def material_for_mesh(mesh: UsdGeom.Mesh) -> UsdShade.Material:
 
 
 def sanitize_path(path: str) -> str:
-    return sub(r"[-\(\)\[\]]+", "_", path)
+    return sub(r"[-\(\)\[\] ]+", "_", path)
