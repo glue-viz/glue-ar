@@ -1,4 +1,4 @@
-from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode, component_type
+from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
 from glue_vispy_viewers.common.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 from numpy import isfinite, ndarray
@@ -11,7 +11,7 @@ from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
-from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes, matrix
+from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
 from glue_ar.utils import Viewer3DState, get_stretches, iterable_has_nan, hex_to_components, layer_color, \
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
@@ -307,13 +307,12 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             )
             color_meshes[cindex] = builder.mesh_count - 1
 
-
     # This branching logic here is for output file size considerations
     # There are two options for creating multiple scatter points:
     # We can specify a separate mesh for each point, and a node for each of these meshes
     # or
     # We can reuse the same mesh with a scale/rotation matrix
-    # 
+    #
     # Which one produces a larger output file depends on sizing
     for i, point in enumerate(data):
 

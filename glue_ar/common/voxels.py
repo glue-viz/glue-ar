@@ -136,7 +136,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                 material=builder.material_count-1,
             )
             colors_map[rgba_tpl] = builder.mesh_count - 1
-        
+
 
 @ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ("usda", "usdc", "usdz"), multiple=True)
 def add_voxel_layers_usd(builder: USDBuilder,
