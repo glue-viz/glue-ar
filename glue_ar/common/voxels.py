@@ -11,7 +11,7 @@ from glue_ar.common.stl_builder import STLBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARVoxelExportOptions
 from glue_ar.usd_utils import material_for_color, sanitize_path
-from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamp, clamped_opacity, \
+from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamp, \
                           clip_sides, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color, offset_triangles, unique_id, xyz_bounds
 
@@ -84,7 +84,8 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange, opacity_resolution)
+            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange,
+                                              opacity_resolution)
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
@@ -189,7 +190,8 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange, opacity_resolution)
+            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange,
+                                              opacity_resolution)
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
@@ -199,7 +201,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
                 colors_map[current_color].remove(indices_tpl)
                 colors_map[new_color].add(indices_tpl)
             elif adjusted_opacity >= opacity_cutoff:
-                color =  color_components[:3] + [adjusted_opacity]
+                color = color_components[:3] + [adjusted_opacity]
                 occupied_voxels[indices_tpl] = color
                 colors_map[tuple(color)].add(indices_tpl)
 
@@ -272,7 +274,8 @@ def add_voxel_layers_stl(builder: STLBuilder,
 
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange, opacity_resolution)
+            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange,
+                                              opacity_resolution)
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
