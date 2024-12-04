@@ -3187,6 +3187,7 @@
   min-width: 100px;
   width: 150px;
   height: 150px;
+  display: inline;
 }
 
 .qr-code:hover {
@@ -3212,7 +3213,8 @@
 }
 
 .example-section {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
 }
 
 #examples-grid {
@@ -3230,8 +3232,13 @@
         display: block;
     }
 
+    .qr-highlight {
+      margin: auto;
+    }
+
     .qr-code {
         width: 75%;
+        height: 75%;
     }
 
     #examples-grid {
