@@ -123,7 +123,10 @@ class TestJupyterExportDialog(BaseExportDialogTest):
 
         state.layer = "Scatter Data"
         assert self.dialog.method_selected == 0
-        assert self.dialog.method_items == [{"text": "Scatter", "value": 0}]
+        assert self.dialog.method_items == [
+            {"text": "Scatter", "value": 0},
+            {"text": "Points", "value": 1},
+        ]
         assert not self.dialog.has_layer_options
 
         state.layer = "Volume Data"
@@ -133,7 +136,10 @@ class TestJupyterExportDialog(BaseExportDialogTest):
 
         state.layer = "Scatter Data"
         assert self.dialog.method_selected == 0
-        assert self.dialog.method_items == [{"text": "Scatter", "value": 0}]
+        assert self.dialog.method_items == [
+            {"text": "Scatter", "value": 0},
+            {"text": "Points", "value": 1},
+        ]
         assert not self.dialog.has_layer_options
 
     def test_on_cancel(self):
