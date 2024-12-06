@@ -1,12 +1,10 @@
-from collections import defaultdict
-from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
 from glue_vispy_viewers.common.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, scatter_layer_mask
-from glue_ar.usd_utils import material_for_color
-from glue_ar.utils import Bounds, NoneType, Viewer3DState, color_identifier, hex_to_components, layer_color, unique_id, xyz_bounds, xyz_for_layer
+from glue_ar.utils import Bounds, NoneType, Viewer3DState, hex_to_components, layer_color, \
+        unique_id, xyz_bounds, xyz_for_layer
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.scatter_export_options import ARPointExportOptions
 
@@ -59,7 +57,7 @@ def add_points_layer_usd(builder: USDBuilder,
         colors = [get_color(cval) for cval in cmap_vals]
 
     builder.add_points(data, colors, identifier)
-   
+
 
 @ar_layer_export(ScatterLayerState, "Points", ARPointExportOptions, ("usdz", "usdc", "usda"))
 def add_vispy_points_layer_usd(builder: USDBuilder,

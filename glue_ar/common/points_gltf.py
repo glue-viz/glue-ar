@@ -6,7 +6,8 @@ from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, scatter_layer_mask
 from glue_ar.gltf_utils import add_points_to_bytearray, index_mins, index_maxes
-from glue_ar.utils import Bounds, NoneType, Viewer3DState, color_identifier, hex_to_components, layer_color, unique_id, xyz_bounds, xyz_for_layer
+from glue_ar.utils import Bounds, NoneType, Viewer3DState, color_identifier, hex_to_components, \
+        layer_color, unique_id, xyz_bounds, xyz_for_layer
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter_export_options import ARPointExportOptions
 
@@ -38,7 +39,6 @@ def add_points_layer_gltf(builder: GLTFBuilder,
                          scaled=True)
     data = data[:, [1, 2, 0]]
 
-
     uri = f"layer_{unique_id()}.bin"
 
     if fixed_color:
@@ -54,7 +54,7 @@ def add_points_layer_gltf(builder: GLTFBuilder,
 
         builder.add_buffer(byte_length=len(barr), uri=uri)
         builder.add_buffer_view(
-            buffer = builder.buffer_count-1,
+            buffer=builder.buffer_count-1,
             byte_length=len(barr),
             byte_offset=0,
             target=BufferTarget.ARRAY_BUFFER
@@ -142,7 +142,7 @@ def add_vispy_points_layer_gltf(builder: GLTFBuilder,
 
 @ar_layer_export(Scatter3DLayerState, "Points", ARPointExportOptions, ("gltf", "glb"))
 def add_ipyvolume_points_layer_gltf(builder: GLTFBuilder,
-                                    viewer_state: Vispy3DViewerState,
+                                    viewer_state: ViewerState3D,
                                     layer_state: ScatterLayerState,
                                     options: ARPointExportOptions,
                                     bounds: Bounds,
