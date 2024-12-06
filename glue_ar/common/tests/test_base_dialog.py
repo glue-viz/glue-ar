@@ -63,7 +63,7 @@ class BaseExportDialogTest:
         state = self.dialog.state
 
         state.layer = "Scatter Data"
-        assert state.method_helper.choices == ["Scatter"]
+        assert state.method_helper.choices == ["Scatter", "Points"]
         assert state.method == "Scatter"
 
         state.layer = "Volume Data"
@@ -71,7 +71,7 @@ class BaseExportDialogTest:
         assert state.method in {"Isosurface", "Voxel"}
 
         state.layer = "Scatter Data"
-        assert state.method_helper.choices == ["Scatter"]
+        assert state.method_helper.choices == ["Scatter", "Points"]
         assert state.method == "Scatter"
 
     def test_method_settings_persistence(self):

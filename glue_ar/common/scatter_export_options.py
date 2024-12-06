@@ -12,3 +12,7 @@ class ARVispyScatterExportOptions(State):
 
 class ARIpyvolumeScatterExportOptions(State):
     pass
+
+
+class ARPointExportOptions(State):
+    pass
