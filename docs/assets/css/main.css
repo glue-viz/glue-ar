@@ -3205,7 +3205,7 @@
 }
 
 /* Grid borders adapted from https://geary.co/internal-borders-css-grid/ */
-#examples-grid {
+#examples-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
   overflow: hidden;
@@ -3272,7 +3272,7 @@
         height: 75%;
     }
 
-    #examples-grid {
+    #examples-container {
       grid-template-columns: 1fr;
     }
 }
