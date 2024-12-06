@@ -88,11 +88,11 @@ class TestScatterExportTool:
             assert kwargs["bounds"] == bounds
             assert kwargs["filepath"] == filepath
             assert kwargs["compression"] == compression
+            assert kwargs["model_viewer"]
             state_dict = kwargs["state_dictionary"]
             assert tuple(state_dict.keys()) == ("Scatter Data 1", "Scatter Data 2")
             for value in state_dict.values():
                 assert len(value) == 2
                 assert value[0] == "Scatter"
                 assert isinstance(value[1], ARVispyScatterExportOptions)
-                assert value[1].theta_resolution == 10
-                assert value[1].phi_resolution == 10
+                assert value[1].resolution == 10

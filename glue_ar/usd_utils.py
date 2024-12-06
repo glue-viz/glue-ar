@@ -1,3 +1,4 @@
+from re import sub
 from typing import Optional, Tuple
 
 from pxr import Sdf, Usd, UsdGeom, UsdShade
@@ -33,3 +34,7 @@ def material_for_mesh(mesh: UsdGeom.Mesh) -> UsdShade.Material:
     target = relationship.GetTargets()[0]
     material_prim = prim.GetStage().GetPrimAtPath(target)
     return UsdShade.Material(material_prim)
+
+
+def sanitize_path(path: str) -> str:
+    return sub(r"[-\(\)\[\] ]+", "_", path)

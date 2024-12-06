@@ -1,14 +1,16 @@
+from math import floor, log
 import os
 from typing import List
 
-from echo import HasCallbackProperties
-from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_float_text
+from echo import HasCallbackProperties, add_callback
+from echo.core import remove_callback
+from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_value
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
 from glue_ar.common.export_dialog_base import ARExportDialogBase
 
-from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLayout, QLineEdit, QWidget
-from qtpy.QtGui import QIntValidator, QDoubleValidator
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
 
 
 __all__ = ['QtARExportDialog']
@@ -46,12 +48,39 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             label = QLabel()
             prompt = f"{display_name}:"
             label.setText(prompt)
-            widget = QLineEdit()
-            validator = QIntValidator() if t is int else QDoubleValidator()
-            widget.setText(str(value))
-            widget.setValidator(validator)
-            self._layer_connections.append(connect_float_text(instance, property, widget))
-            return [label, widget]
+            widget = QSlider()
+            policy = QSizePolicy()
+            policy.setHorizontalPolicy(QSizePolicy.Policy.Expanding)
+            policy.setVerticalPolicy(QSizePolicy.Policy.Fixed)
+            widget.setOrientation(Qt.Orientation.Horizontal)
+
+            widget.setSizePolicy(policy)
+
+            value_label = QLabel()
+            instance_type = type(instance)
+            cb_property = getattr(instance_type, property)
+            min = getattr(cb_property, 'min_value', 1 if t is int else 0.01)
+            max = getattr(cb_property, 'max_value', 100 * min)
+            step = getattr(cb_property, 'resolution', None)
+            if step is None:
+                step = 1 if t is int else 0.01
+            places = -floor(log(step, 10))
+
+            def update_label(value):
+                value_label.setText(f"{value:.{places}f}")
+
+            def remove_label_callback(*args):
+                remove_callback(instance, property, update_label)
+
+            update_label(value)
+            add_callback(instance, property, update_label)
+            widget.destroyed.connect(remove_label_callback)
+
+            steps = round((max - min) / step)
+            widget.setMinimum(0)
+            widget.setMaximum(steps)
+            self._layer_connections.append(connect_value(instance, property, widget, value_range=(min, max)))
+            return [label, widget, value_label]
         else:
             return []
 
@@ -100,6 +129,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         gl = filetype.lower() in ("gltf", "glb")
         self.ui.combosel_compression.setVisible(gl)
         self.ui.label_compression_message.setVisible(gl)
+        self.ui.bool_modelviewer.setVisible(gl)
 
     def _on_method_change(self, method_name: str):
         super()._on_method_change(method_name)

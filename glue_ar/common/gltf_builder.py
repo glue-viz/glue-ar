@@ -7,7 +7,10 @@ from gltflib.gltf import GLTF
 from gltflib.gltf_resource import FileResource
 from typing import Iterable, List, Optional, Union
 
+from glue_ar.registries import builder
 
+
+@builder(("gltf", "glb"))
 class GLTFBuilder:
 
     def __init__(self):

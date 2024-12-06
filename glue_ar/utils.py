@@ -138,10 +138,24 @@ def bounds_3d_from_layers(viewer_state: Viewer3DState,
     return bounds
 
 
-def slope_intercept_between(a: List[float], b: List[float]) -> Tuple[float, float]:
+def slope_intercept_between(a: Union[List[float], Tuple[float, float]],
+                            b: Union[List[float], Tuple[float, float]]) -> Tuple[float, float]:
     slope = (b[1] - a[1]) / (b[0] - a[0])
     intercept = b[1] - slope * b[0]
     return slope, intercept
+
+
+def clip_linear_transformations(bounds: Union[Bounds, BoundsWithResolution],
+                                clip_size: float = 1.0,
+                                stretches: Tuple[float, float, float] = (1.0, 1.0, 1.0)):
+    ranges = [abs(bds[1] - bds[0]) for bds in bounds]
+    max_side = max(rg * stretch for rg, stretch in zip(ranges, stretches))
+    line_data = []
+    for bds, rg, stretch in zip(bounds, ranges, stretches):
+        frac = rg * stretch / max_side
+        target = frac * clip_size
+        line_data.append(slope_intercept_between((bds[0], -target), (bds[1], target)))
+    return line_data
 
 
 # TODO: Make this better?
@@ -154,16 +168,39 @@ def layer_color(layer_state: LayerState) -> str:
     return layer_color
 
 
-def bring_into_clip(data, bounds: Union[Bounds, BoundsWithResolution], preserve_aspect: bool = True):
-    if preserve_aspect:
-        ranges = [abs(bds[1] - bds[0]) for bds in bounds]
-        max_range = max(ranges)
-        line_data = []
-        for bds, rg in zip(bounds, ranges):
-            frac = rg / max_range
-            line_data.append(slope_intercept_between([bds[0], -frac], [bds[1], frac]))
+def clip_sides(viewer_state: Viewer3DState,
+               clip_size: float = 1.0) -> Tuple[float, float, float]:
+
+    stretches = get_stretches(viewer_state)
+    bounds = xyz_bounds(viewer_state, with_resolution=False)
+    resolution = get_resolution(viewer_state)
+    x_range = viewer_state.x_max - viewer_state.x_min
+    y_range = viewer_state.y_max - viewer_state.y_min
+    z_range = viewer_state.z_max - viewer_state.z_min
+    x_spacing = x_range / resolution
+    y_spacing = y_range / resolution
+    z_spacing = z_range / resolution
+    sides = (x_spacing, y_spacing, z_spacing)
+    if viewer_state.native_aspect:
+        clip_transforms = clip_linear_transformations(bounds,
+                                                      clip_size=clip_size,
+                                                      stretches=stretches)
+        return tuple(s * transform[0] for s, transform in zip(sides, clip_transforms))
     else:
-        line_data = [slope_intercept_between([bds[0], -1], [bds[1], 1]) for bds in bounds]
+        max_stretch = max(stretches)
+        return tuple(2 * clip_size * stretch / (max_stretch * resolution) for stretch in stretches)
+
+
+def bring_into_clip(data,
+                    bounds: Union[Bounds, BoundsWithResolution],
+                    clip_size: float = 1.0,
+                    preserve_aspect: bool = True,
+                    stretches: Tuple[float, float, float] = (1.0, 1.0, 1.0)):
+    if preserve_aspect:
+        line_data = clip_linear_transformations(bounds=bounds, clip_size=clip_size, stretches=stretches)
+    else:
+        line_data = [slope_intercept_between([bds[0], -stretch], [bds[1], stretch])
+                     for bds, stretch in zip(bounds, stretches)]
 
     scaled = [[m * d + b for d in data[idx]] for idx, (m, b) in enumerate(line_data)]
 
@@ -183,6 +220,13 @@ def mask_for_bounds(viewer_state: Viewer3DState,
            (data[viewer_state.z_att] <= bounds[2][1])
 
 
+def get_stretches(viewer_state: Viewer3DState) -> Tuple[float, float, float]:
+    return tuple(
+            getattr(viewer_state, f"{axis}_stretch", 1.0)
+            for axis in ("x", "y", "z")
+    )
+
+
 # TODO: Worry about efficiency later
 # and just generally make this better
 def xyz_for_layer(viewer_state: Viewer3DState,
@@ -196,8 +240,9 @@ def xyz_for_layer(viewer_state: Viewer3DState,
     vals = [xs, ys, zs]
 
     if scaled:
+        stretches = get_stretches(viewer_state)
         bounds = xyz_bounds(viewer_state, with_resolution=False)
-        vals = bring_into_clip(vals, bounds, preserve_aspect=preserve_aspect)
+        vals = bring_into_clip(vals, bounds, preserve_aspect=preserve_aspect, stretches=stretches)
 
     return array(list(zip(*vals)))
 
@@ -211,8 +256,8 @@ def unique_id() -> str:
 
 
 def alpha_composite(over: List[float], under: List[float]) -> List[float]:
-    alpha_o = over[3] if len(over) == 4 else over[2]
-    alpha_u = under[3] if len(under) == 4 else under[2]
+    alpha_o = over[3] if len(over) == 4 else 1
+    alpha_u = under[3] if len(under) == 4 else 1
     rgb_o = over[:3]
     rgb_u = under[:3]
     alpha_new = alpha_o + alpha_u * (1 - alpha_o)
@@ -293,8 +338,9 @@ def get_resolution(viewer_state: Viewer3DState) -> int:
     try:
         from glue_jupyter.common.state3d import VolumeViewerState
         if isinstance(viewer_state, VolumeViewerState):
-            resolutions = tuple(getattr(state, 'max_resolution', None) for state in viewer_state.layers)
-            return max((res for res in resolutions if res is not None), default=256)
+            return max((resolution for state in viewer_state.layers
+                        if (resolution := getattr(state, "max_resolution", None)) is not None),
+                       default=256)
     except ImportError:
         pass
 
@@ -310,8 +356,12 @@ def clamped_opacity(opacity: float) -> float:
     return clamp(opacity, 0, 1)
 
 
+def clamp_with_resolution(value: Number, minimum: Number, maximum: Number, resolution: Number) -> Number:
+    return clamp(round(value / resolution) * resolution, minimum, maximum)
+
+
 def binned_opacity(raw_opacity: float, resolution: float) -> float:
-    return clamped_opacity(round(raw_opacity / resolution) * resolution)
+    return clamp_with_resolution(raw_opacity, 0, 1, resolution)
 
 
 def color_identifier(color: Tuple[int, int, int], opacity: float = 1.0) -> str:

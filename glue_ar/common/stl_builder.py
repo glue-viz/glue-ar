@@ -4,7 +4,10 @@ from numpy import array, concatenate, zeros
 from stl import Mesh
 from typing import Iterable, List
 
+from glue_ar.registries import builder
 
+
+@builder("stl")
 class STLBuilder:
 
     def __init__(self):

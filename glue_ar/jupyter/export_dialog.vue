@@ -1,9 +1,9 @@
 <template>
   <v-dialog
     v-model="dialog_open"
-    width="500px"
+    width="600px"
   >
-    <v-card>
+    <v-card class="pa-3">
       <v-card-title>
         Export 3D File
       </v-card-title>
@@ -46,6 +46,13 @@
           :items="compression_items"
           v-model="compression_selected"
         />
+        <v-row>
+          <v-checkbox
+            v-if="show_modelviewer"
+            v-model="modelviewer"
+            label="Export model-viewer HTML"
+          />
+        </v-row>
         <v-row>
           <v-spacer></v-spacer>
           <v-btn class="mx-2" color="error" @click="cancel_dialog">Cancel</v-btn>

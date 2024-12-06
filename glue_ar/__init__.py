@@ -6,6 +6,14 @@ except DistributionNotFound:
     pass
 
 
+def setup_common():
+    from .common.gltf_builder import GLTFBuilder  # noqa: F401
+    from .common.usd_builder import USDBuilder  # noqa: F401
+    from .common.stl_builder import STLBuilder  # noqa: F401
+
+    from .compression import compress_gltfpack, compress_gltf_pipeline  # noqa: F401
+
+
 def setup_qt():
     try:
         from glue_vispy_viewers.scatter.qt.scatter_viewer import VispyScatterViewer
@@ -56,6 +64,9 @@ def setup_jupyter():
 
 
 def setup():
+
+    setup_common()
+
     try:
         setup_qt()
     except ImportError:
