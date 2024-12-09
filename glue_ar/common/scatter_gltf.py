@@ -356,7 +356,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             builder.add_accessor(
                 buffer_view=builder.buffer_view_count-1,
                 component_type=ComponentType.UNSIGNED_INT,
-                count=len(mesh_triangles),
+                count=len(mesh_triangles)*3,
                 type=AccessorType.SCALAR,
                 mins=[0],
                 maxes=[max(idx for tri in mesh_triangles for idx in tri)],
