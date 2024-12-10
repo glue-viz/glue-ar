@@ -298,14 +298,15 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         for cval in cmap_vals:
             normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
             cindex = int(normalized * 255)
-            color = cmap(cindex)
-            builder.add_material(color, layer_state.alpha)
-            builder.add_mesh(
-                position_accessor=builder.accessor_count-1,
-                indices_accessor=sphere_triangles_accessor,
-                material=builder.material_count - 1,
-            )
-            color_meshes[cindex] = builder.mesh_count - 1
+            if cindex not in color_meshes:
+                color = cmap(cindex)
+                builder.add_material(color, layer_state.alpha)
+                builder.add_mesh(
+                    position_accessor=builder.accessor_count-1,
+                    indices_accessor=sphere_triangles_accessor,
+                    material=builder.material_count - 1,
+                )
+                color_meshes[cindex] = builder.mesh_count - 1
 
     # This branching logic here is for output file size considerations
     # There are two options for creating multiple scatter points:
