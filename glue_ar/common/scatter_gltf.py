@@ -310,8 +310,11 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
             cindex = int(normalized * 255)
             color = cmap(cindex)
-            builder.add_material(color, layer_state.alpha)
-            color_materials[color] = builder.material_count - 1
+            material_index = color_materials.get(color, None)
+            if material_index is None:
+                builder.add_material(color, layer_state.alpha)
+                material_index = builder.material_count - 1
+                color_materials[color] = material_index
 
             size = radius if fixed_size else sizes[i]
             pts = points_getter(point, size)
