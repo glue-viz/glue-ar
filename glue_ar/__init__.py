@@ -11,7 +11,7 @@ def setup_common():
     from .common.usd_builder import USDBuilder  # noqa: F401
     from .common.stl_builder import STLBuilder  # noqa: F401
 
-    from .compression import compress_gltfpack, compress_gltf_pipeline  # noqa: F401
+    from .compression import compress_draco, compress_meshoptimizer  # noqa: F401
 
 
 def setup_qt():

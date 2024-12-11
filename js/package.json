@@ -1,7 +1,6 @@
 {
     "dependencies": {
-        "gltf-pipeline": "^4.1.0",
-        "gltfpack": "^0.21.0"
+        "@gltf-transform/cli": "^4.1.1"
     },
     "scripts": {
         "glue-ar-export": "npm install && node glue-ar-export.js"
