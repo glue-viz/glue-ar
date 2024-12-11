@@ -12,7 +12,7 @@ from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
-from glue_ar.gltf_utils import SHORT_MAX, add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes
+from glue_ar.gltf_utils import SHORT_MAX, add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes, SHORT_MAX
 from glue_ar.utils import Viewer3DState, get_stretches, iterable_has_nan, hex_to_components, layer_color, offset_triangles, \
                           unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
@@ -261,10 +261,6 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             size = radius if fixed_size else sizes[i]
             pts = points_getter(point, size)
             points.append(pts)
-            pt_triangles = offset_triangles(triangles, triangle_offset)
-            triangle_offset += len(pts)
-            tris.append(pt_triangles)
-
 
         pts_count = len(points_getter((0, 0, 0), 1))
         for _ in range(min(points_per_mesh, n_points)):
@@ -291,14 +287,15 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             count=len(mesh_triangles)*3,
             type=AccessorType.SCALAR,
             mins=[0],
-            maxes=max_triangle_index,
+            maxes=[max_triangle_index],
         )
 
         start = 0
         buffer = builder.buffer_count
         triangles_accessor = builder.accessor_count - 1
         while start < n_points:
-            mesh_points = [pt for pts in points[start:points_per_mesh] for pt in pts]
+            print(start, n_points)
+            mesh_points = [pt for pts in points[start:start+points_per_mesh] for pt in pts]
             barr_offset = len(barr)
             add_points_to_bytearray(barr, mesh_points)
             point_mins = index_mins(mesh_points)
@@ -307,7 +304,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             builder.add_buffer_view(
                 buffer=buffer,
                 byte_length=len(barr)-barr_offset,
-                byte_offset=0,
+                byte_offset=barr_offset,
                 target=BufferTarget.ARRAY_BUFFER,
             )
             builder.add_accessor(
@@ -320,14 +317,18 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             )
             points_accessor = builder.accessor_count - 1
 
-            count = n_points - start
-            triangles_accessor = triangles_accessor
             # This should only happen on the final iteration
             # or not at all, if points_per_mesh is a divisor of count
             # But in this case we do need a separate accessor as the
             # byte length is different
+            count = n_points - start
             if count < points_per_mesh:
-                byte_length = n_points * triangles_len / count
+                triangles_count = len(tris)
+                byte_length = count * triangles_len // triangles_count 
+                print(triangles_len, triangles_count, count)
+                print(byte_length)
+                mesh_triangles = [tri for sphere in tris[:count] for tri in sphere]
+                max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
                 builder.add_buffer_view(
                     buffer=buffer,
                     byte_length=byte_length,
@@ -338,10 +339,10 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                 builder.add_accessor(
                     buffer_view=builder.buffer_view_count-1,
                     component_type=component_type,
-                    count=len(mesh_triangles)*3,
+                    count=len(triangles)*3*count,
                     type=AccessorType.SCALAR,
                     mins=[0],
-                    maxes=max_triangle_index,
+                    maxes=[max_triangle_index],
                 )
                 triangles_accessor = builder.accessor_count - 1
 
@@ -484,13 +485,18 @@ def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
     points_getter = sphere_points_getter(theta_resolution=theta_resolution,
                                          phi_resolution=phi_resolution)
 
+    triangles_per_point = len(triangles)
+    # points_per_mesh = SHORT_MAX // (triangles_per_point * 3)
+    points_per_mesh = 100
+
     add_scatter_layer_gltf(builder=builder,
                            viewer_state=viewer_state,
                            layer_state=layer_state,
                            points_getter=points_getter,
                            triangles=triangles,
                            bounds=bounds,
-                           clip_to_bounds=clip_to_bounds)
+                           clip_to_bounds=clip_to_bounds,
+                           points_per_mesh=points_per_mesh)
 
 
 @ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("gltf", "glb"))
