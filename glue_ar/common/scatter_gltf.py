@@ -532,7 +532,7 @@ def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
 
     points_getter = sphere_points_getter(theta_resolution=theta_resolution,
                                          phi_resolution=phi_resolution)
-    points_per_mesh = None
+    points_per_mesh = 1
 
     add_scatter_layer_gltf(builder=builder,
                            viewer_state=viewer_state,
@@ -556,7 +556,7 @@ def add_ipyvolume_scatter_layer_gltf(builder: GLTFBuilder,
     triangle_getter = IPYVOLUME_TRIANGLE_GETTERS.get(geometry, rectangular_prism_triangulation)
     triangles = triangle_getter()
     points_getter = IPYVOLUME_POINTS_GETTERS.get(geometry, box_points_getter)
-    points_per_mesh = None
+    points_per_mesh = 1
 
     add_scatter_layer_gltf(builder=builder,
                            viewer_state=viewer_state,
