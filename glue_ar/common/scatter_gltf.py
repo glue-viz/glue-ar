@@ -12,9 +12,10 @@ from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
-from glue_ar.gltf_utils import SHORT_MAX, add_points_to_bytearray, add_triangles_to_bytearray, index_mins, index_maxes, SHORT_MAX
-from glue_ar.utils import Viewer3DState, get_stretches, iterable_has_nan, hex_to_components, layer_color, offset_triangles, \
-                          unique_id, xyz_bounds, xyz_for_layer, Bounds
+from glue_ar.gltf_utils import SHORT_MAX, add_points_to_bytearray, add_triangles_to_bytearray, \
+                               index_mins, index_maxes
+from glue_ar.utils import Viewer3DState, get_stretches, iterable_has_nan, hex_to_components, \
+                          layer_color, offset_triangles, unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
                                    PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
@@ -248,6 +249,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     if points_per_mesh is None:
         points_per_mesh = n_points
 
+    first_material_index = builder.material_count
     if fixed_color:
         points = []
         tris = []
@@ -327,7 +329,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             count = n_points - start
             if start != 0 and count < points_per_mesh:
                 triangles_count = len(tris)
-                byte_length = count * triangles_len // triangles_count 
+                byte_length = count * triangles_len // triangles_count
                 mesh_triangles = [tri for sphere in tris[:count] for tri in sphere]
                 max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
                 builder.add_buffer_view(
@@ -373,8 +375,6 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             size = radius if fixed_size else sizes[i]
             pts = points_getter(point, size)
             points_by_color[cindex].append(pts)
-
-
 
         for cindex, points in points_by_color.items():
 
