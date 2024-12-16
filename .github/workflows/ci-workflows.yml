@@ -29,7 +29,7 @@ jobs:
         apt:
           - '^libxcb.*-dev'
           - libxkbcommon-x11-0
-          - libegl1-mesa
+          - libegl1-mesa-dev
           - libhdf5-dev
       envs: |
         - linux: py39-test-all
