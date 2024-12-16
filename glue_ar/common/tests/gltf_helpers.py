@@ -9,7 +9,7 @@ from typing import List, Literal, Optional, Tuple, Union, cast
 from glue_ar.utils import iterator_count
 
 
-BufferFormat = Union[Literal["f"], Literal["I"]]
+BufferFormat = Union[Literal["f"], Literal["I"], Literal["H"]]
 
 
 def get_data(gltf: GLTF, buffer: Buffer, buffer_view: Optional[BufferView] = None) -> bytes:
@@ -41,8 +41,9 @@ def count_vertices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView):
     return count_points(gltf, buffer, buffer_view, 'f')
 
 
-def count_indices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView):
-    return count_points(gltf, buffer, buffer_view, 'I')
+def count_indices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView, use_short=False):
+    format = 'H' if use_short else 'I'
+    return count_points(gltf, buffer, buffer_view, format)
 
 
 def unpack_points(gltf: GLTF,
