@@ -75,9 +75,12 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
                 except ValueError:
                     pass
 
+            def on_widget_destroyed(widget, cb=remove_label_callback):
+                cb(widget)
+
             update_label(value)
             add_callback(instance, property, update_label)
-            widget.destroyed.connect(lambda *args, cb=remove_label_callback: cb(widget))
+            widget.destroyed.connect(on_widget_destroyed)
 
             steps = round((max - min) / step)
             widget.setMinimum(0)
