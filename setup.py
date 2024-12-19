@@ -754,6 +754,8 @@ extras_require = {
         "ipyfilechooser",
         "ipyvuetify",
         "glue-vispy-viewers[jupyter]",
+        # Temporary - see https://github.com/widgetti/ipyvolume/issues/447
+        "ipython-genutils",
     ],
     "qr": [
         "ngrok",

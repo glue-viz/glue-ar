@@ -69,12 +69,15 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             def update_label(value):
                 value_label.setText(f"{value:.{places}f}")
 
-            def remove_label_callback(*args):
-                remove_callback(instance, property, update_label)
+            def remove_label_callback(widget, update_label=update_label):
+                try:
+                    remove_callback(instance, property, update_label)
+                except ValueError:
+                    pass
 
             update_label(value)
             add_callback(instance, property, update_label)
-            widget.destroyed.connect(remove_label_callback)
+            widget.destroyed.connect(lambda *args, cb=remove_label_callback: cb(widget))
 
             steps = round((max - min) / step)
             widget.setMinimum(0)
