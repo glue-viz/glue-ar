@@ -1,6 +1,6 @@
 from math import floor, log
 import os
-from typing import List
+from typing import List, Tuple
 
 from echo import HasCallbackProperties, add_callback
 from echo.core import remove_callback
@@ -10,7 +10,7 @@ from glue_qt.utils import load_ui
 from glue_ar.common.export_dialog_base import ARExportDialogBase
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
+from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QVBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
 
 
 __all__ = ['QtARExportDialog']
@@ -32,22 +32,38 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         self.ui.button_cancel.clicked.connect(self.reject)
         self.ui.button_ok.clicked.connect(self.accept)
 
+    def _doc_label(self, cb_property) -> QLabel:
+        label = QLabel(text=cb_property.__doc__)
+        label.setWordWrap(True)
+        return label
+
     def _widgets_for_property(self,
                               instance: HasCallbackProperties,
                               property: str,
-                              display_name: str) -> List[QWidget]:
+                              display_name: str) -> List[Tuple[QWidget]]:
         value = getattr(instance, property)
+        instance_type = type(instance)
+        cb_property = getattr(instance_type, property)
         t = type(value)
+        widgets: List[Tuple[QWidget]] = []
         if t is bool:
             widget = QCheckBox()
             widget.setChecked(value)
             widget.setText(display_name)
             self._layer_connections.append(connect_checkable_button(instance, property, widget))
-            return [widget]
+            if cb_property.__doc__:
+                label = self._doc_label(cb_property)
+                widgets.append((label,))
+            widgets.append((widget,))
         elif t in (int, float):
+            widgets: List[Tuple[QWidget]] = []
             label = QLabel()
             prompt = f"{display_name}:"
             label.setText(prompt)
+            widgets.append((label,))
+            if cb_property.__doc__:
+                label = self._doc_label(cb_property)
+                widgets.append((label,))
             widget = QSlider()
             policy = QSizePolicy()
             policy.setHorizontalPolicy(QSizePolicy.Policy.Expanding)
@@ -57,8 +73,6 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             widget.setSizePolicy(policy)
 
             value_label = QLabel()
-            instance_type = type(instance)
-            cb_property = getattr(instance_type, property)
             min = getattr(cb_property, 'min_value', 1 if t is int else 0.01)
             max = getattr(cb_property, 'max_value', 100 * min)
             step = getattr(cb_property, 'resolution', None)
@@ -86,9 +100,9 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             widget.setMinimum(0)
             widget.setMaximum(steps)
             self._layer_connections.append(connect_value(instance, property, widget, value_range=(min, max)))
-            return [label, widget, value_label]
-        else:
-            return []
+            widgets.append((widget, value_label))
+
+        return widgets
 
     def _clear_layout(self, layout: QLayout):
         if layout is not None:
@@ -119,15 +133,19 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         multiple_methods = len(self.state.method_helper.choices) > 1
         self.ui.label_method.setVisible(multiple_methods)
         self.ui.combosel_method.setVisible(multiple_methods)
+        self.ui.line_2.setVisible(multiple_methods)
 
     def _update_layer_ui(self, state: State):
         self._clear_layer_layout()
         for property in state.callback_properties():
-            row = QHBoxLayout()
+            row = QVBoxLayout()
             name = self.display_name(property)
-            widgets = self._widgets_for_property(state, property, name)
-            for widget in widgets:
-                row.addWidget(widget)
+            widget_tuples = self._widgets_for_property(state, property, name)
+            for widgets in widget_tuples:
+                subrow = QHBoxLayout()     
+                for widget in widgets:
+                    subrow.addWidget(widget)
+                row.addLayout(subrow)
             self.ui.layer_layout.addRow(row)
 
     def _on_filetype_change(self, filetype: str):
