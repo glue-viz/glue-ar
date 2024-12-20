@@ -11,7 +11,7 @@ from qtpy.QtGui import QCursor, QEnterEvent, QIcon
 from glue_ar.common.export_dialog_base import ARExportDialogBase
 
 from qtpy.QtCore import Qt, QEvent
-from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QPushButton, QToolTip, QVBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
+from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLayoutItem, QPushButton, QSpacerItem, QToolTip, QVBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
 
 from glue_ar.utils import RESOURCES_DIR
 
@@ -51,11 +51,14 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         return button 
 
     def _doc_enter_event(self, event: QEnterEvent, cb_property: CallbackProperty):
-        print(dir(event))
-        QToolTip.showText(QCursor.pos(), cb_property.__doc__ or "")
+        # Make the tooltip be rich text so that it will line wrap
+        QToolTip.showText(QCursor.pos(), f"<qt>{cb_property.__doc__}</qt>" or "")
 
     def _doc_leave_event(self, _event: QEvent):
         QToolTip.hideText()
+
+    def _horizontal_spacer(self) -> QSpacerItem:
+        return QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
     def _widgets_for_property(self,
                               instance: HasCallbackProperties,
@@ -72,8 +75,9 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             widget.setText(display_name)
             self._layer_connections.append(connect_checkable_button(instance, property, widget))
             if cb_property.__doc__:
-                label = self._doc_button(cb_property)
-                widgets.append((label, widget))
+                button = self._doc_button(cb_property)
+                spacer = self._horizontal_spacer()
+                widgets.append((widget, button, spacer))
             else:
                 widgets.append((widget,))
         elif t in (int, float):
@@ -83,7 +87,8 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             label.setText(prompt)
             if cb_property.__doc__:
                 info_button = self._doc_button(cb_property)
-                widgets.append((label, info_button))
+                spacer = self._horizontal_spacer()
+                widgets.append((label, info_button, spacer))
             else:
                 widgets.append((label,))
             widget = QSlider()
@@ -166,7 +171,10 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             for widgets in widget_tuples:
                 subrow = QHBoxLayout()     
                 for widget in widgets:
-                    subrow.addWidget(widget)
+                    if isinstance(widget, QWidget):
+                        subrow.addWidget(widget)
+                    elif isinstance(widget, QLayoutItem):
+                        subrow.addItem(widget)
                 row.addLayout(subrow)
             self.ui.layer_layout.addLayout(row)
 
