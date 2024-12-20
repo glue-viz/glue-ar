@@ -2,15 +2,18 @@ from math import floor, log
 import os
 from typing import List, Tuple
 
-from echo import HasCallbackProperties, add_callback
+from echo import CallbackProperty, HasCallbackProperties, add_callback
 from echo.core import remove_callback
 from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_value
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
+from qtpy.QtGui import QCursor, QEnterEvent, QIcon
 from glue_ar.common.export_dialog_base import ARExportDialogBase
 
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QVBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
+from qtpy.QtCore import Qt, QEvent
+from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QPushButton, QToolTip, QVBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
+
+from glue_ar.utils import RESOURCES_DIR
 
 
 __all__ = ['QtARExportDialog']
@@ -32,10 +35,27 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         self.ui.button_cancel.clicked.connect(self.reject)
         self.ui.button_ok.clicked.connect(self.accept)
 
-    def _doc_label(self, cb_property) -> QLabel:
-        label = QLabel(text=cb_property.__doc__)
-        label.setWordWrap(True)
-        return label
+    def _doc_button(self, cb_property) -> QPushButton:
+        button = QPushButton()
+        button.setCheckable(False)
+        button.setFlat(True)
+        icon_path = os.path.join(RESOURCES_DIR, "info.png")
+        icon = QIcon(icon_path)
+        button.setIcon(icon)
+        button.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum))
+
+        # We want the tooltip to show immediately, rather than have a delay
+        button.enterEvent = lambda event: self._doc_enter_event(event, cb_property=cb_property)
+        button.leaveEvent = self._doc_leave_event
+        
+        return button 
+
+    def _doc_enter_event(self, event: QEnterEvent, cb_property: CallbackProperty):
+        print(dir(event))
+        QToolTip.showText(QCursor.pos(), cb_property.__doc__ or "")
+
+    def _doc_leave_event(self, _event: QEvent):
+        QToolTip.hideText()
 
     def _widgets_for_property(self,
                               instance: HasCallbackProperties,
@@ -52,17 +72,19 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             widget.setText(display_name)
             self._layer_connections.append(connect_checkable_button(instance, property, widget))
             if cb_property.__doc__:
-                label = self._doc_label(cb_property)
-                widgets.append((label,))
-            widgets.append((widget,))
+                label = self._doc_button(cb_property)
+                widgets.append((label, widget))
+            else:
+                widgets.append((widget,))
         elif t in (int, float):
             widgets: List[Tuple[QWidget]] = []
             label = QLabel()
             prompt = f"{display_name}:"
             label.setText(prompt)
-            widgets.append((label,))
             if cb_property.__doc__:
-                label = self._doc_label(cb_property)
+                info_button = self._doc_button(cb_property)
+                widgets.append((label, info_button))
+            else:
                 widgets.append((label,))
             widget = QSlider()
             policy = QSizePolicy()
@@ -146,7 +168,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
                 for widget in widgets:
                     subrow.addWidget(widget)
                 row.addLayout(subrow)
-            self.ui.layer_layout.addRow(row)
+            self.ui.layer_layout.addLayout(row)
 
     def _on_filetype_change(self, filetype: str):
         super()._on_filetype_change(filetype)
