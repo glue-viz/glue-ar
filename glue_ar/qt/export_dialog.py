@@ -35,7 +35,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         self.ui.button_cancel.clicked.connect(self.reject)
         self.ui.button_ok.clicked.connect(self.accept)
 
-    def _doc_button(self, cb_property) -> QPushButton:
+    def _doc_button(self, cb_property: CallbackProperty) -> QPushButton:
         button = QPushButton()
         button.setCheckable(False)
         button.setFlat(True)
@@ -58,7 +58,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         QToolTip.hideText()
 
     def _horizontal_spacer(self) -> QSpacerItem:
-        return QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        return QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
     def _widgets_for_property(self,
                               instance: HasCallbackProperties,
@@ -77,7 +77,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             if cb_property.__doc__:
                 button = self._doc_button(cb_property)
                 spacer = self._horizontal_spacer()
-                widgets.append((widget, button, spacer))
+                widgets.append((widget, spacer, button))
             else:
                 widgets.append((widget,))
         elif t in (int, float):
@@ -88,7 +88,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             if cb_property.__doc__:
                 info_button = self._doc_button(cb_property)
                 spacer = self._horizontal_spacer()
-                widgets.append((label, info_button, spacer))
+                widgets.append((label, spacer, info_button))
             else:
                 widgets.append((label,))
             widget = QSlider()
