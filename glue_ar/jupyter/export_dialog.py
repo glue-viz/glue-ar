@@ -96,7 +96,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
                 "name": "activator",
                 "variable": "tooltip",
                 "children": [
-                    v.Img(src=icon_src, height=20, width=20)
+                    v.Img(v_on="tooltip.on", src=icon_src, height=20, width=20)
                 ],
             }],
             children=[cb_property.__doc__],
