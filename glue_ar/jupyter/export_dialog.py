@@ -34,7 +34,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
     method_items = traitlets.List().tag(sync=True)
     method_selected = traitlets.Int().tag(sync=True)
 
-    layer_layout = traitlets.Instance(v.Row).tag(sync=True, **widget_serialization)
+    layer_layout = traitlets.Instance(v.Col).tag(sync=True, **widget_serialization)
     has_layer_options = traitlets.Bool().tag(sync=True)
 
     modelviewer = traitlets.Bool(True).tag(sync=True)
@@ -47,7 +47,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
                  on_export: Optional[Callable] = None):
 
         ARExportDialogBase.__init__(self, viewer=viewer)
-        self.layer_layout = v.Row()
+        self.layer_layout = v.Col()
         VuetifyTemplate.__init__(self)
 
         self._on_layer_change(self.state.layer)
@@ -69,12 +69,17 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
             for widget in self.layer_layout.children:
                 widget.close()
 
-        widgets = []
+        rows = []
+        input_widgets = []
+        self.layer_layout = v.Col()
         for property, _ in state.iter_callback_properties():
             name = self.display_name(property)
-            widgets.extend(self.widgets_for_property(state, property, name))
-        self.input_widgets = [w for w in widgets if isinstance(w, v.Slider)]
-        self.layer_layout = v.Row(children=widgets, px_0=True, py_0=True)
+            widgets = self.widgets_for_property(state, property, name)
+            input_widgets.extend(w for w in widgets if isinstance(w, v.Slider))
+            rows.append(v.Row(children=widgets))
+
+        self.layer_layout.children = rows
+        self.input_widgets = input_widgets
         self.has_layer_options = len(self.layer_layout.children) > 0
 
     def _on_method_change(self, method_name: str):
@@ -132,41 +137,17 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
                     max=max,
                     step=step,
                     label=display_name,
+                    hide_details=True,
                     thumb_label=f"{value:g}",
-                    v_slots=[{
-                        "name": "append",
-                        "children": [
-                            v.Tooltip(
-                                top=True,
-                                dark=v.theme.dark,
-                                disabled=not cb_property.__doc__,
-                                children=[v.Html(tag="p",
-                                                 children=[(cb_property.__doc__ or "").replace(". ", ".<br>")]
-                                        ),
-                                ],
-                                v_slots=[{
-                                    "name": "activator",
-                                    "variable": "tooltip",
-                                    "children": [
-                                        v.Icon(
-                                            small=True,
-                                            v_on="tooltip.on",
-                                            src="mdi-info",
-                                        )
-                                    ],
-                                }],
-                            ),
-                        ],
-                    }],
                 )
             link((instance, property),
                  (widget, 'v_model'))
 
             widgets.append(widget)
 
-        if cb_property.__doc__:
-            widgets.append(self._doc_button(cb_property))
-        
+            if cb_property.__doc__:
+                widgets.append(self._doc_button(cb_property))
+
         return widgets
 
     def vue_cancel_dialog(self, *args):
