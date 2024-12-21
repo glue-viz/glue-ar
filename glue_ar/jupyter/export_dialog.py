@@ -34,7 +34,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
     method_items = traitlets.List().tag(sync=True)
     method_selected = traitlets.Int().tag(sync=True)
 
-    layer_layout = traitlets.Instance(v.Container).tag(sync=True, **widget_serialization)
+    layer_layout = traitlets.Instance(v.Row).tag(sync=True, **widget_serialization)
     has_layer_options = traitlets.Bool().tag(sync=True)
 
     modelviewer = traitlets.Bool(True).tag(sync=True)
@@ -45,8 +45,9 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
                  display: Optional[bool] = False,
                  on_cancel: Optional[Callable] = None,
                  on_export: Optional[Callable] = None):
+
         ARExportDialogBase.__init__(self, viewer=viewer)
-        self.layer_layout = v.Container()
+        self.layer_layout = v.Row()
         VuetifyTemplate.__init__(self)
 
         self._on_layer_change(self.state.layer)
@@ -73,7 +74,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
             name = self.display_name(property)
             widgets.extend(self.widgets_for_property(state, property, name))
         self.input_widgets = [w for w in widgets if isinstance(w, v.Slider)]
-        self.layer_layout = v.Container(children=widgets, px_0=True, py_0=True)
+        self.layer_layout = v.Row(children=widgets, px_0=True, py_0=True)
         self.has_layer_options = len(self.layer_layout.children) > 0
 
     def _on_method_change(self, method_name: str):
@@ -96,7 +97,10 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
                 "name": "activator",
                 "variable": "tooltip",
                 "children": [
-                    v.Img(v_on="tooltip.on", src=icon_src, height=20, width=20)
+                    v.Img(v_on="tooltip.on", src=icon_src,
+                          height=20, width=20,
+                          max_width=20, max_height=20
+                    ),
                 ],
             }],
             children=[cb_property.__doc__],
@@ -123,11 +127,38 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
             step = getattr(cb_property, 'resolution', None)
             if step is None:
                 step = 1 if t is int else 0.01
-            widget = v.Slider(min=min,
-                              max=max,
-                              step=step,
-                              label=display_name,
-                              thumb_label=f"{value:g}")
+            widget = v.Slider(
+                    min=min,
+                    max=max,
+                    step=step,
+                    label=display_name,
+                    thumb_label=f"{value:g}",
+                    v_slots=[{
+                        "name": "append",
+                        "children": [
+                            v.Tooltip(
+                                top=True,
+                                dark=v.theme.dark,
+                                disabled=not cb_property.__doc__,
+                                children=[v.Html(tag="p",
+                                                 children=[(cb_property.__doc__ or "").replace(". ", ".<br>")]
+                                        ),
+                                ],
+                                v_slots=[{
+                                    "name": "activator",
+                                    "variable": "tooltip",
+                                    "children": [
+                                        v.Icon(
+                                            small=True,
+                                            v_on="tooltip.on",
+                                            src="mdi-info",
+                                        )
+                                    ],
+                                }],
+                            ),
+                        ],
+                    }],
+                )
             link((instance, property),
                  (widget, 'v_model'))
 
