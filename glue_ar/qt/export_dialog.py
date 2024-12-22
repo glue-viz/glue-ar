@@ -7,13 +7,12 @@ from echo.core import remove_callback
 from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_value
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
-from qtpy.QtGui import QCursor, QEnterEvent, QIcon
 from glue_ar.common.export_dialog_base import ARExportDialogBase
 
-from qtpy.QtCore import Qt, QEvent
-from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLayoutItem, QPushButton, QSpacerItem, QToolTip, QVBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLayoutItem, QVBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
 
-from glue_ar.utils import RESOURCES_DIR
+from glue_ar.qt.widget_utils import horizontal_spacer, info_button, widgets_for_callback_property
 
 
 __all__ = ['QtARExportDialog']
@@ -34,102 +33,6 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
 
         self.ui.button_cancel.clicked.connect(self.reject)
         self.ui.button_ok.clicked.connect(self.accept)
-
-    def _doc_button(self, cb_property: CallbackProperty) -> QPushButton:
-        button = QPushButton()
-        button.setCheckable(False)
-        button.setFlat(True)
-        icon_path = os.path.join(RESOURCES_DIR, "info.png")
-        icon = QIcon(icon_path)
-        button.setIcon(icon)
-        button.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum))
-
-        # We want the tooltip to show immediately, rather than have a delay
-        button.enterEvent = lambda event: self._doc_enter_event(event, cb_property=cb_property)
-        button.leaveEvent = self._doc_leave_event
-        
-        return button 
-
-    def _doc_enter_event(self, event: QEnterEvent, cb_property: CallbackProperty):
-        # Make the tooltip be rich text so that it will line wrap
-        QToolTip.showText(QCursor.pos(), f"<qt>{cb_property.__doc__}</qt>" or "")
-
-    def _doc_leave_event(self, _event: QEvent):
-        QToolTip.hideText()
-
-    def _horizontal_spacer(self) -> QSpacerItem:
-        return QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-    def _widgets_for_property(self,
-                              instance: HasCallbackProperties,
-                              property: str,
-                              display_name: str) -> List[Tuple[QWidget]]:
-        value = getattr(instance, property)
-        instance_type = type(instance)
-        cb_property = getattr(instance_type, property)
-        t = type(value)
-        widgets: List[Tuple[QWidget]] = []
-        if t is bool:
-            widget = QCheckBox()
-            widget.setChecked(value)
-            widget.setText(display_name)
-            self._layer_connections.append(connect_checkable_button(instance, property, widget))
-            if cb_property.__doc__:
-                button = self._doc_button(cb_property)
-                spacer = self._horizontal_spacer()
-                widgets.append((widget, spacer, button))
-            else:
-                widgets.append((widget,))
-        elif t in (int, float):
-            widgets: List[Tuple[QWidget]] = []
-            label = QLabel()
-            prompt = f"{display_name}:"
-            label.setText(prompt)
-            if cb_property.__doc__:
-                info_button = self._doc_button(cb_property)
-                spacer = self._horizontal_spacer()
-                widgets.append((label, spacer, info_button))
-            else:
-                widgets.append((label,))
-            widget = QSlider()
-            policy = QSizePolicy()
-            policy.setHorizontalPolicy(QSizePolicy.Policy.Expanding)
-            policy.setVerticalPolicy(QSizePolicy.Policy.Fixed)
-            widget.setOrientation(Qt.Orientation.Horizontal)
-
-            widget.setSizePolicy(policy)
-
-            value_label = QLabel()
-            min = getattr(cb_property, 'min_value', 1 if t is int else 0.01)
-            max = getattr(cb_property, 'max_value', 100 * min)
-            step = getattr(cb_property, 'resolution', None)
-            if step is None:
-                step = 1 if t is int else 0.01
-            places = -floor(log(step, 10))
-
-            def update_label(value):
-                value_label.setText(f"{value:.{places}f}")
-
-            def remove_label_callback(widget, update_label=update_label):
-                try:
-                    remove_callback(instance, property, update_label)
-                except ValueError:
-                    pass
-
-            def on_widget_destroyed(widget, cb=remove_label_callback):
-                cb(widget)
-
-            update_label(value)
-            add_callback(instance, property, update_label)
-            widget.destroyed.connect(on_widget_destroyed)
-
-            steps = round((max - min) / step)
-            widget.setMinimum(0)
-            widget.setMaximum(steps)
-            self._layer_connections.append(connect_value(instance, property, widget, value_range=(min, max)))
-            widgets.append((widget, value_label))
-
-        return widgets
 
     def _clear_layout(self, layout: QLayout):
         if layout is not None:
@@ -167,7 +70,8 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         for property in state.callback_properties():
             row = QVBoxLayout()
             name = self.display_name(property)
-            widget_tuples = self._widgets_for_property(state, property, name)
+            widget_tuples, connection = widgets_for_callback_property(state, property, name)
+            self._layer_connections.append(connection)
             for widgets in widget_tuples:
                 subrow = QHBoxLayout()     
                 for widget in widgets:

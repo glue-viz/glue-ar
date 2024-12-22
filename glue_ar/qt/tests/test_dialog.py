@@ -6,7 +6,6 @@ importorskip("glue_qt")
 
 from glue_qt.app import GlueApplication
 from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
-from qtpy.QtWidgets import QCheckBox, QLabel, QSlider
 
 from glue_ar.common.tests.test_base_dialog import BaseExportDialogTest, DummyState
 from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
@@ -71,36 +70,6 @@ class TestQtExportDialog(BaseExportDialogTest):
         state.filetype = "glTF"
         assert ui.combosel_compression.isVisible()
         assert ui.label_compression_message.isVisible()
-
-    def test_widgets_for_property(self):
-        state = DummyState()
-
-        int_widgets = self.dialog._widgets_for_property(state, "cb_int", "Int CB")
-        assert len(int_widgets) == 3
-        label, slider, value_label = int_widgets
-        assert isinstance(label, QLabel)
-        assert label.text() == "Int CB:"
-        assert isinstance(slider, QSlider)
-        assert slider.value() == 1  # 2 is the second (index 1) step value
-        assert isinstance(value_label, QLabel)
-        assert value_label.text() == "2"
-
-        float_widgets = self.dialog._widgets_for_property(state, "cb_float", "Float CB")
-        assert len(float_widgets) == 3
-        label, slider, value_label = float_widgets
-        assert isinstance(label, QLabel)
-        assert label.text() == "Float CB:"
-        assert isinstance(slider, QSlider)
-        assert slider.value() == 69  # Another value -> index thing (see above comment)
-        assert isinstance(value_label, QLabel)
-        assert value_label.text() == "0.70"
-
-        bool_widgets = self.dialog._widgets_for_property(state, "cb_bool", "Bool CB")
-        assert len(bool_widgets) == 1
-        box = bool_widgets[0]
-        assert isinstance(box, QCheckBox)
-        assert box.text() == "Bool CB"
-        assert not box.isChecked()
 
     def test_update_layer_ui(self):
         state = DummyState()
