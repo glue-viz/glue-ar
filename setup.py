@@ -744,7 +744,6 @@ extras_require = {
         "flake8",
         "pytest",
         "pytest-cov",
-        "pytest-qt",
     ],
     "qt": [
         "glue-qt",
