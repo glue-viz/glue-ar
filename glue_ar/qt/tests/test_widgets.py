@@ -15,11 +15,11 @@ from glue_ar.qt.widgets import boolean_callback_widgets, horizontal_spacer, \
 
 class TestQtWidgets:
 
-    def setup_method(self, method):
-        self.app = QApplication(sys.argv)
+    def setup_class(cls):
+        cls.app = QApplication(sys.argv)
 
-    def teardown_method(self, method):
-        self.app.quit()
+    def teardown_class(cls):
+        cls.app.quit()
 
     def test_info_tooltip(self):
         assert info_tooltip(DummyState.cb_int) == "<qt>Integer callback property</qt>"
