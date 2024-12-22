@@ -1,19 +1,16 @@
 import ipyvuetify as v  # noqa
 from ipyvuetify.VuetifyTemplate import VuetifyTemplate
-from ipywidgets import DOMWidget, widget_serialization
-import os
+from ipywidgets import widget_serialization
 import traitlets
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
-from echo import CallbackProperty, HasCallbackProperties
 from glue.core.state_objects import State
 from glue.viewers.common.viewer import Viewer
-from glue_jupyter.common.toolbar_vuetify import read_icon
 from glue_jupyter.link import link
 from glue_jupyter.vuetify_helpers import link_glue_choices
 
 from glue_ar.common.export_dialog_base import ARExportDialogBase
-from glue_ar.utils import RESOURCES_DIR
+from glue_ar.jupyter.widgets import widgets_for_callback_property
 
 
 class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
@@ -74,7 +71,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         self.layer_layout = v.Col()
         for property, _ in state.iter_callback_properties():
             name = self.display_name(property)
-            widgets = self.widgets_for_property(state, property, name)
+            widgets = widgets_for_callback_property(state, property, name)
             input_widgets.extend(w for w in widgets if isinstance(w, v.Slider))
             rows.append(v.Row(children=widgets))
 
@@ -92,63 +89,6 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         gl = filetype.lower() in ("gltf", "glb")
         self.show_compression = gl
         self.show_modelviewer = gl
-
-    def _doc_button(self, cb_property: CallbackProperty) -> v.Tooltip:
-        img_path = os.path.join(RESOURCES_DIR, "info.png")
-        icon_src = read_icon(img_path, "image/png")
-        button = v.Tooltip(
-            top=True,
-            v_slots=[{
-                "name": "activator",
-                "variable": "tooltip",
-                "children": [
-                    v.Img(v_on="tooltip.on", src=icon_src,
-                          height=20, width=20,
-                          max_width=20, max_height=20
-                    ),
-                ],
-            }],
-            children=[cb_property.__doc__],
-        )
-        return button
-
-    def widgets_for_property(self,
-                             instance: HasCallbackProperties,
-                             property: str,
-                             display_name: str) -> List[DOMWidget]:
-
-        value = getattr(instance, property)
-        instance_type = type(instance)
-        cb_property = getattr(instance_type, property)
-        t = type(value)
-        widgets = []
-        if t is bool:
-            widget = v.Checkbox(label=display_name)
-            link((instance, property), (widget, 'value'))
-            widgets.append(widget)
-        elif t in (int, float):
-            min = getattr(cb_property, 'min_value', 1 if t is int else 0.01)
-            max = getattr(cb_property, 'max_value', 100 * min)
-            step = getattr(cb_property, 'resolution', None)
-            if step is None:
-                step = 1 if t is int else 0.01
-            widget = v.Slider(
-                    min=min,
-                    max=max,
-                    step=step,
-                    label=display_name,
-                    hide_details=True,
-                    thumb_label=f"{value:g}",
-                )
-            link((instance, property),
-                 (widget, 'v_model'))
-
-            widgets.append(widget)
-
-            if cb_property.__doc__:
-                widgets.append(self._doc_button(cb_property))
-
-        return widgets
 
     def vue_cancel_dialog(self, *args):
         self.state_dictionary = {}
