@@ -1,5 +1,5 @@
 from os.path import join
-from typing import List, Tuple 
+from typing import List, Tuple
 
 from echo import CallbackProperty, HasCallbackProperties
 from glue_jupyter.common.toolbar_vuetify import read_icon
@@ -29,8 +29,7 @@ def info_icon(cb_property: CallbackProperty) -> v.Tooltip:
             "children": [
                 v.Img(v_on="tooltip.on", src=icon_src,
                       height=20, width=20,
-                      max_width=20, max_height=20
-                ),
+                      max_width=20, max_height=20),
             ],
         }],
         children=tooltip_children,
@@ -96,6 +95,6 @@ def widgets_for_callback_property(
     if t is bool:
         return boolean_callback_widgets(instance, property, display_name)
     elif t in (int, float):
-        return number_callback_widgets(instance, property, display_name) 
+        return number_callback_widgets(instance, property, display_name)
     else:
         raise ValueError("Unsupported callback property type!")

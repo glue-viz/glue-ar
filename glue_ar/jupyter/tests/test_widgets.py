@@ -2,7 +2,9 @@ from echo import CallbackProperty
 from ipyvuetify import Checkbox, Img, Slider, Tooltip
 
 from glue_ar.common.tests.test_base_dialog import DummyState
-from glue_ar.jupyter.widgets import boolean_callback_widgets, info_icon, info_tooltip, number_callback_widgets, widgets_for_callback_property
+from glue_ar.jupyter.widgets import boolean_callback_widgets, info_icon, \
+                                    info_tooltip, number_callback_widgets, \
+                                    widgets_for_callback_property
 
 
 def test_info_tooltip():

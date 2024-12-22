@@ -6,7 +6,7 @@ from echo import CallbackProperty, HasCallbackProperties, add_callback, remove_c
 from echo.qt import BaseConnection, connect_checkable_button, connect_value
 from qtpy.QtGui import QCursor, QEnterEvent, QIcon
 from qtpy.QtCore import Qt, QEvent
-from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLayoutItem, QPushButton, QSpacerItem, QToolTip, QVBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
+from qtpy.QtWidgets import QCheckBox, QPushButton, QSpacerItem, QToolTip, QLabel, QSizePolicy, QSlider, QWidget
 
 from glue_ar.utils import RESOURCES_DIR
 
@@ -41,8 +41,8 @@ def info_button(cb_property: CallbackProperty) -> QPushButton:
     if cb_property.__doc__:
         button.enterEvent = lambda event: info_enter_event_handler(event, cb_property=cb_property)
         button.leaveEvent = info_leave_event_handler
-    
-    return button 
+
+    return button
 
 
 def boolean_callback_widgets(instance: HasCallbackProperties,
@@ -92,7 +92,6 @@ def number_callback_widgets(instance: HasCallbackProperties,
     if step is None:
         step = 1 if t is int else 0.01
     places = -floor(log(step, 10))
-
 
     def update_label(value):
         value_label.setText(f"{value:.{places}f}")

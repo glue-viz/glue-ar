@@ -68,7 +68,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
             widget_tuples, connection = widgets_for_callback_property(state, property, name)
             self._layer_connections.append(connection)
             for widgets in widget_tuples:
-                subrow = QHBoxLayout()     
+                subrow = QHBoxLayout()
                 for widget in widgets:
                     if isinstance(widget, QWidget):
                         subrow.addWidget(widget)

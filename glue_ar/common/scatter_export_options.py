@@ -13,7 +13,7 @@ class ARVispyScatterExportOptions(State):
             max_value=50,
             resolution=1,
             docstring="Controls the resolution of the sphere meshes used for scatter points. "
-                       "Higher means better resolution, but a larger filesize.",
+                      "Higher means better resolution, but a larger filesize.",
     )
 
 
