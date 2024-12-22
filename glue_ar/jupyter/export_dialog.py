@@ -73,7 +73,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
             name = self.display_name(property)
             widgets = widgets_for_callback_property(state, property, name)
             input_widgets.extend(w for w in widgets if isinstance(w, v.Slider))
-            rows.append(v.Row(children=widgets))
+            rows.append(v.Row(children=widgets, align="center"))
 
         self.layer_layout.children = rows
         self.input_widgets = input_widgets
