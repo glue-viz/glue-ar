@@ -9,9 +9,9 @@ from numpy import arange, ones
 
 
 class DummyState(State):
-    cb_int = CallbackProperty(2)
-    cb_float = CallbackProperty(0.7)
-    cb_bool = CallbackProperty(False)
+    cb_int = CallbackProperty(2, docstring="Integer callback property")
+    cb_float = CallbackProperty(0.7, docstring="Float callback property")
+    cb_bool = CallbackProperty(False, docstring="Boolean callback property")
 
 
 class BaseExportDialogTest:
