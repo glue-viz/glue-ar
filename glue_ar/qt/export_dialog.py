@@ -1,18 +1,13 @@
-from math import floor, log
 import os
-from typing import List, Tuple
 
-from echo import CallbackProperty, HasCallbackProperties, add_callback
-from echo.core import remove_callback
-from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_value
+from echo.qt import autoconnect_callbacks_to_qt
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
 from glue_ar.common.export_dialog_base import ARExportDialogBase
 
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLayoutItem, QVBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
+from qtpy.QtWidgets import QDialog, QFormLayout, QHBoxLayout, QLayoutItem, QVBoxLayout, QLayout, QWidget
 
-from glue_ar.qt.widget_utils import horizontal_spacer, info_button, widgets_for_callback_property
+from glue_ar.qt.widgets import widgets_for_callback_property
 
 
 __all__ = ['QtARExportDialog']

@@ -9,7 +9,7 @@ from echo.qt import connect_checkable_button, connect_value
 from qtpy.QtWidgets import QApplication, QPushButton, QSpacerItem, QCheckBox, QLabel, QSlider, QSpacerItem
 
 from glue_ar.common.tests.test_base_dialog import DummyState
-from glue_ar.qt.widget_utils import boolean_callback_widgets, horizontal_spacer, info_button, info_tooltip, widgets_for_callback_property
+from glue_ar.qt.widgets import boolean_callback_widgets, horizontal_spacer, info_button, info_tooltip, widgets_for_callback_property
 
 
 class TestQtWidgets:
@@ -25,11 +25,9 @@ class TestQtWidgets:
         assert info_tooltip(DummyState.cb_float) == "<qt>Float callback property</qt>"
         assert info_tooltip(DummyState.cb_bool) == "<qt>Boolean callback property</qt>"
     
-    
     def test_horizontal_spacer(self):
         spacer = horizontal_spacer(width=60, height=80)
         assert isinstance(spacer, QSpacerItem)
-    
     
     def test_info_button(self):
         state = DummyState()
@@ -38,7 +36,6 @@ class TestQtWidgets:
             cb_property: CallbackProperty = getattr(DummyState, property)
             button = info_button(cb_property)
             assert isinstance(button, QPushButton)
-    
     
     def test_boolean_callback_widgets(self):
         state = DummyState()
@@ -53,7 +50,6 @@ class TestQtWidgets:
         assert not box.isChecked()
         assert isinstance(spacer, QSpacerItem)
         assert isinstance(info_button, QPushButton)
-    
     
     def test_integer_callback_widgets(self):
         state = DummyState()
@@ -74,7 +70,6 @@ class TestQtWidgets:
         assert isinstance(value_label, QLabel)
         assert value_label.text() == "2"
     
-    
     def test_float_callback_widgets(self):
         state = DummyState()
         widget_rows, connection = widgets_for_callback_property(state, "cb_float", "Float CB")
@@ -94,7 +89,6 @@ class TestQtWidgets:
         assert isinstance(value_label, QLabel)
         assert value_label.text() == "0.70"
 
-    
     def test_widgets_for_callback_property(self):
         state = DummyState()
     
