@@ -53,16 +53,16 @@ def boolean_callback_widgets(instance: HasCallbackProperties,
     instance_type = type(instance)
     cb_property: CallbackProperty = getattr(instance_type, property)
 
-    box = QCheckBox()
-    box.setChecked(value)
-    box.setText(display_name)
-    connection = connect_checkable_button(instance, property, box)
+    checkbox = QCheckBox()
+    checkbox.setChecked(value)
+    checkbox.setText(display_name)
+    connection = connect_checkable_button(instance, property, checkbox)
     if cb_property.__doc__:
         spacer = horizontal_spacer(width=40, height=20)
         button = info_button(cb_property)
-        return ((box, spacer, button),), connection
+        return ((checkbox, spacer, button),), connection
     else:
-        return ((box,),), connection
+        return ((checkbox,),), connection
 
 
 def number_callback_widgets(instance: HasCallbackProperties,
@@ -127,8 +127,8 @@ def number_callback_widgets(instance: HasCallbackProperties,
 def widgets_for_callback_property(instance: HasCallbackProperties,
                                   property: str,
                                   display_name: str) -> Tuple[Tuple[Tuple[QWidget]], BaseConnection]:
-    value = getattr(instance, property)
-    t = type(value)
+
+    t = type(getattr(instance, property))
     if t is bool:
         return boolean_callback_widgets(instance, property, display_name)
     elif t in (int, float):

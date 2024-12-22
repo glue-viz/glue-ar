@@ -32,7 +32,6 @@ class TestQtWidgets:
     def test_info_button(self):
         state = DummyState()
         for property in state.callback_properties():
-            print(property)
             cb_property: CallbackProperty = getattr(DummyState, property)
             button = info_button(cb_property)
             assert isinstance(button, QPushButton)
