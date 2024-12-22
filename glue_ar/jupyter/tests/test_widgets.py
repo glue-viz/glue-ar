@@ -1,3 +1,7 @@
+from pytest import importorskip
+
+importorskip("glue_jupyter")
+
 from echo import CallbackProperty
 from ipyvuetify import Checkbox, Img, Slider, Tooltip
 
