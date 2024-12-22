@@ -29,6 +29,7 @@ def test_info_button(qtbot):
         button = info_button(cb_property)
         assert isinstance(button, QPushButton)
 
+
 def test_boolean_callback_widgets(qtbot):
     state = DummyState()
 
@@ -62,6 +63,7 @@ def test_integer_callback_widgets(qtbot):
     assert slider.value() == 1  # 2 is the second (index 1) step value
     assert isinstance(value_label, QLabel)
     assert value_label.text() == "2"
+
 
 def test_float_callback_widgets():
     state = DummyState()
