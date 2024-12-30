@@ -87,4 +87,6 @@ class ARExportDialogBase:
 
     @staticmethod
     def display_name(prop):
+        if prop == "log_points_per_mesh":
+            return "Points per mesh"
         return prop.replace("_", " ").capitalize()

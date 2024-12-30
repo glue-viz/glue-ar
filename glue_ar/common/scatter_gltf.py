@@ -211,7 +211,8 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                            triangles: List[Tuple[int, int, int]],
                            bounds: Bounds,
                            clip_to_bounds: bool = True,
-                           points_per_mesh: Optional[int] = None):
+                           points_per_mesh: Optional[int] = None,
+):
     if layer_state is None:
         return
 
@@ -532,7 +533,11 @@ def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
 
     points_getter = sphere_points_getter(theta_resolution=theta_resolution,
                                          phi_resolution=phi_resolution)
-    points_per_mesh = 1
+    log_ppm = int(options.log_points_per_mesh)
+    if log_ppm == 7:
+        ppm = None
+    else:
+       ppm = 10 ** log_ppm 
 
     add_scatter_layer_gltf(builder=builder,
                            viewer_state=viewer_state,
@@ -541,7 +546,7 @@ def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
                            triangles=triangles,
                            bounds=bounds,
                            clip_to_bounds=clip_to_bounds,
-                           points_per_mesh=points_per_mesh)
+                           points_per_mesh=ppm)
 
 
 @ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("gltf", "glb"))
@@ -556,7 +561,11 @@ def add_ipyvolume_scatter_layer_gltf(builder: GLTFBuilder,
     triangle_getter = IPYVOLUME_TRIANGLE_GETTERS.get(geometry, rectangular_prism_triangulation)
     triangles = triangle_getter()
     points_getter = IPYVOLUME_POINTS_GETTERS.get(geometry, box_points_getter)
-    points_per_mesh = 1
+    log_ppm = int(options.log_points_per_mesh)
+    if log_ppm == 7:
+        ppm = None
+    else:
+       ppm = 10 ** log_ppm 
 
     add_scatter_layer_gltf(builder=builder,
                            viewer_state=viewer_state,
@@ -565,4 +574,4 @@ def add_ipyvolume_scatter_layer_gltf(builder: GLTFBuilder,
                            triangles=triangles,
                            bounds=bounds,
                            clip_to_bounds=clip_to_bounds,
-                           points_per_mesh=points_per_mesh)
+                           points_per_mesh=ppm)

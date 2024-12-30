@@ -39,7 +39,9 @@ def info_icon(cb_property: CallbackProperty) -> v.Tooltip:
 
 def boolean_callback_widgets(instance: HasCallbackProperties,
                              property: str,
-                             display_name: str) -> Tuple[DOMWidget]:
+                             display_name: str,
+                             **kwargs,
+) -> Tuple[DOMWidget]:
 
     instance_type = type(instance)
     cb_property = getattr(instance_type, property)
@@ -56,7 +58,10 @@ def boolean_callback_widgets(instance: HasCallbackProperties,
 
 def number_callback_widgets(instance: HasCallbackProperties,
                             property: str,
-                            display_name: str) -> Tuple[DOMWidget]:
+                            display_name: str,
+                            label_for_value=False,
+                            **kwargs,
+) -> Tuple[DOMWidget]:
 
     value = getattr(instance, property)
     instance_type = type(instance)
@@ -68,14 +73,15 @@ def number_callback_widgets(instance: HasCallbackProperties,
     step = getattr(cb_property, 'resolution', None)
     if step is None:
         step = 1 if t is int else 0.01
+
     slider = v.Slider(
             min=min,
             max=max,
             step=step,
             label=display_name,
             hide_details=True,
-            thumb_label=f"{value:g}",
-        )
+            thumb_label=f"{value:g}" if label_for_value else False,
+    )
     link((instance, property),
          (slider, 'v_model'))
 
@@ -89,7 +95,9 @@ def number_callback_widgets(instance: HasCallbackProperties,
 def widgets_for_callback_property(
         instance: HasCallbackProperties,
         property: str,
-        display_name: str) -> Tuple[DOMWidget]:
+        display_name: str,
+        **kwargs,
+) -> Tuple[DOMWidget]:
 
     t = type(getattr(instance, property))
     if t is bool:
