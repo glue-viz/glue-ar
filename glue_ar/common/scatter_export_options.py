@@ -22,5 +22,6 @@ class ARVispyScatterExportOptions(State):
             docstring="Controls how many points are put into each mesh. "
                        "Higher means a larger filesize, but better performance.")
 
+
 class ARIpyvolumeScatterExportOptions(State):
     pass

@@ -390,6 +390,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                 triangle_offset += pts_count
                 tris.append(pt_triangles)
 
+            triangles_count = len(tris)
             mesh_points = [pt for pts in points for pt in pts]
             mesh_triangles = [tri for sphere in tris for tri in sphere]
             max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
@@ -448,7 +449,6 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                 # there's no need to do this - we can use the buffer view that we just created
                 count = n_points - start
                 if start != 0 and count < points_per_mesh:
-                    triangles_count = len(tris)
                     byte_length = count * triangles_len // triangles_count
                     mesh_triangles = [tri for sphere in tris[:count] for tri in sphere]
                     max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
