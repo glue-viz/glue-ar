@@ -70,12 +70,12 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         input_widgets = []
         self.layer_layout = v.Col()
         for property, _ in state.iter_callback_properties():
-            is_log_ppm = (property == "log_points_per_mesh")
+            is_log_pm = (property in ("log_points_per_mesh", "log_voxels_per_mesh"))
             # TODO: Think of a cleaner way to handle this
-            if is_log_ppm and self.state.filetype.lower() not in ("gltf", "glb"):
+            if is_log_pm and self.state.filetype.lower() not in ("gltf", "glb"):
                 continue
             name = self.display_name(property)
-            widgets = widgets_for_callback_property(state, property, name, label_for_value=not is_log_ppm)
+            widgets = widgets_for_callback_property(state, property, name, label_for_value=not is_log_pm)
             input_widgets.extend(w for w in widgets if isinstance(w, v.Slider))
             rows.append(v.Row(children=widgets, align="center"))
 

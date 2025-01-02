@@ -63,13 +63,13 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
     def _update_layer_ui(self, state: State):
         self._clear_layer_layout()
         for property in state.callback_properties():
-            is_log_ppm = (property == "log_points_per_mesh")
+            is_log_pm = (property in ("log_points_per_mesh", "log_voxels_per_mesh"))
             # TODO: Think of a cleaner way to handle this
-            if is_log_ppm and self.state.filetype.lower() not in ("gltf", "glb"):
+            if is_log_pm and self.state.filetype.lower() not in ("gltf", "glb"):
                 continue
             row = QVBoxLayout()
             name = self.display_name(property)
-            widget_tuples, connection = widgets_for_callback_property(state, property, name, label_for_value=not is_log_ppm)
+            widget_tuples, connection = widgets_for_callback_property(state, property, name, label_for_value=not is_log_pm)
             self._layer_connections.append(connection)
             for widgets in widget_tuples:
                 subrow = QHBoxLayout()
