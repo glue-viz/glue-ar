@@ -32,3 +32,11 @@ class ARVoxelExportOptions(State):
         docstring="The resolution of the opacity in the exported figure. Opacity values will be "
                   "rounded to the nearest integer multiple of this value.",
     )
+
+    log_voxels_per_mesh = RangedCallbackProperty(
+        default=7,
+        min_value=0,
+        max_value=7,
+        docstring="Controls how many voxels are put into each mesh. "
+                  "Higher means a larger filesize, but better performance."
+    )
