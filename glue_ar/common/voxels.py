@@ -100,30 +100,20 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     triangle_offset = 0
     triangles = rectangular_prism_triangulation()
     pts_count = len(rectangular_prism_points((0, 0, 0), tuple(1 for _ in range(3))))
-    print(rectangular_prism_points((0, 0, 0), tuple(1 for _ in range(3))))
-    print(pts_count)
     voxels_per_mesh = min(voxels_per_mesh, max_points_per_opacity)
     for _ in range(voxels_per_mesh):
         voxel_triangles = offset_triangles(triangles, triangle_offset)
-        print(triangle_offset)
-        print(voxel_triangles)
         triangle_offset += pts_count
         tris.append(voxel_triangles)
 
     triangles_count = len(tris)
     mesh_triangles = [tri for box in tris for tri in box]
     max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
-    print("Initial data")
-    print(f"Max triangle index: {max_triangle_index}")
     use_short = max_triangle_index <= SHORT_MAX
-    print(f"Use short: {use_short}")
 
     triangles_barr = bytearray()
     add_triangles_to_bytearray(triangles_barr, mesh_triangles, short=use_short)
     triangles_len = len(triangles_barr)
-    print([idx for tri in mesh_triangles for idx in tri])
-    print(len([idx for tri in mesh_triangles for idx in tri]))
-    print(f"Triangles bytearray length: {triangles_len}")
 
     builder.add_buffer(byte_length=len(triangles_barr), uri=triangles_bin)
     builder.add_file_resource(triangles_bin, data=triangles_barr)
@@ -191,17 +181,10 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
             # But in this case we do need a separate accessor as the
             # byte length is different.
             count = n_voxels - start
-            print(f"Start: {start}, Count: {count}, VPM: {voxels_per_mesh}")
             if count < voxels_per_mesh:
                 byte_length = count * triangles_len // triangles_count
                 last_mesh_triangles = [tri for box in tris[:count] for tri in box]
                 max_mesh_triangle_index = max(idx for tri in last_mesh_triangles for idx in tri)
-                print(len(last_mesh_triangles))
-                print(max_mesh_triangle_index)
-                print(count)
-                print(byte_length)
-                print(triangles_len, triangles_count)
-                print("======")
                 builder.add_buffer_view(
                     buffer=triangles_buffer,
                     byte_length=byte_length,
