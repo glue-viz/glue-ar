@@ -33,6 +33,6 @@ class ARIpyvolumeScatterExportOptions(State):
                       "Higher means a larger filesize, but better performance."
     )
 
-  
+
 class ARPointExportOptions(State):
     pass
