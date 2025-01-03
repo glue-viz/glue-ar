@@ -40,8 +40,7 @@ def info_icon(cb_property: CallbackProperty) -> v.Tooltip:
 def boolean_callback_widgets(instance: HasCallbackProperties,
                              property: str,
                              display_name: str,
-                             **kwargs,
-) -> Tuple[DOMWidget]:
+                             **kwargs) -> Tuple[DOMWidget]:
 
     instance_type = type(instance)
     cb_property = getattr(instance_type, property)
@@ -60,8 +59,7 @@ def number_callback_widgets(instance: HasCallbackProperties,
                             property: str,
                             display_name: str,
                             label_for_value=False,
-                            **kwargs,
-) -> Tuple[DOMWidget]:
+                            **kwargs) -> Tuple[DOMWidget]:
 
     value = getattr(instance, property)
     instance_type = type(instance)

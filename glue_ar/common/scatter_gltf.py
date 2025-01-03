@@ -211,8 +211,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                            triangles: List[Tuple[int, int, int]],
                            bounds: Bounds,
                            clip_to_bounds: bool = True,
-                           points_per_mesh: Optional[int] = None,
-):
+                           points_per_mesh: Optional[int] = None):
     if layer_state is None:
         return
 
@@ -537,7 +536,7 @@ def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
     if log_ppm == 7:
         ppm = None
     else:
-       ppm = 10 ** log_ppm 
+        ppm = 10 ** log_ppm
 
     add_scatter_layer_gltf(builder=builder,
                            viewer_state=viewer_state,
@@ -565,7 +564,7 @@ def add_ipyvolume_scatter_layer_gltf(builder: GLTFBuilder,
     if log_ppm == 7:
         ppm = None
     else:
-       ppm = 10 ** log_ppm 
+        ppm = 10 ** log_ppm
 
     add_scatter_layer_gltf(builder=builder,
                            viewer_state=viewer_state,

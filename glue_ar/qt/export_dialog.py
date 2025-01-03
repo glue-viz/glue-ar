@@ -69,7 +69,8 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
                 continue
             row = QVBoxLayout()
             name = self.display_name(property)
-            widget_tuples, connection = widgets_for_callback_property(state, property, name, label_for_value=not is_log_pm)
+            widget_tuples, connection = widgets_for_callback_property(state, property, name,
+                                                                      label_for_value=not is_log_pm)
             self._layer_connections.append(connection)
             for widgets in widget_tuples:
                 subrow = QHBoxLayout()

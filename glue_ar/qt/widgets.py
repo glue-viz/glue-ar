@@ -48,8 +48,7 @@ def info_button(cb_property: CallbackProperty) -> QPushButton:
 def boolean_callback_widgets(instance: HasCallbackProperties,
                              property: str,
                              display_name: str,
-                             **kwargs,
-) -> Tuple[Tuple[Tuple[QWidget]], connect_checkable_button]:
+                             **kwargs) -> Tuple[Tuple[Tuple[QWidget]], connect_checkable_button]:
 
     value = getattr(instance, property)
     instance_type = type(instance)
@@ -71,8 +70,7 @@ def number_callback_widgets(instance: HasCallbackProperties,
                             property: str,
                             display_name: str,
                             label_for_value=True,
-                            **kwargs,
-) -> Tuple[Tuple[Tuple[QWidget]], connect_value]:
+                            **kwargs) -> Tuple[Tuple[Tuple[QWidget]], connect_value]:
 
     value = getattr(instance, property)
     instance_type = type(instance)
@@ -99,6 +97,7 @@ def number_callback_widgets(instance: HasCallbackProperties,
 
     if label_for_value:
         value_label = QLabel()
+
         def update_label(value):
             value_label.setText(f"{value:.{places}f}")
 
@@ -114,7 +113,7 @@ def number_callback_widgets(instance: HasCallbackProperties,
         update_label(value)
         add_callback(instance, property, update_label)
         slider.destroyed.connect(on_widget_destroyed)
-        
+
         value_widgets = (slider, value_label)
     else:
         value_widgets = (slider,)
@@ -135,8 +134,7 @@ def number_callback_widgets(instance: HasCallbackProperties,
 def widgets_for_callback_property(instance: HasCallbackProperties,
                                   property: str,
                                   display_name: str,
-                                  **kwargs,
-) -> Tuple[Tuple[Tuple[QWidget]], BaseConnection]:
+                                  **kwargs) -> Tuple[Tuple[Tuple[QWidget]], BaseConnection]:
 
     t = type(getattr(instance, property))
     if t is bool:

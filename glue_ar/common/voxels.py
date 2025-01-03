@@ -12,7 +12,7 @@ from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARVoxelExportOptions
 from glue_ar.usd_utils import material_for_color, sanitize_path
 from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamp, \
-                          clip_sides, frb_for_layer, get_resolution, hex_to_components, isomin_for_layer, \
+                          clip_sides, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color, offset_triangles, unique_id, xyz_bounds
 
 from glue_ar.gltf_utils import SHORT_MAX, add_points_to_bytearray, add_triangles_to_bytearray, \
