@@ -7,9 +7,36 @@ __all__ = ["ARIsosurfaceExportOptions", "ARVoxelExportOptions"]
 
 
 class ARIsosurfaceExportOptions(State):
-    isosurface_count = RangedCallbackProperty(default=20, min_value=1, max_value=50)
+    isosurface_count = RangedCallbackProperty(
+        default=20,
+        min_value=1,
+        max_value=50,
+        docstring="The number of isosurfaces used in the export.",
+    )
 
 
 class ARVoxelExportOptions(State):
-    opacity_cutoff = RangedCallbackProperty(default=0.1, min_value=0.01, max_value=1, resolution=0.01)
-    opacity_resolution = RangedCallbackProperty(default=0.02, min_value=0.005, max_value=1, resolution=0.005)
+    opacity_cutoff = RangedCallbackProperty(
+        default=0.1,
+        min_value=0.01,
+        max_value=1,
+        resolution=0.01,
+        docstring="The minimum opacity voxels to retain. Voxels with a lower opacity will be "
+                  "omitted from the export.",
+    )
+    opacity_resolution = RangedCallbackProperty(
+        default=0.02,
+        min_value=0.005,
+        max_value=1,
+        resolution=0.005,
+        docstring="The resolution of the opacity in the exported figure. Opacity values will be "
+                  "rounded to the nearest integer multiple of this value.",
+    )
+
+    # log_voxels_per_mesh = RangedCallbackProperty(
+    #     default=7,
+    #     min_value=0,
+    #     max_value=7,
+    #     docstring="Controls how many voxels are put into each mesh. "
+    #               "Higher means a larger filesize, but better performance."
+    # )

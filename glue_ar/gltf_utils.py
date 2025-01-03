@@ -18,6 +18,8 @@ GLTF_COMPRESSION_EXTENSIONS = {
     "meshoptimizer": "EXT_meshopt_compression",
 }
 
+SHORT_MAX = 65_535
+
 
 def create_material_for_color(
     color: List[int],
@@ -40,10 +42,13 @@ def add_points_to_bytearray(arr: bytearray, points: Iterable[Iterable[Union[int,
             arr.extend(struct.pack('f', coordinate))
 
 
-def add_triangles_to_bytearray(arr: bytearray, triangles: Iterable[Iterable[int]]):
+def add_triangles_to_bytearray(arr: bytearray,
+                               triangles: Iterable[Iterable[int]],
+                               short: bool = False):
+    format = "H" if short else "I"
     for triangle in triangles:
         for index in triangle:
-            arr.extend(struct.pack('I', index))
+            arr.extend(struct.pack(format, index))
 
 
 T = TypeVar("T", bound=Union[int, float])

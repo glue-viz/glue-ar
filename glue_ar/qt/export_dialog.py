@@ -1,16 +1,13 @@
-from math import floor, log
 import os
-from typing import List
 
-from echo import HasCallbackProperties, add_callback
-from echo.core import remove_callback
-from echo.qt import autoconnect_callbacks_to_qt, connect_checkable_button, connect_value
+from echo.qt import autoconnect_callbacks_to_qt
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
 from glue_ar.common.export_dialog_base import ARExportDialogBase
 
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLayout, QSizePolicy, QSlider, QWidget
+from qtpy.QtWidgets import QDialog, QFormLayout, QHBoxLayout, QLayoutItem, QVBoxLayout, QLayout, QWidget
+
+from glue_ar.qt.widgets import widgets_for_callback_property
 
 
 __all__ = ['QtARExportDialog']
@@ -31,58 +28,6 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
 
         self.ui.button_cancel.clicked.connect(self.reject)
         self.ui.button_ok.clicked.connect(self.accept)
-
-    def _widgets_for_property(self,
-                              instance: HasCallbackProperties,
-                              property: str,
-                              display_name: str) -> List[QWidget]:
-        value = getattr(instance, property)
-        t = type(value)
-        if t is bool:
-            widget = QCheckBox()
-            widget.setChecked(value)
-            widget.setText(display_name)
-            self._layer_connections.append(connect_checkable_button(instance, property, widget))
-            return [widget]
-        elif t in (int, float):
-            label = QLabel()
-            prompt = f"{display_name}:"
-            label.setText(prompt)
-            widget = QSlider()
-            policy = QSizePolicy()
-            policy.setHorizontalPolicy(QSizePolicy.Policy.Expanding)
-            policy.setVerticalPolicy(QSizePolicy.Policy.Fixed)
-            widget.setOrientation(Qt.Orientation.Horizontal)
-
-            widget.setSizePolicy(policy)
-
-            value_label = QLabel()
-            instance_type = type(instance)
-            cb_property = getattr(instance_type, property)
-            min = getattr(cb_property, 'min_value', 1 if t is int else 0.01)
-            max = getattr(cb_property, 'max_value', 100 * min)
-            step = getattr(cb_property, 'resolution', None)
-            if step is None:
-                step = 1 if t is int else 0.01
-            places = -floor(log(step, 10))
-
-            def update_label(value):
-                value_label.setText(f"{value:.{places}f}")
-
-            def remove_label_callback(*args):
-                remove_callback(instance, property, update_label)
-
-            update_label(value)
-            add_callback(instance, property, update_label)
-            widget.destroyed.connect(remove_label_callback)
-
-            steps = round((max - min) / step)
-            widget.setMinimum(0)
-            widget.setMaximum(steps)
-            self._layer_connections.append(connect_value(instance, property, widget, value_range=(min, max)))
-            return [label, widget, value_label]
-        else:
-            return []
 
     def _clear_layout(self, layout: QLayout):
         if layout is not None:
@@ -113,19 +58,34 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         multiple_methods = len(self.state.method_helper.choices) > 1
         self.ui.label_method.setVisible(multiple_methods)
         self.ui.combosel_method.setVisible(multiple_methods)
+        self.ui.line_2.setVisible(multiple_methods)
 
     def _update_layer_ui(self, state: State):
         self._clear_layer_layout()
         for property in state.callback_properties():
-            row = QHBoxLayout()
+            is_log_pm = (property in ("log_points_per_mesh", "log_voxels_per_mesh"))
+            # TODO: Think of a cleaner way to handle this
+            if is_log_pm and self.state.filetype.lower() not in ("gltf", "glb"):
+                continue
+            row = QVBoxLayout()
             name = self.display_name(property)
-            widgets = self._widgets_for_property(state, property, name)
-            for widget in widgets:
-                row.addWidget(widget)
-            self.ui.layer_layout.addRow(row)
+            widget_tuples, connection = widgets_for_callback_property(state, property, name,
+                                                                      label_for_value=not is_log_pm)
+            self._layer_connections.append(connection)
+            for widgets in widget_tuples:
+                subrow = QHBoxLayout()
+                for widget in widgets:
+                    if isinstance(widget, QWidget):
+                        subrow.addWidget(widget)
+                    elif isinstance(widget, QLayoutItem):
+                        subrow.addItem(widget)
+                row.addLayout(subrow)
+            self.ui.layer_layout.addLayout(row)
 
     def _on_filetype_change(self, filetype: str):
         super()._on_filetype_change(filetype)
+        state = self._layer_export_states[self.state.layer][self.state.method]
+        self._update_layer_ui(state)
         gl = filetype.lower() in ("gltf", "glb")
         self.ui.combosel_compression.setVisible(gl)
         self.ui.label_compression_message.setVisible(gl)

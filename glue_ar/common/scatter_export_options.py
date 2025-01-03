@@ -7,12 +7,32 @@ __all__ = ["ARVispyScatterExportOptions"]
 
 
 class ARVispyScatterExportOptions(State):
-    resolution = RangedCallbackProperty(default=10, min_value=3, max_value=50, resolution=1)
+    resolution = RangedCallbackProperty(
+            default=10,
+            min_value=3,
+            max_value=50,
+            resolution=1,
+            docstring="Controls the resolution of the sphere meshes used for scatter points. "
+                      "Higher means better resolution, but a larger filesize.",
+    )
+    log_points_per_mesh = RangedCallbackProperty(
+            default=7,
+            min_value=0,
+            max_value=7,
+            docstring="Controls how many points are put into each mesh. "
+                      "Higher means a larger filesize, but better performance."
+    )
 
 
 class ARIpyvolumeScatterExportOptions(State):
-    pass
+    log_points_per_mesh = RangedCallbackProperty(
+            default=7,
+            min_value=0,
+            max_value=7,
+            docstring="Controls how many points are put into each mesh. "
+                      "Higher means a larger filesize, but better performance."
+    )
 
-
+  
 class ARPointExportOptions(State):
     pass

@@ -186,10 +186,11 @@ class BaseScatterTest:
     def _basic_state_dictionary(self, viewer_type: str) -> Dict[str, Tuple[str, State]]:
         if viewer_type == "vispy":
             def state_maker():
-                return ARVispyScatterExportOptions(theta_resolution=15,
-                                                   phi_resolution=15)
+                return ARVispyScatterExportOptions(resolution=15,
+                                                   log_points_per_mesh=0)
         elif viewer_type == "ipyvolume":
-            state_maker = ARIpyvolumeScatterExportOptions
+            def state_maker():
+                return ARIpyvolumeScatterExportOptions(log_points_per_mesh=0)
         else:
             raise ValueError("Viewer type should be either vispy or ipyvolume")
 

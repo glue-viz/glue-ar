@@ -8,7 +8,6 @@ from glue_jupyter import JupyterApplication
 # We can't use the Jupyter vispy widget for these tests until
 # https://github.com/glue-viz/glue-vispy-viewers/pull/388 is released
 from glue_jupyter.ipyvolume.volume import IpyvolumeVolumeView
-from ipyvuetify import Checkbox, Slider
 
 from glue_ar.common.tests.test_base_dialog import BaseExportDialogTest, DummyState
 from glue_ar.jupyter.export_dialog import JupyterARExportDialog
@@ -89,30 +88,6 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         assert self.dialog.show_compression
         assert self.dialog.show_modelviewer
 
-    def test_widgets_for_property(self):
-        state = DummyState()
-
-        int_widgets = self.dialog.widgets_for_property(state, "cb_int", "Int CB")
-        assert len(int_widgets) == 1
-        widget = int_widgets[0]
-        assert isinstance(widget, Slider)
-        assert widget.label == "Int CB"
-        assert widget.v_model == 2
-
-        float_widgets = self.dialog.widgets_for_property(state, "cb_float", "Float CB")
-        assert len(float_widgets) == 1
-        widget = float_widgets[0]
-        assert isinstance(widget, Slider)
-        assert widget.label == "Float CB"
-        assert widget.v_model == 0.7
-
-        bool_widgets = self.dialog.widgets_for_property(state, "cb_bool", "Bool CB")
-        assert len(bool_widgets) == 1
-        widget = bool_widgets[0]
-        assert isinstance(widget, Checkbox)
-        assert widget.label == "Bool CB"
-        assert widget.value is False
-
     def test_update_layer_ui(self):
         state = DummyState()
         self.dialog._update_layer_ui(state)
@@ -127,7 +102,7 @@ class TestJupyterExportDialog(BaseExportDialogTest):
             {"text": "Scatter", "value": 0},
             {"text": "Points", "value": 1},
         ]
-        assert not self.dialog.has_layer_options
+        assert self.dialog.has_layer_options
 
         state.layer = "Volume Data"
         assert self.dialog.method_items[self.dialog.method_selected]["text"] == state.method
@@ -140,7 +115,7 @@ class TestJupyterExportDialog(BaseExportDialogTest):
             {"text": "Scatter", "value": 0},
             {"text": "Points", "value": 1},
         ]
-        assert not self.dialog.has_layer_options
+        assert self.dialog.has_layer_options
 
     def test_on_cancel(self):
         self.dialog.vue_cancel_dialog()

@@ -6,15 +6,14 @@ from glue_ar.utils import PACKAGE_DIR
 
 
 NODE_MODULES_DIR = join(PACKAGE_DIR, "js", "node_modules")
-GLTF_PIPELINE_FILEPATH = join(NODE_MODULES_DIR, "gltf-pipeline", "bin", "gltf-pipeline.js")
-GLTFPACK_FILEPATH = join(NODE_MODULES_DIR, "gltfpack", "cli.js")
+GLTF_TRANSFORM_FILEPATH = join(NODE_MODULES_DIR, "@gltf-transform", "cli", "bin", "cli.js")
 
 
 @compressor("draco")
-def compress_gltf_pipeline(filepath: str):
-    run(["node", GLTF_PIPELINE_FILEPATH, "-i", filepath, "-o", filepath, "-d"], capture_output=True)
+def compress_draco(filepath: str):
+    run([GLTF_TRANSFORM_FILEPATH, "optimize", filepath, filepath, "--compress", "draco"], capture_output=True)
 
 
 @compressor("meshoptimizer")
-def compress_gltfpack(filepath: str):
-    run(["node", GLTFPACK_FILEPATH, "-i", filepath, "-o", filepath], capture_output=True)
+def compress_meshoptimizer(filepath: str):
+    run([GLTF_TRANSFORM_FILEPATH, "optimize", filepath, filepath], capture_output=True)

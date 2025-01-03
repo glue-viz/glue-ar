@@ -15,7 +15,7 @@ from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity,
                           clip_sides, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color, offset_triangles, unique_id, xyz_bounds
 
-from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, \
+from glue_ar.gltf_utils import SHORT_MAX, add_points_to_bytearray, add_triangles_to_bytearray, \
                                index_mins, index_maxes
 from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation
 
@@ -27,39 +27,16 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                           viewer_state: Vispy3DVolumeViewerState,
                           layer_states: Iterable[VolumeLayerState],
                           options: Iterable[ARVoxelExportOptions],
-                          bounds: Optional[BoundsWithResolution] = None):
+                          bounds: Optional[BoundsWithResolution] = None,
+                          voxels_per_mesh: Optional[int] = None):
 
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
     sides = clip_sides(viewer_state, clip_size=1)
     sides = tuple(sides[i] for i in (1, 2, 0))
 
-    point_index = 0
-    points_barr = bytearray()
-    triangles_barr = bytearray()
     voxels_id = unique_id()
     points_bin = f"points_{voxels_id}.bin"
     triangles_bin = f"triangles_{voxels_id}.bin"
-
-    triangles = rectangular_prism_triangulation()
-    triangles_barr = bytearray()
-    add_triangles_to_bytearray(triangles_barr, triangles)
-    triangle_barrlen = len(triangles_barr)
-
-    builder.add_buffer_view(
-        buffer=builder.buffer_count+1,
-        byte_length=triangle_barrlen,
-        byte_offset=0,
-        target=BufferTarget.ELEMENT_ARRAY_BUFFER,
-    )
-    builder.add_accessor(
-        buffer_view=builder.buffer_view_count-1,
-        component_type=ComponentType.UNSIGNED_INT,
-        count=len(triangles) * 3,
-        type=AccessorType.SCALAR,
-        mins=[0],
-        maxes=[7],
-    )
-    indices_accessor = builder.accessor_count - 1
 
     opacity_factor = 1
     occupied_voxels = {}
@@ -95,60 +72,146 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
             else:
                 occupied_voxels[indices_tpl] = color_components[:3] + [adjusted_opacity]
 
+    # Once we're done doing the alpha compositing, we want to reverse our dictionary setup
+    # Right now we have (key, value) as (indices, color)
+    # But now we want (color, indices) to do our mesh chunking
     materials_map = {}
+    voxels_by_color = defaultdict(list)
     for indices, rgba in occupied_voxels.items():
-        if rgba[-1] < opacity_cutoff:
-            continue
+        if rgba[-1] >= opacity_cutoff:
+            rgba = tuple(rgba)
+            voxels_by_color[rgba].append(indices)
 
-        center = tuple((-1 + (index + 0.5) * side) for index, side in zip(indices, sides))
+            if rgba in materials_map:
+                material_index = materials_map[rgba]
+            else:
+                material_index = builder.material_count
+                materials_map[rgba] = material_index
+                builder.add_material(
+                    rgba[:3],
+                    rgba[3],
+                )
 
-        pts = rectangular_prism_points(center, sides)
-        prev_ptbarr_len = len(points_barr)
-        point_index += len(pts)
-        add_points_to_bytearray(points_barr, pts)
-        ptbarr_len = len(points_barr)
+    max_points_per_opacity = max(len(voxels) for voxels in voxels_by_color.values())
+    if voxels_per_mesh is None:
+        voxels_per_mesh = max_points_per_opacity
 
-        pt_mins = index_mins(pts)
-        pt_maxes = index_maxes(pts)
+    tris = []
+    triangle_offset = 0
+    triangles = rectangular_prism_triangulation()
+    pts_count = len(rectangular_prism_points((0, 0, 0), tuple(1 for _ in range(3))))
+    voxels_per_mesh = min(voxels_per_mesh, max_points_per_opacity)
+    for _ in range(voxels_per_mesh):
+        voxel_triangles = offset_triangles(triangles, triangle_offset)
+        triangle_offset += pts_count
+        tris.append(voxel_triangles)
 
-        # We're going to use two buffers
-        # The first one (index 0) for the points
-        # and the second one (index 1) for the triangles
-        builder.add_buffer_view(
-           buffer=builder.buffer_count,
-           byte_length=ptbarr_len-prev_ptbarr_len,
-           byte_offset=prev_ptbarr_len,
-           target=BufferTarget.ARRAY_BUFFER,
-        )
-        builder.add_accessor(
-            buffer_view=builder.buffer_view_count-1,
-            component_type=ComponentType.FLOAT,
-            count=len(pts),
-            type=AccessorType.VEC3,
-            mins=pt_mins,
-            maxes=pt_maxes,
-        )
-        rgba_tpl = tuple(rgba)
-        if rgba_tpl in materials_map:
-            material_index = materials_map[rgba_tpl]
-        else:
-            material_index = builder.material_count
-            materials_map[rgba_tpl] = material_index
-            builder.add_material(
-                rgba[:3],
-                rgba[3],
+    triangles_count = len(tris)
+    mesh_triangles = [tri for box in tris for tri in box]
+    max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
+    use_short = max_triangle_index <= SHORT_MAX
+
+    triangles_barr = bytearray()
+    add_triangles_to_bytearray(triangles_barr, mesh_triangles, short=use_short)
+    triangles_len = len(triangles_barr)
+
+    builder.add_buffer(byte_length=len(triangles_barr), uri=triangles_bin)
+    builder.add_file_resource(triangles_bin, data=triangles_barr)
+
+    triangles_buffer = builder.buffer_count - 1
+    points_buffer = builder.buffer_count
+    builder.add_buffer_view(
+        buffer=triangles_buffer,
+        byte_length=triangles_len,
+        byte_offset=0,
+        target=BufferTarget.ELEMENT_ARRAY_BUFFER,
+    )
+
+    component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
+    builder.add_accessor(
+        buffer_view=builder.buffer_view_count-1,
+        component_type=component_type,
+        count=len(mesh_triangles)*3,
+        type=AccessorType.SCALAR,
+        mins=[0],
+        maxes=[max_triangle_index],
+    )
+
+    points_barr = bytearray()
+    default_triangles_accessor = builder.accessor_count - 1
+    for rgba, voxels in voxels_by_color.items():
+
+        triangles_accessor = default_triangles_accessor
+        start = 0
+        n_voxels = len(voxels)
+        while start < n_voxels:
+            mesh_indices = voxels[start:start+voxels_per_mesh]
+            points = []
+            for indices in mesh_indices:
+                center = tuple((-1 + (index + 0.5) * side) for index, side in zip(indices, sides))
+                pts = rectangular_prism_points(center, sides)
+                points.append(pts)
+
+            prev_ptbarr_len = len(points_barr)
+            mesh_points = [c for pt in points for c in pt]
+            add_points_to_bytearray(points_barr, mesh_points)
+            ptbarr_len = len(points_barr)
+
+            pt_mins = index_mins(mesh_points)
+            pt_maxes = index_maxes(mesh_points)
+
+            builder.add_buffer_view(
+               buffer=points_buffer,
+               byte_length=ptbarr_len-prev_ptbarr_len,
+               byte_offset=prev_ptbarr_len,
+               target=BufferTarget.ARRAY_BUFFER,
             )
-        builder.add_mesh(
-            position_accessor=builder.accessor_count-1,
-            indices_accessor=indices_accessor,
-            material=material_index
-        )
+            builder.add_accessor(
+                buffer_view=builder.buffer_view_count-1,
+                component_type=ComponentType.FLOAT,
+                count=len(mesh_points),
+                type=AccessorType.VEC3,
+                mins=pt_mins,
+                maxes=pt_maxes,
+            )
+            points_accessor = builder.accessor_count - 1
+
+            # This should only happen on the final iteration
+            # or not at all, if voxels_per_mesh is a divisor of count
+            # But in this case we do need a separate accessor as the
+            # byte length is different.
+            count = n_voxels - start
+            if count < voxels_per_mesh:
+                byte_length = count * triangles_len // triangles_count
+                last_mesh_triangles = [tri for box in tris[:count] for tri in box]
+                max_mesh_triangle_index = max(idx for tri in last_mesh_triangles for idx in tri)
+                builder.add_buffer_view(
+                    buffer=triangles_buffer,
+                    byte_length=byte_length,
+                    byte_offset=0,
+                    target=BufferTarget.ELEMENT_ARRAY_BUFFER,
+                )
+
+                component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
+                builder.add_accessor(
+                    buffer_view=builder.buffer_view_count-1,
+                    component_type=component_type,
+                    count=len(last_mesh_triangles)*3,
+                    type=AccessorType.SCALAR,
+                    mins=[0],
+                    maxes=[max_mesh_triangle_index]
+                )
+                triangles_accessor = builder.accessor_count - 1
+
+            builder.add_mesh(
+                position_accessor=points_accessor,
+                indices_accessor=triangles_accessor,
+                material=materials_map[rgba],
+            )
+            start += voxels_per_mesh
 
     builder.add_buffer(byte_length=len(points_barr), uri=points_bin)
-    builder.add_buffer(byte_length=len(triangles_barr), uri=triangles_bin)
-
     builder.add_file_resource(points_bin, data=points_barr)
-    builder.add_file_resource(triangles_bin, data=triangles_barr)
 
 
 @ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ("usda", "usdc", "usdz"), multiple=True)

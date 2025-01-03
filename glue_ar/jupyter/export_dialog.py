@@ -1,16 +1,16 @@
 import ipyvuetify as v  # noqa
 from ipyvuetify.VuetifyTemplate import VuetifyTemplate
-from ipywidgets import DOMWidget, widget_serialization
+from ipywidgets import widget_serialization
 import traitlets
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
-from echo import HasCallbackProperties
 from glue.core.state_objects import State
 from glue.viewers.common.viewer import Viewer
 from glue_jupyter.link import link
 from glue_jupyter.vuetify_helpers import link_glue_choices
 
 from glue_ar.common.export_dialog_base import ARExportDialogBase
+from glue_ar.jupyter.widgets import widgets_for_callback_property
 
 
 class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
@@ -31,7 +31,7 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
     method_items = traitlets.List().tag(sync=True)
     method_selected = traitlets.Int().tag(sync=True)
 
-    layer_layout = traitlets.Instance(v.Container).tag(sync=True, **widget_serialization)
+    layer_layout = traitlets.Instance(v.Col).tag(sync=True, **widget_serialization)
     has_layer_options = traitlets.Bool().tag(sync=True)
 
     modelviewer = traitlets.Bool(True).tag(sync=True)
@@ -42,8 +42,9 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
                  display: Optional[bool] = False,
                  on_cancel: Optional[Callable] = None,
                  on_export: Optional[Callable] = None):
+
         ARExportDialogBase.__init__(self, viewer=viewer)
-        self.layer_layout = v.Container()
+        self.layer_layout = v.Col()
         VuetifyTemplate.__init__(self)
 
         self._on_layer_change(self.state.layer)
@@ -65,12 +66,21 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
             for widget in self.layer_layout.children:
                 widget.close()
 
-        widgets = []
+        rows = []
+        input_widgets = []
+        self.layer_layout = v.Col()
         for property, _ in state.iter_callback_properties():
+            is_log_pm = (property in ("log_points_per_mesh", "log_voxels_per_mesh"))
+            # TODO: Think of a cleaner way to handle this
+            if is_log_pm and self.state.filetype.lower() not in ("gltf", "glb"):
+                continue
             name = self.display_name(property)
-            widgets.extend(self.widgets_for_property(state, property, name))
-        self.input_widgets = [w for w in widgets if isinstance(w, v.Slider)]
-        self.layer_layout = v.Container(children=widgets, px_0=True, py_0=True)
+            widgets = widgets_for_callback_property(state, property, name, label_for_value=not is_log_pm)
+            input_widgets.extend(w for w in widgets if isinstance(w, v.Slider))
+            rows.append(v.Row(children=widgets, align="center"))
+
+        self.layer_layout.children = rows
+        self.input_widgets = input_widgets
         self.has_layer_options = len(self.layer_layout.children) > 0
 
     def _on_method_change(self, method_name: str):
@@ -80,40 +90,11 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
 
     def _on_filetype_change(self, filetype: str):
         super()._on_filetype_change(filetype)
+        state = self._layer_export_states[self.state.layer][self.state.method]
+        self._update_layer_ui(state)
         gl = filetype.lower() in ("gltf", "glb")
         self.show_compression = gl
         self.show_modelviewer = gl
-
-    def widgets_for_property(self,
-                             instance: HasCallbackProperties,
-                             property: str,
-                             display_name: str) -> List[DOMWidget]:
-
-        value = getattr(instance, property)
-        t = type(value)
-        if t is bool:
-            widget = v.Checkbox(label=display_name)
-            link((instance, property), (widget, 'value'))
-            return [widget]
-        elif t in (int, float):
-            instance_type = type(instance)
-            cb_property = getattr(instance_type, property)
-            min = getattr(cb_property, 'min_value', 1 if t is int else 0.01)
-            max = getattr(cb_property, 'max_value', 100 * min)
-            step = getattr(cb_property, 'resolution', None)
-            if step is None:
-                step = 1 if t is int else 0.01
-            widget = v.Slider(min=min,
-                              max=max,
-                              step=step,
-                              label=display_name,
-                              thumb_label=f"{value:g}")
-            link((instance, property),
-                 (widget, 'v_model'))
-
-            return [widget]
-        else:
-            return []
 
     def vue_cancel_dialog(self, *args):
         self.state_dictionary = {}
