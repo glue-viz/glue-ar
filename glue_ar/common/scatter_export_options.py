@@ -25,4 +25,10 @@ class ARVispyScatterExportOptions(State):
 
 
 class ARIpyvolumeScatterExportOptions(State):
-    pass
+    log_points_per_mesh = RangedCallbackProperty(
+            default=7,
+            min_value=0,
+            max_value=7,
+            docstring="Controls how many points are put into each mesh. "
+                      "Higher means a larger filesize, but better performance."
+    )
