@@ -47,7 +47,8 @@ def info_button(cb_property: CallbackProperty) -> QPushButton:
 
 def boolean_callback_widgets(instance: HasCallbackProperties,
                              property: str,
-                             display_name: str) -> Tuple[Tuple[Tuple[QWidget]], connect_checkable_button]:
+                             display_name: str,
+                             **kwargs) -> Tuple[Tuple[Tuple[QWidget]], connect_checkable_button]:
 
     value = getattr(instance, property)
     instance_type = type(instance)
@@ -67,7 +68,9 @@ def boolean_callback_widgets(instance: HasCallbackProperties,
 
 def number_callback_widgets(instance: HasCallbackProperties,
                             property: str,
-                            display_name: str) -> Tuple[Tuple[Tuple[QWidget]], connect_value]:
+                            display_name: str,
+                            label_for_value=True,
+                            **kwargs) -> Tuple[Tuple[Tuple[QWidget]], connect_value]:
 
     value = getattr(instance, property)
     instance_type = type(instance)
@@ -85,7 +88,6 @@ def number_callback_widgets(instance: HasCallbackProperties,
     slider.setOrientation(Qt.Orientation.Horizontal)
     slider.setSizePolicy(policy)
 
-    value_label = QLabel()
     min = getattr(cb_property, 'min_value', 1 if t is int else 0.01)
     max = getattr(cb_property, 'max_value', 100 * min)
     step = getattr(cb_property, 'resolution', None)
@@ -93,28 +95,34 @@ def number_callback_widgets(instance: HasCallbackProperties,
         step = 1 if t is int else 0.01
     places = -floor(log(step, 10))
 
-    def update_label(value):
-        value_label.setText(f"{value:.{places}f}")
+    if label_for_value:
+        value_label = QLabel()
 
-    def remove_label_callback(widget, update_label=update_label):
-        try:
-            remove_callback(instance, property, update_label)
-        except ValueError:
-            pass
+        def update_label(value):
+            value_label.setText(f"{value:.{places}f}")
 
-    def on_widget_destroyed(widget, cb=remove_label_callback):
-        cb(widget)
+        def remove_label_callback(widget, update_label=update_label):
+            try:
+                remove_callback(instance, property, update_label)
+            except ValueError:
+                pass
 
-    update_label(value)
-    add_callback(instance, property, update_label)
-    slider.destroyed.connect(on_widget_destroyed)
+        def on_widget_destroyed(widget, cb=remove_label_callback):
+            cb(widget)
+
+        update_label(value)
+        add_callback(instance, property, update_label)
+        slider.destroyed.connect(on_widget_destroyed)
+
+        value_widgets = (slider, value_label)
+    else:
+        value_widgets = (slider,)
 
     steps = round((max - min) / step)
     slider.setMinimum(0)
     slider.setMaximum(steps)
     connection = connect_value(instance, property, slider, value_range=(min, max))
 
-    value_widgets = (slider, value_label)
     if cb_property.__doc__:
         button = info_button(cb_property)
         spacer = horizontal_spacer(width=40, height=20)
@@ -125,12 +133,13 @@ def number_callback_widgets(instance: HasCallbackProperties,
 
 def widgets_for_callback_property(instance: HasCallbackProperties,
                                   property: str,
-                                  display_name: str) -> Tuple[Tuple[Tuple[QWidget]], BaseConnection]:
+                                  display_name: str,
+                                  **kwargs) -> Tuple[Tuple[Tuple[QWidget]], BaseConnection]:
 
     t = type(getattr(instance, property))
     if t is bool:
-        return boolean_callback_widgets(instance, property, display_name)
+        return boolean_callback_widgets(instance, property, display_name, **kwargs)
     elif t in (int, float):
-        return number_callback_widgets(instance, property, display_name)
+        return number_callback_widgets(instance, property, display_name, **kwargs)
     else:
         raise ValueError("Unsupported callback property type!")

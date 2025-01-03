@@ -78,7 +78,7 @@ class TestQtExportDialog(BaseExportDialogTest):
 
         state = ARVispyScatterExportOptions()
         self.dialog._update_layer_ui(state)
-        assert self.dialog.ui.layer_layout.count() == 1
+        assert self.dialog.ui.layer_layout.count() == 2
 
     def test_clear_layout(self):
         self.dialog._clear_layer_layout()

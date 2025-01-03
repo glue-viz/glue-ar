@@ -389,6 +389,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                 triangle_offset += pts_count
                 tris.append(pt_triangles)
 
+            triangles_count = len(tris)
             mesh_points = [pt for pts in points for pt in pts]
             mesh_triangles = [tri for sphere in tris for tri in sphere]
             max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
@@ -447,7 +448,6 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                 # there's no need to do this - we can use the buffer view that we just created
                 count = n_points - start
                 if start != 0 and count < points_per_mesh:
-                    triangles_count = len(tris)
                     byte_length = count * triangles_len // triangles_count
                     mesh_triangles = [tri for sphere in tris[:count] for tri in sphere]
                     max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
@@ -532,7 +532,11 @@ def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
 
     points_getter = sphere_points_getter(theta_resolution=theta_resolution,
                                          phi_resolution=phi_resolution)
-    points_per_mesh = 1
+    log_ppm = int(options.log_points_per_mesh)
+    if log_ppm == 7:
+        ppm = None
+    else:
+        ppm = 10 ** log_ppm
 
     add_scatter_layer_gltf(builder=builder,
                            viewer_state=viewer_state,
@@ -541,7 +545,7 @@ def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
                            triangles=triangles,
                            bounds=bounds,
                            clip_to_bounds=clip_to_bounds,
-                           points_per_mesh=points_per_mesh)
+                           points_per_mesh=ppm)
 
 
 @ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("gltf", "glb"))
@@ -556,7 +560,11 @@ def add_ipyvolume_scatter_layer_gltf(builder: GLTFBuilder,
     triangle_getter = IPYVOLUME_TRIANGLE_GETTERS.get(geometry, rectangular_prism_triangulation)
     triangles = triangle_getter()
     points_getter = IPYVOLUME_POINTS_GETTERS.get(geometry, box_points_getter)
-    points_per_mesh = 1
+    log_ppm = int(options.log_points_per_mesh)
+    if log_ppm == 7:
+        ppm = None
+    else:
+        ppm = 10 ** log_ppm
 
     add_scatter_layer_gltf(builder=builder,
                            viewer_state=viewer_state,
@@ -565,4 +573,4 @@ def add_ipyvolume_scatter_layer_gltf(builder: GLTFBuilder,
                            triangles=triangles,
                            bounds=bounds,
                            clip_to_bounds=clip_to_bounds,
-                           points_per_mesh=points_per_mesh)
+                           points_per_mesh=ppm)

@@ -70,8 +70,12 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         input_widgets = []
         self.layer_layout = v.Col()
         for property, _ in state.iter_callback_properties():
+            is_log_pm = (property in ("log_points_per_mesh", "log_voxels_per_mesh"))
+            # TODO: Think of a cleaner way to handle this
+            if is_log_pm and self.state.filetype.lower() not in ("gltf", "glb"):
+                continue
             name = self.display_name(property)
-            widgets = widgets_for_callback_property(state, property, name)
+            widgets = widgets_for_callback_property(state, property, name, label_for_value=not is_log_pm)
             input_widgets.extend(w for w in widgets if isinstance(w, v.Slider))
             rows.append(v.Row(children=widgets, align="center"))
 
@@ -86,6 +90,8 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
 
     def _on_filetype_change(self, filetype: str):
         super()._on_filetype_change(filetype)
+        state = self._layer_export_states[self.state.layer][self.state.method]
+        self._update_layer_ui(state)
         gl = filetype.lower() in ("gltf", "glb")
         self.show_compression = gl
         self.show_modelviewer = gl

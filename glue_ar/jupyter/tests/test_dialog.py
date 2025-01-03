@@ -99,7 +99,7 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         state.layer = "Scatter Data"
         assert self.dialog.method_selected == 0
         assert self.dialog.method_items == [{"text": "Scatter", "value": 0}]
-        assert not self.dialog.has_layer_options
+        assert self.dialog.has_layer_options
 
         state.layer = "Volume Data"
         assert self.dialog.method_items[self.dialog.method_selected]["text"] == state.method
@@ -109,7 +109,7 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         state.layer = "Scatter Data"
         assert self.dialog.method_selected == 0
         assert self.dialog.method_items == [{"text": "Scatter", "value": 0}]
-        assert not self.dialog.has_layer_options
+        assert self.dialog.has_layer_options
 
     def test_on_cancel(self):
         self.dialog.vue_cancel_dialog()

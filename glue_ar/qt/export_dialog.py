@@ -63,9 +63,14 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
     def _update_layer_ui(self, state: State):
         self._clear_layer_layout()
         for property in state.callback_properties():
+            is_log_pm = (property in ("log_points_per_mesh", "log_voxels_per_mesh"))
+            # TODO: Think of a cleaner way to handle this
+            if is_log_pm and self.state.filetype.lower() not in ("gltf", "glb"):
+                continue
             row = QVBoxLayout()
             name = self.display_name(property)
-            widget_tuples, connection = widgets_for_callback_property(state, property, name)
+            widget_tuples, connection = widgets_for_callback_property(state, property, name,
+                                                                      label_for_value=not is_log_pm)
             self._layer_connections.append(connection)
             for widgets in widget_tuples:
                 subrow = QHBoxLayout()
@@ -79,6 +84,8 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
 
     def _on_filetype_change(self, filetype: str):
         super()._on_filetype_change(filetype)
+        state = self._layer_export_states[self.state.layer][self.state.method]
+        self._update_layer_ui(state)
         gl = filetype.lower() in ("gltf", "glb")
         self.ui.combosel_compression.setVisible(gl)
         self.ui.label_compression_message.setVisible(gl)
