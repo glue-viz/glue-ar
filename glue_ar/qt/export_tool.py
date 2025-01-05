@@ -48,10 +48,20 @@ class QtARExportTool(Tool):
         if result == QDialog.Rejected:
             return
 
+        filetype = dialog.state.filetype
+        extension = dialog.state.filetype.lower()
+        filter = f"{filetype} file (*.{extension})"
+
         export_path, _ = compat.getsavefilename(parent=self.viewer,
-                                                basedir=f"{self._default_filename}.{dialog.state.filetype.lower()}")
+                                                basedir=f"{self._default_filename}.{extension}",
+                                                filters=filter,
+                                                selectedfilter=filter)
+
         if not export_path:
             return
+
+        if "." not in export_path:
+            export_path += f".{extension}"
 
         layer_states = [layer.state for layer in self.viewer.layers if
                         layer.enabled and layer.state.visible]
