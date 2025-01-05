@@ -77,6 +77,11 @@ class JupyterARExportTool(Tool):
             display(dialog)
 
     def maybe_save_figure(self, filepath):
+
+        if "." not in filepath:
+            filetype = self.export_dialog.state.filetype.lower()
+            filepath += f".{filetype}"
+
         if exists(filepath):
             yes_btn = v.Btn(color='success', children=["Yes"])
             no_btn = v.Btn(color='error', children=["No"])
