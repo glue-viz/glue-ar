@@ -228,6 +228,9 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                          preserve_aspect=viewer_state.native_aspect,
                          mask=mask,
                          scaled=True)
+    if len(data) == 0:
+        return
+
     data = data[:, [1, 2, 0]]
 
     buffer = builder.buffer_count

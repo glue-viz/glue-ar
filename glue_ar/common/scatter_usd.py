@@ -102,6 +102,10 @@ def add_scatter_layer_usd(
                          preserve_aspect=viewer_state.native_aspect,
                          mask=mask,
                          scaled=True)
+
+    if len(data) == 0:
+        return
+
     data = data[:, [1, 2, 0]]
     color = layer_color(layer_state)
     color_components = tuple(hex_to_components(color))
