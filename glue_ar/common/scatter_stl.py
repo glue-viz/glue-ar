@@ -41,7 +41,7 @@ def add_scatter_layer_stl(builder: STLBuilder,
                          preserve_aspect=viewer_state.native_aspect,
                          mask=mask,
                          scaled=True)
-    
+
     if len(data) == 0:
         return
 

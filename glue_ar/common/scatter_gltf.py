@@ -3,7 +3,7 @@ from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
 from glue.utils.array import ensure_numerical
 from glue_vispy_viewers.common.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
-from numpy import isfinite, ndarray
+from numpy import ndarray
 from numpy.linalg import norm
 
 from typing import List, Literal, Optional, Tuple
@@ -15,7 +15,7 @@ from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, 
                                   normalize, rectangular_prism_triangulation, sphere_triangles
 from glue_ar.gltf_utils import SHORT_MAX, add_points_to_bytearray, add_triangles_to_bytearray, \
                                index_mins, index_maxes
-from glue_ar.utils import Viewer3DState, get_stretches, iterable_has_nan, hex_to_components, \
+from glue_ar.utils import Viewer3DState, iterable_has_nan, hex_to_components, \
                           layer_color, offset_triangles, unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
