@@ -1,6 +1,6 @@
 from functools import partial
 from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Literal, Optional, Tuple, Union
 
 from glue.utils import ensure_numerical
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
@@ -44,11 +44,13 @@ def scatter_layer_mask(
     fixed_color = getattr(layer_state, cmap_mode_attr, "Fixed") == "Fixed"
     size_attr = "size_attribute" if vispy_layer_state else "size_att"
     if not fixed_size:
-        size_mask = isfinite(layer_state.layer[getattr(layer_state, size_attr)])
+        size_data = ensure_numerical(layer_state.layer[getattr(layer_state, size_attr)])
+        size_mask = isfinite(size_data)
         mask = size_mask if mask is None else (mask & size_mask)
     cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
     if not fixed_color:
-        color_mask = isfinite(layer_state.layer[getattr(layer_state, cmap_attr)])
+        color_data = ensure_numerical(layer_state.layer[getattr(layer_state, cmap_attr)])
+        color_mask = isfinite(color_data)
         mask = color_mask if mask is None else (mask & color_mask)
 
     return mask
@@ -101,7 +103,7 @@ def clip_vector_data(viewer_state: Viewer3DState,
         atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
     else:
         atts = [layer_state.vx_att, layer_state.vy_att, layer_state.vz_att]
-    vector_data = [layer_state.layer[att].ravel()[mask] for att in atts]
+    vector_data = [ensure_numerical(layer_state.layer[att].ravel()[mask]) for att in atts]
 
     stretches = get_stretches(viewer_state)
     if viewer_state.native_aspect:
@@ -113,6 +115,30 @@ def clip_vector_data(viewer_state: Viewer3DState,
     vector_data = array(list(zip(*vector_data)))
 
     return vector_data
+
+
+def clip_error_data(viewer_state: Viewer3DState,
+                    layer_state: ScatterLayerState3D,
+                    bounds: Bounds,
+                    axis: Literal["x", "y", "z"],
+                    mask: Optional[ndarray] = None) -> ndarray:
+    att_ending = "attribute" if isinstance(layer_state, ScatterLayerState) else "att"
+    err_att = getattr(layer_state, f"{axis}err_{att_ending}")
+    error_data = ensure_numerical(layer_state.layer[err_att].ravel()[mask]).astype(float)
+    error_data[~isfinite(error_data)] = 0.0
+
+    stretches = get_stretches(viewer_state)
+    if viewer_state.native_aspect:
+        max_side = max(abs(b[1] - b[0]) * s for b, s in zip(bounds, stretches))
+        factor = 2 / max_side
+    else:
+        index = ['x', 'y', 'z'].index(axis)
+        axis_factor = abs(bounds[index][1] - bounds[index][0]) * stretches[index]
+        factor = 2 / axis_factor
+
+    error_data *= factor
+
+    return error_data
 
 
 def sphere_points_getter(theta_resolution: int,

@@ -1,5 +1,6 @@
 from collections import defaultdict
 from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
+from glue.utils.array import ensure_numerical
 from glue_vispy_viewers.common.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 from numpy import isfinite, ndarray
@@ -19,7 +20,7 @@ from glue_ar.utils import Viewer3DState, get_stretches, iterable_has_nan, hex_to
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
                                    PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
-                                   IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, clip_vector_data, \
+                                   IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, clip_error_data, clip_vector_data, \
                                    radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, \
                                    sphere_points_getter, NoneType
 
@@ -87,7 +88,7 @@ def add_vectors_gltf(builder: GLTFBuilder,
     if not fixed_color:
         cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
         cmap_att = getattr(layer_state, cmap_attr)
-        cmap_vals = layer_state.layer[cmap_att][mask]
+        cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
 
     for i, (pt, v) in enumerate(zip(data, vector_data)):
@@ -100,7 +101,7 @@ def add_vectors_gltf(builder: GLTFBuilder,
             cval = cmap_vals[i]
             normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
             cindex = int(normalized * 255)
-            material_index = materials[cindex] if materials else layer_color(layer_state)
+            material_index = materials[cindex] if materials else builder.material_count - 1
 
         prev_len = len(barr)
         adjusted_v = v * layer_state.vector_scaling
@@ -164,61 +165,67 @@ def add_error_bars_gltf(builder: GLTFBuilder,
                         axis: Literal["x", "y", "z"],
                         data: ndarray,
                         bounds: Bounds,
+                        materials: Optional[dict[int, int]] = None,
                         mask: Optional[ndarray] = None):
-    att_ending = "attribute" if isinstance(layer_state, ScatterLayerState) else "att"
-    att = getattr(layer_state, f"{axis}err_{att_ending}")
-    err_values = layer_state.layer[att].ravel()[mask]
-    err_values[~isfinite(err_values)] = 0
-    index = ['x', 'y', 'z'].index(axis)
+    err_values = clip_error_data(viewer_state, layer_state, bounds, axis, mask)
+
+    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
+    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
+    fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
+    if not fixed_color:
+        cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
+        cmap_att = getattr(layer_state, cmap_attr)
+        cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
+        crange = layer_state.cmap_vmax - layer_state.cmap_vmin
 
     # NB: This ordering is intentional to account for glTF coordinate system
-    gltf_index = ['z', 'y', 'x'].index(axis)
-
-    stretches = get_stretches(viewer_state)
-    if viewer_state.native_aspect:
-        max_side = max(abs(b[1] - b[0]) * s for b, s in zip(bounds, stretches))
-        factor = 1 / max_side
-    else:
-        axis_factor = abs(bounds[index][1] - bounds[index][0]) * stretches[index]
-        factor = 1 / axis_factor
-    err_values *= factor
+    gltf_index = ['y', 'z', 'x'].index(axis)
 
     barr = bytearray()
-
     errors_bin = f"errors_{unique_id()}.bin"
-    points = []
-    for pt, err in zip(data, err_values):
+    segments_by_material = defaultdict(list)
+    material_index = builder.material_count - 1
+    for i, (pt, err) in enumerate(zip(data, err_values)):
+
+        if not fixed_color:
+            cval = cmap_vals[i]
+            normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+            cindex = int(normalized * 255)
+            material_index = materials[cindex] if materials else builder.material_count - 1
+
         start = [c - err if idx == gltf_index else c for idx, c in enumerate(pt)]
         end = [c + err if idx == gltf_index else c for idx, c in enumerate(pt)]
         line_points = (start, end)
-        points.extend(line_points)
+        segments_by_material[material_index].extend(line_points)
 
-        add_points_to_bytearray(barr, line_points)
+    for material, segments in segments_by_material.items():
+        bv_start = len(barr)
+        add_points_to_bytearray(barr, segments)
+        pt_mins = index_mins(segments)
+        pt_maxes = index_maxes(segments)
+        bv_len = len(barr) - bv_start
 
-    pt_mins = index_mins(points)
-    pt_maxes = index_maxes(points)
+        builder.add_buffer_view(
+            buffer=builder.buffer_count,
+            byte_length=bv_len,
+            byte_offset=bv_start,
+            target=BufferTarget.ARRAY_BUFFER,
+        )
+        builder.add_accessor(
+            buffer_view=builder.buffer_view_count-1,
+            component_type=ComponentType.FLOAT,
+            count=len(segments),
+            type=AccessorType.VEC3,
+            mins=pt_mins,
+            maxes=pt_maxes,
+        )
+        builder.add_mesh(
+            position_accessor=builder.accessor_count-1,
+            material=material,
+            mode=PrimitiveMode.LINES,
+        )
 
     builder.add_buffer(byte_length=len(barr), uri=errors_bin)
-    builder.add_buffer_view(
-        buffer=builder.buffer_count-1,
-        byte_length=len(barr),
-        byte_offset=0,
-        target=BufferTarget.ARRAY_BUFFER,
-    )
-    builder.add_accessor(
-        buffer_view=builder.buffer_view_count-1,
-        component_type=ComponentType.FLOAT,
-        count=len(points),
-        type=AccessorType.VEC3,
-        mins=pt_mins,
-        maxes=pt_maxes,
-    )
-    builder.add_mesh(
-        position_accessor=builder.accessor_count-1,
-        material=builder.material_count-1,
-        mode=PrimitiveMode.LINES,
-    )
-
     builder.add_file_resource(errors_bin, data=barr)
 
 
@@ -255,7 +262,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     cmap = layer_state.cmap
     cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
     cmap_att = getattr(layer_state, cmap_attr)
-    cmap_vals = layer_state.layer[cmap_att][mask]
+    cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
     crange = layer_state.cmap_vmax - layer_state.cmap_vmin
     uri = f"layer_{unique_id()}.bin"
 
@@ -499,6 +506,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     builder.add_buffer(byte_length=len(barr), uri=uri)
     builder.add_file_resource(uri, data=barr)
 
+    materials = color_materials if not fixed_color else None
     for axis in ("x", "y", "z"):
         if getattr(layer_state, f"{axis}err_visible", False):
             add_error_bars_gltf(
@@ -508,6 +516,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                 axis=axis,
                 data=data,
                 bounds=bounds,
+                materials=materials,
                 mask=mask,
             )
 
@@ -515,7 +524,6 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         shaft_radius = radius / 1.5
         tip_radius = shaft_radius * 4
         tip_height = 2 * tip_radius
-        materials = color_materials if not fixed_color else None
         add_vectors_gltf(
             builder=builder,
             viewer_state=viewer_state,
