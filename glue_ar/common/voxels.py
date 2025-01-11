@@ -46,6 +46,9 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
         opacity_resolution = clamp(option.opacity_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
+        if len(data) == 0:
+            continue
+
         isomin = isomin_for_layer(viewer_state, layer_state)
         isomax = isomax_for_layer(viewer_state, layer_state)
 
@@ -238,6 +241,9 @@ def add_voxel_layers_usd(builder: USDBuilder,
         opacity_resolution = clamp(option.opacity_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
+        if len(data) == 0:
+            continue
+
         isomin = isomin_for_layer(viewer_state, layer_state)
         isomax = isomax_for_layer(viewer_state, layer_state)
 
@@ -321,6 +327,9 @@ def add_voxel_layers_stl(builder: STLBuilder,
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
         opacity_resolution = clamp(option.opacity_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
+
+        if len(data) == 0:
+            continue
 
         isomin = isomin_for_layer(viewer_state, layer_state)
         isomax = isomax_for_layer(viewer_state, layer_state)

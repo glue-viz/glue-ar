@@ -25,6 +25,9 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
                               bounds: BoundsWithResolution):
     data = frb_for_layer(viewer_state, layer_state, bounds)
 
+    if len(data) == 0:
+        return
+
     isomin = isomin_for_layer(viewer_state, layer_state)
     isomax = isomax_for_layer(viewer_state, layer_state)
 
@@ -113,6 +116,9 @@ def add_isosurface_layer_usd(
 
     data = frb_for_layer(viewer_state, layer_state, bounds)
 
+    if len(data) == 0:
+        return
+
     isomin = isomin_for_layer(viewer_state, layer_state)
     isomax = isomax_for_layer(viewer_state, layer_state)
 
@@ -147,6 +153,9 @@ def add_isosurface_layer_stl(
 ):
 
     data = frb_for_layer(viewer_state, layer_state, bounds)
+
+    if len(data) == 0:
+        return
 
     isomin = isomin_for_layer(viewer_state, layer_state)
     isomax = isomax_for_layer(viewer_state, layer_state)
