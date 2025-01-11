@@ -39,7 +39,7 @@ def add_vectors_gltf(builder: GLTFBuilder,
                      tip_radius: float,
                      tip_resolution: int = 10,
                      shaft_resolution: int = 10,
-                     materials: Optional[List[int]] = None,
+                     materials: Optional[dict[int, int]] = None,
                      mask: Optional[ndarray] = None):
 
     vector_data = clip_vector_data(viewer_state, layer_state, bounds, mask)
@@ -80,10 +80,28 @@ def add_vectors_gltf(builder: GLTFBuilder,
 
     point_mins = None
     point_maxes = None
+    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
+    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
+    fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
+
+    if not fixed_color:
+        cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
+        cmap_att = getattr(layer_state, cmap_attr)
+        cmap_vals = layer_state.layer[cmap_att][mask]
+        crange = layer_state.cmap_vmax - layer_state.cmap_vmin
+
     for i, (pt, v) in enumerate(zip(data, vector_data)):
         if iterable_has_nan(v):
             continue
-        material_index = materials[i] if materials else builder.material_count - 1
+
+        if fixed_color:
+            material_index = builder.material_count - 1
+        else:
+            cval = cmap_vals[i]
+            normalized = max(min((cval - layer_state.cmap_vmin) / crange, 1), 0)
+            cindex = int(normalized * 255)
+            material_index = materials[cindex] if materials else layer_color(layer_state)
+
         prev_len = len(barr)
         adjusted_v = v * layer_state.vector_scaling
         length = norm(adjusted_v)
@@ -252,7 +270,6 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     if points_per_mesh is None:
         points_per_mesh = n_points
 
-    first_material_index = builder.material_count
     if fixed_color:
         points = []
         tris = []
@@ -495,14 +512,10 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             )
 
     if layer_state.vector_visible:
-        tip_height = radius / 2
-        shaft_radius = radius / 8
-        tip_radius = tip_height / 2
-        if fixed_color:
-            materials = None
-        else:
-            last_material_index = builder.material_count - 1
-            materials = list(range(first_material_index, last_material_index+1))
+        shaft_radius = radius / 1.5
+        tip_radius = shaft_radius * 4
+        tip_height = 2 * tip_radius
+        materials = color_materials if not fixed_color else None
         add_vectors_gltf(
             builder=builder,
             viewer_state=viewer_state,
@@ -512,8 +525,8 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             tip_height=tip_height,
             shaft_radius=shaft_radius,
             tip_radius=tip_radius,
-            shaft_resolution=10,
-            tip_resolution=10,
+            shaft_resolution=6,
+            tip_resolution=6,
             materials=materials,
             mask=mask,
         )
