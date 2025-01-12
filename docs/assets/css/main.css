@@ -3284,6 +3284,21 @@
     }
 }
 
+@media screen and (max-width: 500px) {
+  .qr-code {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+@media screen and (max-width: 350px) {
+  .qr-code {
+    width: 75px;
+    height: 75px;
+    min-width: 75px;
+  }
+}
+
 
 /*
 .img-link img {
