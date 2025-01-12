@@ -3185,8 +3185,8 @@
   transition: all 0s;
   box-sizing: border-box;
   min-width: 100px;
-  width: 150px;
-  height: 150px;
+  width: 125px;
+  height: 125px;
   display: inline;
 }
 
@@ -3227,8 +3227,6 @@
 }
 
 .example-section {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
   position: relative;
 }
 
@@ -3254,6 +3252,17 @@
   inset-inline-start: calc(var(--line-offset) * -1);
 }
 
+.qr-highlight {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.qr-item {
+  display: inline;
+  width: fit-content;
+}
+
 @media screen and (max-width: 840px) {
     #nav {
         display: none;
@@ -3265,11 +3274,6 @@
 
     .qr-highlight {
       margin: auto;
-    }
-
-    .qr-code {
-        width: 75%;
-        height: 75%;
     }
 
     #examples-container {
