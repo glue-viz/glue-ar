@@ -3219,8 +3219,7 @@
 }
 
 .example-img {
-  min-height: 150px;
-  max-height: 200px;
+  height: 200px;
   min-width: 200px;
   max-width: calc(100% - 170px);
   object-fit: contain;
@@ -3250,6 +3249,10 @@
   block-size: calc(100% - calc(var(--edge-cutoff) * 2));
   inset-block-start: var(--edge-cutoff);
   inset-inline-start: calc(var(--line-offset) * -1);
+}
+
+.example-section p {
+  height: 60px;
 }
 
 .qr-highlight {
