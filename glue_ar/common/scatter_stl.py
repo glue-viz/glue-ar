@@ -41,6 +41,10 @@ def add_scatter_layer_stl(builder: STLBuilder,
                          preserve_aspect=viewer_state.native_aspect,
                          mask=mask,
                          scaled=True)
+
+    if len(data) == 0:
+        return
+
     data = data[:, [1, 2, 0]]
 
     sizes = sizes_for_scatter_layer(layer_state, bounds, mask)
