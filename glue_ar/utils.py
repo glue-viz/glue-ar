@@ -332,7 +332,7 @@ def is_volume_viewer(viewer: Viewer) -> bool:
 
 
 def get_resolution(viewer_state: Viewer3DState) -> int:
-    if isinstance(viewer_state, Vispy3DVolumeViewerState):
+    if hasattr(viewer_state, "resolution"):
         return viewer_state.resolution
 
     try:
