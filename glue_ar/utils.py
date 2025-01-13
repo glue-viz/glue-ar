@@ -11,7 +11,7 @@ from glue.viewers.common.viewer import LayerArtist, Viewer
 from glue_vispy_viewers.common.layer_state import LayerState, VispyLayerState
 from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
-from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState, Vispy3DVolumeViewerState
+from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
 from numpy import array, inf, isnan, ndarray
 
 try:
@@ -332,7 +332,7 @@ def is_volume_viewer(viewer: Viewer) -> bool:
 
 
 def get_resolution(viewer_state: Viewer3DState) -> int:
-    if isinstance(viewer_state, Vispy3DVolumeViewerState):
+    if hasattr(viewer_state, "resolution"):
         return viewer_state.resolution
 
     try:
