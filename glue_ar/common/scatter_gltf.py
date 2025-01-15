@@ -38,8 +38,8 @@ def add_vectors_gltf(builder: GLTFBuilder,
                      tip_height: float,
                      shaft_radius: float,
                      tip_radius: float,
-                     tip_resolution: int = 10,
-                     shaft_resolution: int = 10,
+                     tip_resolution: int = 6,
+                     shaft_resolution: int = 6,
                      materials: Optional[dict[int, int]] = None,
                      mask: Optional[ndarray] = None):
 
