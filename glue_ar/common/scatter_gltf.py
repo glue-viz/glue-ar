@@ -54,9 +54,10 @@ def add_vectors_gltf(builder: GLTFBuilder,
     max_index = max(idx for tri in triangles for idx in tri)
     add_triangles_to_bytearray(barr, triangles)
 
+    use_short = max_index <= SHORT_MAX
     if layer_state.vector_arrowhead:
         tip_triangles = cone_triangles(theta_resolution=tip_resolution, start_index=max_index + 1)
-        add_triangles_to_bytearray(barr, tip_triangles)
+        add_triangles_to_bytearray(barr, tip_triangles, short=use_short)
         max_index = max(idx for tri in tip_triangles for idx in tri)
         triangle_count += len(tip_triangles)
 
@@ -69,9 +70,10 @@ def add_vectors_gltf(builder: GLTFBuilder,
         byte_offset=0,
         target=BufferTarget.ELEMENT_ARRAY_BUFFER,
     )
+    component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
     builder.add_accessor(
         buffer_view=builder.buffer_view_count-1,
-        component_type=ComponentType.UNSIGNED_INT,
+        component_type=component_type,
         count=triangle_count*3,
         type=AccessorType.SCALAR,
         mins=[0],
