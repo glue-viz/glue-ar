@@ -35,8 +35,8 @@ def add_vectors_usd(builder: USDBuilder,
                     tip_height: float,
                     shaft_radius: float,
                     tip_radius: float,
-                    tip_resolution: int = 10,
-                    shaft_resolution: int = 10,
+                    tip_resolution: int = 6,
+                    shaft_resolution: int = 6,
                     colors: Optional[List[Tuple[int, int, int]]] = None,
                     mask: Optional[ndarray] = None):
 
