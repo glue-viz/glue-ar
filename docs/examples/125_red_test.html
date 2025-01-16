@@ -87,7 +87,7 @@ model-viewer {
     <script>
     const modelViewer = document.querySelector("model-viewer");
     modelViewer.addEventListener("load", (event) => {
-      const material = modelViewerParameters.model.materials[0];
+      const material = modelViewer.model.materials[0];
       material.pbrMetallicRoughness.setBaseColorFactor([1, 0, 0, 0.1]);
     });
     </script>
