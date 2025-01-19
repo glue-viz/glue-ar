@@ -68,10 +68,25 @@ model-viewer {
   top: 50%;
 }
 
+h3 {
+  color: white;
+}
+
 #layer-controls {
   position: relative;
   top: 20px;
   left: 20px;
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 2px solid white;
+  border-radius: 5px;
+  background-color: transparent;
+}
+
+#layer-controls button {
+  width: 100%;
 }
 
 </style>
@@ -90,18 +105,24 @@ model-viewer {
         View in AR
       </button>
       <div class="controls" id="layer-controls">
+        <h3>Toggle Layers</h3>
         <button data-layer="0">Density</button>
         <button data-layer="1">Momentum</button>
       </div>
     </model-viewer>
     <script>
       function componentToHex(c) {
-        var hex = Math.round(c * 256).toString(16);
-        return hex.length == 1 ? "0" + hex : hex;
+        return Math.round(c * 256).toString(16).padStart(2, "0");
       }
       
       function rgbToHex(r, g, b) {
         return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+      }
+
+      function updateButtonStyle(button, on, color) {
+        button.style.color = on ? color : "black";
+        button.style.border = on ? `1px solid ${color}` : "none";
+        button.style.borderRadius = "2px";
       }
 
       const modelViewer = document.querySelector("model-viewer");
@@ -111,15 +132,16 @@ model-viewer {
         const layersOn = colors.map(_ => true);
 
         const layerControls = document.querySelector("#layer-controls");
+        const buttons = [...layerControls.querySelectorAll("button")];
         const hexColors = colors.map(color => rgbToHex(...color.slice(0, 3)));
-        [...layerControls.children].forEach((button, index) => button.style.color = hexColors[index]);
+        buttons.forEach((button, index) => updateButtonStyle(button, true, hexColors[index]));
         layerControls.addEventListener("click", (event) => {
           const index = Number(event.target.dataset.layer);
           const material = modelViewer.model.materials[index];
           const rgb = material.pbrMetallicRoughness.baseColorFactor.slice(0, 3);
           const wasOn = layersOn[index];
           material.pbrMetallicRoughness.setBaseColorFactor([...rgb, wasOn ? 0.0 : originalOpacities[index]]);
-          layerControls.children[index].style.color = wasOn ? "black" : hexColors[index];
+          updateButtonStyle(buttons[index], !wasOn, hexColors[index]);
           layersOn[index] = !wasOn;
         });
       });
