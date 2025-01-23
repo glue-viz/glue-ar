@@ -9,8 +9,9 @@ from numpy.linalg import norm
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, PointsGetter, \
-                                   ScatterLayerState3D, box_points_getter, clip_vector_data, radius_for_scatter_layer, \
-                                   scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter
+                                   Scatter3DLayerState, ScatterLayerState3D, box_points_getter, clip_vector_data, \
+                                   radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, \
+                                   sphere_points_getter
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
@@ -21,10 +22,8 @@ from glue_ar.utils import Viewer3DState, export_label_for_layer, iterable_has_na
 
 try:
     from glue_jupyter.common.state3d import ViewerState3D
-    from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
 except ImportError:
     ViewerState3D = NoneType
-    Scatter3DLayerState = NoneType
 
 
 def add_vectors_usd(builder: USDBuilder,
