@@ -10,7 +10,7 @@ from glue_ar.common.shapes import sphere_points_count, sphere_triangles, sphere_
 from glue_ar.common.tests.gltf_helpers import count_indices, count_vertices, unpack_vertices
 from glue_ar.common.tests.helpers import APP_VIEWER_OPTIONS
 from glue_ar.common.tests.test_scatter import BaseScatterTest
-from glue_ar.gltf_utils import SHORT_MAX
+from glue_ar.gltf_utils import index_export_option
 from glue_ar.utils import export_label_for_layer, hex_to_components, layers_to_export, mask_for_bounds, \
                           xyz_bounds, xyz_for_layer
 
@@ -69,8 +69,8 @@ class TestScatterGLTF(BaseScatterTest):
                                                  phi_resolution=phi_resolution)
         points_count = sphere_points_count(theta_resolution=theta_resolution,
                                            phi_resolution=phi_resolution)
-        use_short = points_count <= SHORT_MAX
-        assert count_indices(gltf, model.buffers[0], model.bufferViews[0], use_short=use_short) == triangles_count
+        index_format = index_export_option(points_count)
+        assert count_indices(gltf, model.buffers[0], model.bufferViews[0], export_option=index_format) == triangles_count
         assert count_vertices(gltf, model.buffers[0], model.bufferViews[1]) == points_count
 
         assert model.bufferViews[0].target == BufferTarget.ELEMENT_ARRAY_BUFFER.value
@@ -78,7 +78,7 @@ class TestScatterGLTF(BaseScatterTest):
 
         indices_accessor = model.accessors[0]
         assert indices_accessor.bufferView == 0
-        expected_indices_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
+        expected_indices_type = index_format.component_type
         assert indices_accessor.componentType == expected_indices_type.value
         assert indices_accessor.count == triangles_count * 3
         assert indices_accessor.type == AccessorType.SCALAR.value

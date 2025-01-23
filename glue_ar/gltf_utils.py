@@ -1,7 +1,7 @@
 from enum import Enum
 import operator
 import struct
-from typing import Callable, Iterable, List, Optional, Type, TypeVar, Union
+from typing import Callable, Iterable, List, Literal, Optional, Type, TypeVar, Union
 
 from gltflib import ComponentType, Material, PBRMetallicRoughness
 
@@ -19,7 +19,7 @@ class GLTFIndexExportOption(Enum):
     Short = ("H", ComponentType.UNSIGNED_SHORT, 2**16-1)
     Int = ("I", ComponentType.UNSIGNED_INT, 2**32-1)
 
-    def __init__(self, format, component_type, max):
+    def __init__(self, format: Literal["B", "H", "I"], component_type: ComponentType, max: int):
         self.format = format
         self.component_type = component_type
         self.max = max
@@ -61,11 +61,10 @@ def add_points_to_bytearray(arr: bytearray, points: Iterable[Iterable[Union[int,
 
 def add_triangles_to_bytearray(arr: bytearray,
                                triangles: Iterable[Iterable[int]],
-                               short: bool = False):
-    format = "H" if short else "I"
+                               export_option: GLTFIndexExportOption = GLTFIndexExportOption.Int):
     for triangle in triangles:
         for index in triangle:
-            arr.extend(struct.pack(format, index))
+            arr.extend(struct.pack(export_option.format, index))
 
 
 T = TypeVar("T", bound=Union[int, float])

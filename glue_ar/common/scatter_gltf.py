@@ -13,7 +13,7 @@ from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
-from glue_ar.gltf_utils import SHORT_MAX, add_points_to_bytearray, add_triangles_to_bytearray, \
+from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_export_option, \
                                index_mins, index_maxes
 from glue_ar.utils import Viewer3DState, iterable_has_nan, hex_to_components, \
                           layer_color, offset_triangles, unique_id, xyz_bounds, xyz_for_layer, Bounds
@@ -54,10 +54,10 @@ def add_vectors_gltf(builder: GLTFBuilder,
     max_index = max(idx for tri in triangles for idx in tri)
     add_triangles_to_bytearray(barr, triangles)
 
-    use_short = max_index <= SHORT_MAX
+    index_format = index_export_option(max_index)
     if layer_state.vector_arrowhead:
         tip_triangles = cone_triangles(theta_resolution=tip_resolution, start_index=max_index + 1)
-        add_triangles_to_bytearray(barr, tip_triangles, short=use_short)
+        add_triangles_to_bytearray(barr, tip_triangles, export_option=index_format)
         max_index = max(idx for tri in tip_triangles for idx in tri)
         triangle_count += len(tip_triangles)
 
@@ -70,10 +70,9 @@ def add_vectors_gltf(builder: GLTFBuilder,
         byte_offset=0,
         target=BufferTarget.ELEMENT_ARRAY_BUFFER,
     )
-    component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
     builder.add_accessor(
         buffer_view=builder.buffer_view_count-1,
-        component_type=component_type,
+        component_type=index_format.component_type,
         count=triangle_count*3,
         type=AccessorType.SCALAR,
         mins=[0],
@@ -304,9 +303,9 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
         mesh_triangles = [tri for sphere in tris for tri in sphere]
         max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
-        use_short = max_triangle_index <= SHORT_MAX
+        index_format = index_export_option(max_triangle_index)
         triangles_start = len(barr)
-        add_triangles_to_bytearray(barr, mesh_triangles, short=use_short)
+        add_triangles_to_bytearray(barr, mesh_triangles, export_option=index_format)
         triangles_len = len(barr)
         builder.add_buffer_view(
             buffer=buffer,
@@ -314,10 +313,9 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             byte_offset=triangles_start,
             target=BufferTarget.ELEMENT_ARRAY_BUFFER,
         )
-        component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
         builder.add_accessor(
             buffer_view=builder.buffer_view_count-1,
-            component_type=component_type,
+            component_type=index_format.component_type,
             count=len(mesh_triangles)*3,
             type=AccessorType.SCALAR,
             mins=[0],
@@ -367,10 +365,9 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                     byte_offset=triangles_start,
                     target=BufferTarget.ELEMENT_ARRAY_BUFFER,
                 )
-                component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
                 builder.add_accessor(
                     buffer_view=builder.buffer_view_count-1,
-                    component_type=component_type,
+                    component_type=index_format.component_type,
                     count=len(triangles)*3*count,
                     type=AccessorType.SCALAR,
                     mins=[0],
@@ -422,9 +419,9 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             mesh_points = [pt for pts in points for pt in pts]
             mesh_triangles = [tri for sphere in tris for tri in sphere]
             max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
-            use_short = max_triangle_index <= SHORT_MAX
+            index_format = index_export_option(max_triangle_index)
             triangles_start = len(barr)
-            add_triangles_to_bytearray(barr, mesh_triangles, short=use_short)
+            add_triangles_to_bytearray(barr, mesh_triangles, export_option=index_format)
             triangles_len = len(barr)
 
             builder.add_buffer_view(
@@ -433,10 +430,9 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                 byte_offset=triangles_start,
                 target=BufferTarget.ELEMENT_ARRAY_BUFFER,
             )
-            component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
             builder.add_accessor(
                 buffer_view=builder.buffer_view_count-1,
-                component_type=component_type,
+                component_type=index_format.component_type,
                 count=len(mesh_triangles)*3,
                 type=AccessorType.SCALAR,
                 mins=[0],
@@ -486,10 +482,9 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                         byte_offset=triangles_start,
                         target=BufferTarget.ELEMENT_ARRAY_BUFFER,
                     )
-                    component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
                     builder.add_accessor(
                         buffer_view=builder.buffer_view_count-1,
-                        component_type=component_type,
+                        component_type=index_format.component_type,
                         count=len(triangles)*3*count,
                         type=AccessorType.SCALAR,
                         mins=[0],

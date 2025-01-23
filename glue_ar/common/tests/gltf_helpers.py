@@ -4,12 +4,13 @@ from gltflib.gltf_resource import FileResource
 
 from numbers import Number
 from struct import iter_unpack
-from typing import List, Literal, Optional, Tuple, Union, cast
+from typing import List, Literal, Optional, Tuple, cast
+from glue_ar.gltf_utils import GLTFIndexExportOption
 
 from glue_ar.utils import iterator_count
 
 
-BufferFormat = Union[Literal["f"], Literal["I"], Literal["H"]]
+BufferFormat = Literal["f", "B", "H", "I"]
 
 
 def get_data(gltf: GLTF, buffer: Buffer, buffer_view: Optional[BufferView] = None) -> bytes:
@@ -41,9 +42,8 @@ def count_vertices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView):
     return count_points(gltf, buffer, buffer_view, 'f')
 
 
-def count_indices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView, use_short=False):
-    format = 'H' if use_short else 'I'
-    return count_points(gltf, buffer, buffer_view, format)
+def count_indices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView, export_option: GLTFIndexExportOption):
+    return count_points(gltf, buffer, buffer_view, export_option.format)
 
 
 def unpack_points(gltf: GLTF,
@@ -71,5 +71,5 @@ def unpack_vertices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView) -> List
     return unpack_points(gltf, buffer, buffer_view, 'f')
 
 
-def unpack_indices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView) -> List[Tuple[Number, Number, Number]]:
-    return unpack_points(gltf, buffer, buffer_view, 'I')
+def unpack_indices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView, export_option: GLTFIndexExportOption = GLTFIndexExportOption.Int) -> List[Tuple[Number, Number, Number]]:
+    return unpack_points(gltf, buffer, buffer_view, export_option.format)

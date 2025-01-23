@@ -11,7 +11,7 @@ from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.stl_builder import STLBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARIsosurfaceExportOptions
-from glue_ar.gltf_utils import SHORT_MAX, add_points_to_bytearray, add_triangles_to_bytearray, \
+from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_export_option, \
                                index_mins, index_maxes
 from glue_ar.utils import BoundsWithResolution, clip_sides, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color
@@ -61,8 +61,8 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
         max_tri_index = int(max(idx for tri in triangles for idx in tri))
         tri_maxes = [max_tri_index]
 
-        use_short = max_tri_index <= SHORT_MAX
-        add_triangles_to_bytearray(barr, triangles, short=use_short)
+        index_format = index_export_option(max_tri_index)
+        add_triangles_to_bytearray(barr, triangles, export_option=index_format)
         triangle_len = len(barr) - point_len
 
         builder.add_buffer(byte_length=len(barr), uri=level_bin)
@@ -88,10 +88,9 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
             byte_offset=point_len,
             target=BufferTarget.ELEMENT_ARRAY_BUFFER,
         )
-        component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
         builder.add_accessor(
             buffer_view=builder.buffer_view_count-1,
-            component_type=component_type,
+            component_type=index_format.component_type,
             count=len(triangles)*3,
             type=AccessorType.SCALAR,
             mins=tri_mins,
