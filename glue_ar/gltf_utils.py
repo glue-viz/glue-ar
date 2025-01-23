@@ -1,8 +1,9 @@
+from enum import Enum
 import operator
 import struct
 from typing import Callable, Iterable, List, Optional, Type, TypeVar, Union
 
-from gltflib import Material, PBRMetallicRoughness
+from gltflib import ComponentType, Material, PBRMetallicRoughness
 
 __all__ = [
     "create_material_for_color",
@@ -13,12 +14,28 @@ __all__ = [
 ]
 
 
+class GLTFIndexExportOption(Enum):
+    Byte = ("B", ComponentType.UNSIGNED_BYTE, 2**8-1)
+    Short = ("H", ComponentType.UNSIGNED_SHORT, 2**16-1)
+    Int = ("I", ComponentType.UNSIGNED_INT, 2**32-1)
+
+    def __init__(self, format, component_type, max):
+        self.format = format
+        self.component_type = component_type
+        self.max = max
+
+
 GLTF_COMPRESSION_EXTENSIONS = {
     "draco": "KHR_draco_mesh_compression",
     "meshoptimizer": "EXT_meshopt_compression",
 }
 
-SHORT_MAX = 65_535
+
+def index_export_option(max_index: int) -> GLTFIndexExportOption:
+    for option in GLTFIndexExportOption:
+        if max_index <= option.max:
+            return option
+    return GLTFIndexExportOption.Int
 
 
 def create_material_for_color(
