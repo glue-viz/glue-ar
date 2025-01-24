@@ -15,7 +15,7 @@ from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity,
                           clip_sides, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color, offset_triangles, unique_id, xyz_bounds
 
-from glue_ar.gltf_utils import SHORT_MAX, add_points_to_bytearray, add_triangles_to_bytearray, \
+from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_export_option, \
                                index_mins, index_maxes
 from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation
 
@@ -112,10 +112,10 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     triangles_count = len(tris)
     mesh_triangles = [tri for box in tris for tri in box]
     max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
-    use_short = max_triangle_index <= SHORT_MAX
+    index_format = index_export_option(max_triangle_index)
 
     triangles_barr = bytearray()
-    add_triangles_to_bytearray(triangles_barr, mesh_triangles, short=use_short)
+    add_triangles_to_bytearray(triangles_barr, mesh_triangles, export_option=index_format)
     triangles_len = len(triangles_barr)
 
     builder.add_buffer(byte_length=len(triangles_barr), uri=triangles_bin)
@@ -130,10 +130,9 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
         target=BufferTarget.ELEMENT_ARRAY_BUFFER,
     )
 
-    component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
     builder.add_accessor(
         buffer_view=builder.buffer_view_count-1,
-        component_type=component_type,
+        component_type=index_format.component_type,
         count=len(mesh_triangles)*3,
         type=AccessorType.SCALAR,
         mins=[0],
@@ -195,10 +194,9 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                     target=BufferTarget.ELEMENT_ARRAY_BUFFER,
                 )
 
-                component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
                 builder.add_accessor(
                     buffer_view=builder.buffer_view_count-1,
-                    component_type=component_type,
+                    component_type=index_format.component_type,
                     count=len(last_mesh_triangles)*3,
                     type=AccessorType.SCALAR,
                     mins=[0],
