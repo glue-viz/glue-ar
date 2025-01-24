@@ -6,6 +6,8 @@ from typing import Callable, Iterable, List, Literal, Optional, Type, TypeVar, U
 from gltflib import ComponentType, Material, PBRMetallicRoughness
 
 __all__ = [
+    "GLTFIndexExportOption",
+    "index_export_option",
     "create_material_for_color",
     "add_points_to_bytearray",
     "add_triangles_to_bytearray",
