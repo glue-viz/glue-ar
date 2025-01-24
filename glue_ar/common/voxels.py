@@ -194,10 +194,9 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                     target=BufferTarget.ELEMENT_ARRAY_BUFFER,
                 )
 
-                component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
                 builder.add_accessor(
                     buffer_view=builder.buffer_view_count-1,
-                    component_type=component_type,
+                    component_type=index_format.component_type,
                     count=len(last_mesh_triangles)*3,
                     type=AccessorType.SCALAR,
                     mins=[0],

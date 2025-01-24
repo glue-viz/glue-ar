@@ -70,7 +70,10 @@ class TestScatterGLTF(BaseScatterTest):
         points_count = sphere_points_count(theta_resolution=theta_resolution,
                                            phi_resolution=phi_resolution)
         index_format = index_export_option(points_count)
-        assert count_indices(gltf, model.buffers[0], model.bufferViews[0], export_option=index_format) == triangles_count
+        assert count_indices(gltf,
+                             model.buffers[0],
+                             model.bufferViews[0],
+                             export_option=index_format) == triangles_count
         assert count_vertices(gltf, model.buffers[0], model.bufferViews[1]) == points_count
 
         assert model.bufferViews[0].target == BufferTarget.ELEMENT_ARRAY_BUFFER.value

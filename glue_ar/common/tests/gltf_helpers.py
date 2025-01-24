@@ -71,5 +71,9 @@ def unpack_vertices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView) -> List
     return unpack_points(gltf, buffer, buffer_view, 'f')
 
 
-def unpack_indices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView, export_option: GLTFIndexExportOption = GLTFIndexExportOption.Int) -> List[Tuple[Number, Number, Number]]:
+def unpack_indices(gltf: GLTF,
+                   buffer: Buffer,
+                   buffer_view: BufferView,
+                   export_option: GLTFIndexExportOption = GLTFIndexExportOption.Int
+                   ) -> List[Tuple[Number, Number, Number]]:
     return unpack_points(gltf, buffer, buffer_view, export_option.format)
