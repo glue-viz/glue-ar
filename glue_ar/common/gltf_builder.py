@@ -23,8 +23,6 @@ class GLTFBuilder:
         self.buffer_views: List[BufferView] = []
         self.accessors: List[Accessor] = []
         self.file_resources: List[FileResource] = []
-        self.channels: List[Channel] = []
-        self.samplers: List[AnimationSampler] = []
         self.animations: List[Animation] = []
 
     def add_material(self,
@@ -131,21 +129,34 @@ class GLTFBuilder:
         )
         return self
 
-    def add_animation(self,
-                      name: str,
-                      node: int,
-                      time_accessor: int,
-                      diffs_accessor: int,
-                      path: Literal["translation", "rotation", "scale"],
-                      interpolation: Literal["STEP", "LINEAR", "CUBICSPLINE"] = "LINEAR") -> GLTFBuilder:
+    def add_to_animation(self,
+                         animation: int,
+                         node: int,
+                         time_accessor: int,
+                         diffs_accessor: int,
+                         path: Literal["translation", "rotation", "scale"],
+                         interpolation: Literal["STEP", "LINEAR", "CUBICSPLINE"] = "LINEAR") -> GLTFBuilder:
 
         target = Target(node=node, path=path)
         sampler = AnimationSampler(input=time_accessor, interpolation=interpolation, output=diffs_accessor)
-        self.samplers.append(sampler)
-        channel = Channel(target=target, sampler=self.sampler_count-1)
-        self.channels.append(channel)
-        animation = Animation(name=name, channels=[channel], samplers=[sampler])
+        
+        anim = self.animations[animation]
+        sampler_index = len(anim.samplers)
+        channel = Channel(target=target, sampler=sampler_index)
+        anim.samplers.append(sampler)
+        anim.channels.append(channel)
+        
+        return self
+
+
+    def add_animation(self,
+                      name: str,
+                      channels: Optional[List[Channel]] = None,
+                      samplers: Optional[List[AnimationSampler]] = None) -> GLTFBuilder:
+
+        animation = Animation(name=name, channels=channels, samplers=samplers)
         self.animations.append(animation)
+        
         return self
 
     @property
@@ -169,14 +180,6 @@ class GLTFBuilder:
         return len(self.accessors)
 
     @property
-    def channel_count(self) -> int:
-        return len(self.channels)
-
-    @property
-    def sampler_count(self) -> int:
-        return len(self.samplers)
-
-    @property
     def animation_count(self) -> int:
         return len(self.animations)
 
@@ -193,7 +196,6 @@ class GLTFBuilder:
             bufferViews=self.buffer_views,
             accessors=self.accessors,
             materials=self.materials or None,
-            samplers=self.samplers or None,
             animations=self.animations or None,
         )
 
