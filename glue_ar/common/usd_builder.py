@@ -16,15 +16,12 @@ MaterialInfo = Tuple[int, int, int, float, float, float]
 @builder(("usda", "usdc", "usdz"))
 class USDBuilder:
 
-    def __init__(self, filepath: str):
-        base, ext = splitext(filepath)
-        if ext == ".usdz":
-            filepath = f"{base}{extsep}usdc"
-        self._create_stage(filepath)
+    def __init__(self):
+        self._create_stage()
         self._material_map: Dict[MaterialInfo, UsdShade.Shader] = {}
 
-    def _create_stage(self, filepath: str):
-        self.stage = Usd.Stage.CreateNew(sanitize_path(filepath))
+    def _create_stage(self):
+        self.stage = Usd.Stage.CreateInMemory()
 
         # TODO: Do we want to make changing this an option?
         UsdGeom.SetStageUpAxis(self.stage, UsdGeom.Tokens.y)
@@ -127,4 +124,5 @@ class USDBuilder:
             self.stage.GetRootLayer().Export(filepath)
 
     def build_and_export(self, filepath: str):
-        self.export(filepath)
+        output_path = sanitize_path(filepath)
+        self.export(output_path)
