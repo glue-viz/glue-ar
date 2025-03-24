@@ -179,10 +179,13 @@ class BaseScatterTest:
             if hasattr(self.viewer, "close"):
                 spec = getfullargspec(self.viewer.close)
                 kwargs = spec[4]
-                if "warn" in kwargs:
-                    self.viewer.close(warn=False)
-                else:
-                    self.viewer.close()
+                try:
+                    if "warn" in kwargs:
+                        self.viewer.close(warn=False)
+                    else:
+                        self.viewer.close()
+                except NotImplementedError:
+                    pass
             self.viewer = None
         if hasattr(self, 'app'):
             if hasattr(self.app, 'close'):
