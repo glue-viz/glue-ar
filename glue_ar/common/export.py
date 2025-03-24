@@ -1,5 +1,4 @@
 from collections import defaultdict
-from inspect import getfullargspec
 from os.path import extsep, join, split, splitext
 from string import Template
 from typing import Dict, Optional
