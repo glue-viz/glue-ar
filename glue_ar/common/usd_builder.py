@@ -1,6 +1,6 @@
 from collections import defaultdict
 from os import extsep, remove
-from os.path import splitext
+from os.path import exists, splitext
 
 from pxr import Usd, UsdGeom, UsdLux, UsdShade, UsdUtils
 from typing import Dict, Iterable, Optional, Tuple
@@ -117,6 +117,12 @@ class USDBuilder:
         base, ext = splitext(filepath)
         if ext == ".usdz":
             usdc_path = f"{base}{extsep}usdc"
+            usdc_exists = exists(usdc_path)
+            count = 0
+            while usdc_exists:
+                count += 1
+                usdc_path = f"{base}-{count}{extsep}usdc"
+                usdc_exists = exists(usdc_path)
             self.stage.GetRootLayer().Export(usdc_path)
             UsdUtils.CreateNewUsdzPackage(usdc_path, filepath)
             remove(usdc_path)
@@ -124,5 +130,4 @@ class USDBuilder:
             self.stage.GetRootLayer().Export(filepath)
 
     def build_and_export(self, filepath: str):
-        output_path = sanitize_path(filepath)
-        self.export(output_path)
+        self.export(filepath)
