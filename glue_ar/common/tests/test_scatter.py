@@ -1,3 +1,4 @@
+from inspect import getfullargspec
 from itertools import product
 from math import sqrt
 from numpy import array, array_equal, nan, ones
@@ -176,7 +177,12 @@ class BaseScatterTest:
             remove(self.tmpfile.name)
         if hasattr(self, 'viewer'):
             if hasattr(self.viewer, "close"):
-                self.viewer.close(warn=False)
+                spec = getfullargspec(self.viewer.close)
+                kwargs = spec[4]
+                if "warn" in kwargs:
+                    self.viewer.close(warn=False)
+                else:
+                    self.viewer.close()
             self.viewer = None
         if hasattr(self, 'app'):
             if hasattr(self.app, 'close'):
