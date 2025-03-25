@@ -1,5 +1,4 @@
 from collections import defaultdict
-from inspect import getfullargspec
 from os.path import extsep, join, split, splitext
 from string import Template
 from typing import Dict, Optional
@@ -30,9 +29,7 @@ def export_viewer(viewer_state: Vispy3DViewerState,
     base, ext = splitext(filepath)
     ext = ext[1:]
     builder_cls = builder_registry.members.get(ext)
-    count = len(getfullargspec(builder_cls.__init__)[0])
-    builder_args = [filepath] if count > 1 else []
-    builder = builder_cls(*builder_args)
+    builder = builder_cls()
     layer_groups = defaultdict(list)
     export_groups = defaultdict(list)
     for layer_state in layer_states:

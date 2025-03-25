@@ -1,6 +1,6 @@
 from collections import defaultdict
 from os import extsep, remove
-from os.path import splitext
+from os.path import exists, splitext
 
 from pxr import Usd, UsdGeom, UsdLux, UsdShade, UsdUtils
 from typing import Dict, Iterable, Optional, Tuple
@@ -16,15 +16,12 @@ MaterialInfo = Tuple[int, int, int, float, float, float]
 @builder(("usda", "usdc", "usdz"))
 class USDBuilder:
 
-    def __init__(self, filepath: str):
-        base, ext = splitext(filepath)
-        if ext == ".usdz":
-            filepath = f"{base}{extsep}usdc"
-        self._create_stage(filepath)
+    def __init__(self):
+        self._create_stage()
         self._material_map: Dict[MaterialInfo, UsdShade.Shader] = {}
 
-    def _create_stage(self, filepath: str):
-        self.stage = Usd.Stage.CreateNew(sanitize_path(filepath))
+    def _create_stage(self):
+        self.stage = Usd.Stage.CreateInMemory()
 
         # TODO: Do we want to make changing this an option?
         UsdGeom.SetStageUpAxis(self.stage, UsdGeom.Tokens.y)
@@ -120,6 +117,12 @@ class USDBuilder:
         base, ext = splitext(filepath)
         if ext == ".usdz":
             usdc_path = f"{base}{extsep}usdc"
+            usdc_exists = exists(usdc_path)
+            count = 0
+            while usdc_exists:
+                count += 1
+                usdc_path = f"{base}-{count}{extsep}usdc"
+                usdc_exists = exists(usdc_path)
             self.stage.GetRootLayer().Export(usdc_path)
             UsdUtils.CreateNewUsdzPackage(usdc_path, filepath)
             remove(usdc_path)
