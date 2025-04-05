@@ -37,7 +37,7 @@ class ARVoxelExportOptions(State):
         min_value=0,
         max_value=2,
         resolution=0.01,
-        docstring="An overall factor by which to adjust the opacity of output voxels."
+        docstring="An overall factor by which to adjust the opacities of output voxels."
     )
 
     # log_voxels_per_mesh = RangedCallbackProperty(
