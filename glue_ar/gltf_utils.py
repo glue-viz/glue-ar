@@ -55,10 +55,12 @@ def create_material_for_color(
     )
 
 
-def add_points_to_bytearray(arr: bytearray, points: Iterable[Iterable[Union[int, float]]]):
+def add_points_to_bytearray(arr: bytearray,
+                            points: Iterable[Iterable[Union[int, float]]],
+                            format: Literal["e", "f"] = "f"):
     for point in points:
         for coordinate in point:
-            arr.extend(struct.pack('f', coordinate))
+            arr.extend(struct.pack(format, coordinate))
 
 
 def add_triangles_to_bytearray(arr: bytearray,
@@ -67,6 +69,13 @@ def add_triangles_to_bytearray(arr: bytearray,
     for triangle in triangles:
         for index in triangle:
             arr.extend(struct.pack(export_option.format, index))
+
+
+def add_values_to_bytearray(arr: bytearray,
+                            values: Iterable[Union[int, float]],
+                            format: Literal["e", "f"] = "f"):
+    for value in values:
+        arr.extend(struct.pack(format, value))
 
 
 T = TypeVar("T", bound=Union[int, float])
