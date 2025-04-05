@@ -38,12 +38,12 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     points_bin = f"points_{voxels_id}.bin"
     triangles_bin = f"triangles_{voxels_id}.bin"
 
-    opacity_factor = 1
     occupied_voxels = {}
 
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
         opacity_resolution = clamp(option.opacity_resolution, 0, 1)
+        opacity_factor = clamp(option.opacity_factor, 0, 2) / 2
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
         if len(data) == 0:
@@ -64,8 +64,8 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange,
-                                              opacity_resolution)
+            opacity = layer_state.alpha * opacity_factor * (value - isomin) / isorange
+            adjusted_opacity = binned_opacity(opacity, opacity_resolution)
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
@@ -95,7 +95,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                     rgba[3],
                 )
 
-    max_points_per_opacity = max(len(voxels) for voxels in voxels_by_color.values())
+    max_points_per_opacity = max((len(voxels) for voxels in voxels_by_color.values()), default=0)
     if voxels_per_mesh is None:
         voxels_per_mesh = max_points_per_opacity
 
