@@ -58,7 +58,7 @@ def boolean_callback_widgets(instance: HasCallbackProperties,
 def number_callback_widgets(instance: HasCallbackProperties,
                             property: str,
                             display_name: str,
-                            label_for_value=False,
+                            label_for_value=True,
                             **kwargs) -> Tuple[DOMWidget]:
 
     value = getattr(instance, property)
@@ -99,8 +99,8 @@ def widgets_for_callback_property(
 
     t = type(getattr(instance, property))
     if t is bool:
-        return boolean_callback_widgets(instance, property, display_name)
+        return boolean_callback_widgets(instance, property, display_name, **kwargs)
     elif t in (int, float):
-        return number_callback_widgets(instance, property, display_name)
+        return number_callback_widgets(instance, property, display_name, **kwargs)
     else:
         raise ValueError("Unsupported callback property type!")
