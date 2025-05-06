@@ -2,8 +2,9 @@ from collections import defaultdict
 from os import extsep, remove
 from os.path import exists, splitext
 
-from pxr import Usd, UsdGeom, UsdLux, UsdShade, UsdUtils
+from pxr import Gf, Sdf, Usd, UsdGeom, UsdLux, UsdShade, UsdUtils
 from typing import Dict, Iterable, Optional, Tuple
+from glue_ar.common.scatter import Point
 
 from glue_ar.registries import builder
 from glue_ar.usd_utils import material_for_color, material_for_mesh, sanitize_path
@@ -30,7 +31,7 @@ class USDBuilder:
         self.default_prim = UsdGeom.Xform.Define(self.stage, self.default_prim_key).GetPrim()
         self.stage.SetDefaultPrim(self.default_prim)
 
-        self._mesh_counts: Dict[str, int] = defaultdict(int)
+        self._geom_counts: Dict[str, int] = defaultdict(int)
 
         light = UsdLux.RectLight.Define(self.stage, "/light")
         light.CreateHeightAttr(-1)
@@ -67,12 +68,13 @@ class USDBuilder:
         This breaks the builder pattern but we'll potentially want this reference to it
         for other meshes that we create.
         """
+
         identifier = sanitize_path(identifier or unique_id())
-        count = self._mesh_counts[identifier]
+        count = self._geom_counts[identifier]
         xform_key = f"{self.default_prim_key}/xform_{identifier}_{count}"
         UsdGeom.Xform.Define(self.stage, xform_key)
         mesh_key = f"{xform_key}/mesh_{identifier}_{count}"
-        self._mesh_counts[identifier] += 1
+        self._geom_counts[identifier] += 1
         mesh = UsdGeom.Mesh.Define(self.stage, mesh_key)
         mesh.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
         mesh.CreatePointsAttr(points)
@@ -92,11 +94,11 @@ class USDBuilder:
                                  identifier: Optional[str] = None) -> UsdGeom.Mesh:
         prim = mesh.GetPrim()
         identifier = sanitize_path(identifier or unique_id())
-        count = self._mesh_counts[identifier]
+        count = self._geom_counts[identifier]
         xform_key = f"{self.default_prim_key}/xform_{identifier}_{count}"
         UsdGeom.Xform.Define(self.stage, xform_key)
         new_mesh_key = f"{xform_key}/mesh_{identifier}_{count}"
-        self._mesh_counts[identifier] += 1
+        self._geom_counts[identifier] += 1
         new_mesh = UsdGeom.Mesh.Define(self.stage, new_mesh_key)
         new_prim = new_mesh.GetPrim()
 
@@ -112,6 +114,30 @@ class USDBuilder:
         translate_op.Set(value=translation)
 
         return mesh
+
+    def add_points(self,
+                   points: Iterable[Point],
+                   colors: Iterable[Tuple[int, int, int]],
+                   identifier: Optional[str] = None) -> UsdGeom.Points:
+
+        identifier = identifier or unique_id()
+        identifier = self._sanitize(identifier)
+        count = self._geom_counts[identifier]
+        xform_key = f"{self.default_prim_key}/xform_{identifier}_{count}"
+        UsdGeom.Xform.Define(self.stage, xform_key)
+        points_key = f"{xform_key}/points_{identifier}_{count}"
+        self._geom_counts[identifier] += 1
+        geom = UsdGeom.Points.Define(self.stage, points_key)
+        point_vecs = [Gf.Vec3f(*point) for point in points]
+        geom.CreatePointsAttr(point_vecs)
+        widths_var = geom.CreateWidthsAttr()
+        widths = [1.0 for _ in points]
+        widths_var.Set(widths)
+        primvars = UsdGeom.PrimvarsAPI(geom.GetPrim())
+        colorvar = primvars.CreatePrimvar("displayColor", Sdf.ValueTypeNames.Color3f)
+        colorvar.Set([Gf.Vec3f(*tuple(c / 255 for c in color)) for color in colors])
+
+        return geom
 
     def export(self, filepath: str):
         base, ext = splitext(filepath)
