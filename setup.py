@@ -771,7 +771,7 @@ setup_args = dict(
     cmdclass=cmdclass,
     long_description=description,
     long_description_content_type="text/markdown",
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     zip_safe=False,
     packages=find_packages(name, exclude=["js"]),
     package_data={
