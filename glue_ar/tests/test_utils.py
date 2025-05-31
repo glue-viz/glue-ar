@@ -7,10 +7,10 @@ from glue.viewers.common.viewer import LayerArtist
 from glue_vispy_viewers.volume.volume_viewer import Vispy3DVolumeViewerState
 
 from glue_ar.utils import alpha_composite, binned_opacity, clamp, clamp_with_resolution, clamped_opacity, \
-                          clip_linear_transformations, clip_sides, data_count, data_for_layer, \
+                          clip_linear_transformations, clip_sides, color_component_to_hex, data_count, data_for_layer, \
                           export_label_for_layer, get_resolution, hex_to_components, is_volume_viewer, \
                           iterable_has_nan, iterator_count, layer_color, mask_for_bounds, ndarray_has_nan, \
-                          offset_triangles, slope_intercept_between, unique_id, xyz_bounds
+                          offset_triangles, rgb_to_hex, slope_intercept_between, unique_id, xyz_bounds
 
 
 def package_installed(package):
@@ -368,3 +368,19 @@ def test_offset_triangles():
     assert offset_triangles([[0, 1, 2], [1, 2, 3], [0, 2, 3]], 6) == [(6, 7, 8), (7, 8, 9), (6, 8, 9)]
     assert offset_triangles([[2, 1, 6], [5, 7, 4]], 5) == [(7, 6, 11), (10, 12, 9)]
     assert offset_triangles([[0, 1, 2], [2, 3, 0], [3, 1, 2]], 0) == [(0, 1, 2), (2, 3, 0), (3, 1, 2)]
+
+
+def test_color_component_to_hex():
+    assert color_component_to_hex(0.3) == "4c"
+    assert color_component_to_hex(1.0) == "ff"
+    assert color_component_to_hex(0.0) == "00"
+    assert color_component_to_hex(0.75) == "bf"
+    assert color_component_to_hex(0.5) == "80"
+
+
+def test_rgb_to_hex():
+    assert rgb_to_hex(0.5, 0.8, 0.2) == "#80cc33"
+    assert rgb_to_hex(0.7, 1.0, 0.05) == "#b2ff0d"
+    assert rgb_to_hex(0.0, 0.0, 0.0) == "#000000"
+    assert rgb_to_hex(1.0, 1.0, 1.0) == "#ffffff"
+    assert rgb_to_hex(0.1, 0.25, 0.33) == "#1a4054"
