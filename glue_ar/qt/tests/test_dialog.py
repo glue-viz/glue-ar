@@ -91,9 +91,9 @@ class TestQtExportDialog(BaseExportDialogTest):
 
         state.layer = "Scatter Data"
         assert ui.combosel_method.currentText() == state.method
-        assert combobox_options(ui.combosel_method) == ["Scatter"]
-        assert not ui.label_method.isVisible()
-        assert not ui.combosel_method.isVisible()
+        assert combobox_options(ui.combosel_method) == ["Scatter", "Points"]
+        assert ui.label_method.isVisible()
+        assert ui.combosel_method.isVisible()
 
         state.layer = "Volume Data"
         assert set(combobox_options(ui.combosel_method)) == {"Isosurface", "Voxel"}
@@ -103,6 +103,6 @@ class TestQtExportDialog(BaseExportDialogTest):
 
         state.layer = "Scatter Data"
         assert ui.combosel_method.currentText() == state.method
-        assert combobox_options(ui.combosel_method) == ["Scatter"]
-        assert not ui.label_method.isVisible()
-        assert not ui.combosel_method.isVisible()
+        assert combobox_options(ui.combosel_method) == ["Scatter", "Points"]
+        assert ui.label_method.isVisible()
+        assert ui.combosel_method.isVisible()

@@ -364,5 +364,9 @@ def binned_opacity(raw_opacity: float, resolution: float) -> float:
     return clamp_with_resolution(raw_opacity, 0, 1, resolution)
 
 
+def color_identifier(color: Tuple[int, int, int], opacity: float = 1.0) -> str:
+    return f"{'_'.join(str(c) for c in color)}_{opacity}".replace(".", "_")
+
+
 def offset_triangles(triangle_indices, offset):
     return [tuple(idx + offset for idx in triangle) for triangle in triangle_indices]
