@@ -51,6 +51,15 @@
             v-if="show_modelviewer"
             v-model="modelviewer"
             label="Export model-viewer HTML"
+            hide-details
+          />
+        </v-row>
+        <v-row>
+          <v-checkbox
+            v-if="show_modelviewer"
+            :disabled="compression_selected !== 0 || !modelviewer"
+            label="Include model-viewer layer controls"
+            hide-details
           />
         </v-row>
         <v-row>
