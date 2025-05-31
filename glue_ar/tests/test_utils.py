@@ -371,15 +371,16 @@ def test_offset_triangles():
 
 
 def test_color_component_to_hex():
-    assert color_component_to_hex(0.3) == "4d"
+    assert color_component_to_hex(0.3) == "4c"
     assert color_component_to_hex(1.0) == "ff"
     assert color_component_to_hex(0.0) == "00"
-    assert color_component_to_hex(0.75) == "c0"
+    assert color_component_to_hex(0.75) == "bf"
     assert color_component_to_hex(0.5) == "80"
 
 
 def test_rgb_to_hex():
-    assert rgb_to_hex(0.5, 0.8, 0.2) == "#80cd33"
-    assert rgb_to_hex(0.7, 1.0, 0.05) == "#b3ff0d"
+    assert rgb_to_hex(0.5, 0.8, 0.2) == "#80cc33"
+    assert rgb_to_hex(0.7, 1.0, 0.05) == "#b2ff0d"
     assert rgb_to_hex(0.0, 0.0, 0.0) == "#000000"
     assert rgb_to_hex(1.0, 1.0, 1.0) == "#ffffff"
+    assert rgb_to_hex(0.1, 0.25, 0.33) == "#1a4054"

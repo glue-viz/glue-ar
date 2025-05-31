@@ -252,7 +252,7 @@ def hex_to_components(color: str) -> List[int]:
 
 
 def color_component_to_hex(c: float) -> str:
-    return hex(round(c * 256))[2:].zfill(2)
+    return hex(round(c * 255))[2:].zfill(2)
 
 
 def rgb_to_hex(r: float, g: float, b: float) -> str:
