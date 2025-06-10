@@ -28,7 +28,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                           layer_states: Union[List[VolumeLayerState], VolumeLayerState],
                           options: Iterable[ARVoxelExportOptions],
                           bounds: Optional[BoundsWithResolution] = None,
-                          voxels_per_mesh: Optional[int] = None):
+                          voxels_per_mesh: Optional[int] = 1):
 
     if isinstance(layer_states, VolumeLayerState):
         layer_states = [layer_states]
