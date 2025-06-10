@@ -204,7 +204,9 @@ class GLTFBuilder:
         nodes = [Node(mesh=i) for i in range(len(self.meshes))]
         node_indices = list(range(len(nodes)))
         scenes = [Scene(nodes=node_indices)]
-        return GLTFModel(
+        required_extensions = list(ext for ext, params in self.extensions.items() if params.get("required", True))
+        used_extensions = list(ext for ext, params in self.extensions.items() if params.get("used", True))
+        model_params = dict(
             asset=Asset(version="2.0"),
             scenes=scenes,
             nodes=nodes,
@@ -214,9 +216,12 @@ class GLTFBuilder:
             accessors=self.accessors,
             materials=self.materials or None,
             animations=self.animations or None,
-            extensionsRequired=list(ext for ext, params in self.extensions.items() if params.get("required", True)),
-            extensionsUsed=list(ext for ext, params in self.extensions.items() if params.get("used", True)),
         )
+        if required_extensions:
+            model_params["extensionsRequired"] = required_extensions
+        if used_extensions:
+            model_params["extensionsUsed"] = used_extensions
+        return GLTFModel(**model_params)
 
     def build(self) -> GLTF:
         model = self.build_model()

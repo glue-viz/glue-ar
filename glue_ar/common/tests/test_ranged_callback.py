@@ -2,13 +2,13 @@ from glue.core.state_objects import State
 from glue_ar.common.ranged_callback import RangedCallbackProperty
 
 
-class TestState(State):
+class DummyRangedCallbackState(State):
     int_value = RangedCallbackProperty(default=10, min_value=5, max_value=25, resolution=1)
     float_value = RangedCallbackProperty(default=0.7, min_value=0.2, max_value=3.6, resolution=0.02)
 
 
 def test_ranged_callback():
-    state = TestState()
+    state = DummyRangedCallbackState()
 
     assert state.int_value == 10
     state.int_value = -4
