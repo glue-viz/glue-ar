@@ -74,14 +74,22 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
             value = data[tuple(indices)]
             opacity = layer_state.alpha * opacity_factor * (value - isomin) / isorange
             adjusted_opacity = binned_opacity(opacity, opacity_resolution)
+
+            if layer_state.color_mode == "Fixed":
+                voxel_color = color
+                voxel_color_components = color_components
+            else:
+                voxel_color = layer_state.cmap(adjusted_opacity)
+                voxel_color_components = [int(256 * float(c)) for c in voxel_color[:3]]
+
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
-                adjusted_a_color = color_components[:3] + [adjusted_opacity]
+                adjusted_a_color = voxel_color_components[:3] + [adjusted_opacity]
                 new_color = alpha_composite(adjusted_a_color, current_color)
                 occupied_voxels[indices_tpl] = new_color
             else:
-                occupied_voxels[indices_tpl] = color_components[:3] + [adjusted_opacity]
+                occupied_voxels[indices_tpl] = voxel_color_components[:3] + [adjusted_opacity]
 
     # Once we're done doing the alpha compositing, we want to reverse our dictionary setup
     # Right now we have (key, value) as (indices, color)
@@ -265,21 +273,29 @@ def add_voxel_layers_usd(builder: USDBuilder,
         color_components = hex_to_components(color)
 
         for indices in nonempty_indices:
+  
             value = data[tuple(indices)]
             adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange,
                                               opacity_resolution)
+            if layer_state.color_mode == "Fixed":
+                voxel_color = color
+                voxel_color_components = color_components
+            else:
+                voxel_color = layer_state.cmap(adjusted_opacity)
+                voxel_color_components = hex_to_components(voxel_color)
+
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
-                adjusted_a_color = color_components[:3] + [adjusted_opacity]
+                adjusted_a_color = voxel_color_components[:3] + [adjusted_opacity]
                 new_color = alpha_composite(adjusted_a_color, current_color)
                 occupied_voxels[indices_tpl] = new_color
                 colors_map[current_color].remove(indices_tpl)
                 colors_map[new_color].add(indices_tpl)
             elif adjusted_opacity >= opacity_cutoff:
-                color = color_components[:3] + [adjusted_opacity]
-                occupied_voxels[indices_tpl] = color
-                colors_map[tuple(color)].add(indices_tpl)
+                vcolor = voxel_color_components[:3] + [adjusted_opacity]
+                occupied_voxels[indices_tpl] = vcolor
+                colors_map[tuple(vcolor)].add(indices_tpl)
 
     materials_map = {}
 
