@@ -281,7 +281,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
             voxel_colors = [[int(256 * float(c)) for c in vc[:3]] for vc in voxel_colors]
 
         for indices in nonempty_indices:
-  
+
             value = data[tuple(indices)]
             t_voxel = clamp_with_resolution((value - isomin) / isorange, 0, 1, cmap_resolution)
             adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * t_voxel, cmap_resolution)

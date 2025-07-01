@@ -144,7 +144,7 @@ def add_isosurface_layer_usd(
     color_components = tuple(hex_to_components(color))
     sides = clip_sides(viewer_state, clip_size=1)
     sides = tuple(sides[i] for i in (2, 1, 0))
-    
+
     for level_index, level in enumerate(levels[1:-1]):
         alpha = (3 * level_index + isosurface_count) / (4 * isosurface_count) * opacity
         points, triangles = marching_cubes(data, level)
