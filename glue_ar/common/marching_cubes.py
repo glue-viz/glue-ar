@@ -58,7 +58,7 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
         if layer_state.color_mode == "Fixed":
             surface_color_components = color_components
         else:
-            surface_color = layer_state.cmap((level_index + 1)/ isosurface_count)
+            surface_color = layer_state.cmap((level_index + 1) / isosurface_count)
             surface_color_components = [int(256 * float(c)) for c in surface_color[:3]]
             builder.add_material(surface_color_components, opacity=opacity)
             material_index = builder.material_count - 1
@@ -144,16 +144,22 @@ def add_isosurface_layer_usd(
     color_components = tuple(hex_to_components(color))
     sides = clip_sides(viewer_state, clip_size=1)
     sides = tuple(sides[i] for i in (2, 1, 0))
-
-    for i, level in enumerate(levels[1:-1]):
-        alpha = (3 * i + isosurface_count) / (4 * isosurface_count) * opacity
+    
+    for level_index, level in enumerate(levels[1:-1]):
+        alpha = (3 * level_index + isosurface_count) / (4 * isosurface_count) * opacity
         points, triangles = marching_cubes(data, level)
         if len(points) == 0:
             continue
 
+        if layer_state.color_mode == "Fixed":
+            surface_color_components = color_components
+        else:
+            surface_color = layer_state.cmap((level_index + 1) / isosurface_count)
+            surface_color_components = [int(256 * float(c)) for c in surface_color[:3]]
+
         points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, sides)) for pt in points]
         points = [[p[1], p[0], p[2]] for p in points]
-        builder.add_mesh(points, triangles, color_components, alpha)
+        builder.add_mesh(points, triangles, surface_color_components, alpha)
 
 
 @ar_layer_export(VolumeLayerState, "Isosurface", ARIsosurfaceExportOptions, ("stl",))
