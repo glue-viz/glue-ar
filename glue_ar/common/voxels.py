@@ -12,7 +12,7 @@ from glue_ar.common.stl_builder import STLBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARVoxelExportOptions
 from glue_ar.usd_utils import material_for_color, sanitize_path
-from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamp, \
+from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamp, clamp_with_resolution, \
                           clip_sides, export_label_for_layer, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color, offset_triangles, unique_id, xyz_bounds
 
@@ -77,13 +77,13 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            opacity = binned_opacity(layer_state.alpha * (value - isomin) / isorange, cmap_resolution)
-            adjusted_opacity = binned_opacity(opacity_factor * opacity, cmap_resolution)
+            t_voxel = clamp_with_resolution((value - isomin) / isorange, 0, 1, cmap_resolution)
+            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * t_voxel, cmap_resolution)
 
             if layer_state.color_mode == "Fixed":
                 voxel_color_components = color_components
             else:
-                index = round(opacity / cmap_resolution)
+                index = round(t_voxel / cmap_resolution)
                 voxel_color_components = voxel_colors[index]
 
             indices_tpl = tuple(indices)
@@ -114,8 +114,6 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                     rgba[:3],
                     rgba[3],
                 )
-
-    print("MADE MATERIALS MAP")
 
     max_points_per_opacity = max((len(voxels) for voxels in voxels_by_color.values()), default=0)
     if voxels_per_mesh is None:
@@ -259,7 +257,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
-        opacity_resolution = clamp(option.opacity_resolution, 0, 1)
+        cmap_resolution = clamp(option.cmap_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
         if len(data) == 0:
@@ -278,17 +276,21 @@ def add_voxel_layers_usd(builder: USDBuilder,
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
 
+        if layer_state.color_mode == "Linear":
+            voxel_colors = layer_state.cmap([i * cmap_resolution for i in range(ceil(1 / cmap_resolution) + 1)])
+            voxel_colors = [[int(256 * float(c)) for c in vc[:3]] for vc in voxel_colors]
+
         for indices in nonempty_indices:
   
             value = data[tuple(indices)]
-            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange,
-                                              opacity_resolution)
+            t_voxel = clamp_with_resolution((value - isomin) / isorange, 0, 1, cmap_resolution)
+            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * t_voxel, cmap_resolution)
+
             if layer_state.color_mode == "Fixed":
-                voxel_color = color
                 voxel_color_components = color_components
             else:
-                voxel_color = layer_state.cmap(adjusted_opacity)
-                voxel_color_components = hex_to_components(voxel_color)
+                index = round(t_voxel / cmap_resolution)
+                voxel_color_components = voxel_colors[index]
 
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
