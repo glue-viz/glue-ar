@@ -1,4 +1,5 @@
 from collections import defaultdict
+from math import ceil
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from numpy import isfinite, argwhere, transpose
 from typing import Iterable, List, Optional, Union
@@ -50,7 +51,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
-        opacity_resolution = clamp(option.opacity_resolution, 0, 1)
+        cmap_resolution = clamp(option.cmap_resolution, 0, 1)
         opacity_factor = clamp(option.opacity_factor, 0, 2) / 2
         data = frb_for_layer(viewer_state, layer_state, bounds)
 
@@ -70,17 +71,20 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
 
+        if layer_state.color_mode == "Linear":
+            voxel_colors = layer_state.cmap([i * cmap_resolution for i in range(ceil(1 / cmap_resolution) + 1)])
+            voxel_colors = [[int(256 * float(c)) for c in vc[:3]] for vc in voxel_colors]
+
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            opacity = layer_state.alpha * opacity_factor * (value - isomin) / isorange
-            adjusted_opacity = binned_opacity(opacity, opacity_resolution)
+            opacity = binned_opacity(layer_state.alpha * (value - isomin) / isorange, cmap_resolution)
+            adjusted_opacity = binned_opacity(opacity_factor * opacity, cmap_resolution)
 
             if layer_state.color_mode == "Fixed":
-                voxel_color = color
                 voxel_color_components = color_components
             else:
-                voxel_color = layer_state.cmap(adjusted_opacity)
-                voxel_color_components = [int(256 * float(c)) for c in voxel_color[:3]]
+                index = round(opacity / cmap_resolution)
+                voxel_color_components = voxel_colors[index]
 
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
@@ -110,6 +114,8 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                     rgba[:3],
                     rgba[3],
                 )
+
+    print("MADE MATERIALS MAP")
 
     max_points_per_opacity = max((len(voxels) for voxels in voxels_by_color.values()), default=0)
     if voxels_per_mesh is None:

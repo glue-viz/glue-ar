@@ -24,12 +24,12 @@ class ARVoxelExportOptions(State):
         docstring="The minimum opacity voxels to retain. Voxels with a lower opacity will be "
                   "omitted from the export.",
     )
-    opacity_resolution = RangedCallbackProperty(
+    cmap_resolution = RangedCallbackProperty(
         default=0.02,
         min_value=0.005,
         max_value=1,
         resolution=0.005,
-        docstring="The resolution of the opacity in the exported figure. Opacity values will be "
+        docstring="The resolution of the color and opacity in the exported figure. Values will be "
                   "rounded to the nearest integer multiple of this value.",
     )
     opacity_factor = RangedCallbackProperty(
