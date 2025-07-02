@@ -35,19 +35,20 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
 
     data[~isfinite(data)] = isomin - 10
 
+    data -= isomin
+    data *= (1 / (isomax - isomin))
+
+    if hasattr(layer_state, 'stretch'):
+        data = layer_state.stretch_object(data, out=data, **layer_state.stretch_parameters)
+
     isosurface_count = int(options.isosurface_count)
-    levels = linspace(isomin, isomax, num=isosurface_count + 2)
-    opacity = 0.25 * layer_state.alpha
+    levels = linspace(0, 1, num=isosurface_count + 2)
     color = layer_color(layer_state)
     color_components = hex_to_components(color)
     sides = clip_sides(viewer_state, clip_size=1)
     sides = tuple(sides[i] for i in (2, 1, 0))
 
-    if layer_state.color_mode == "Fixed":
-        builder.add_material(color_components, opacity=opacity)
-        material_index = builder.material_count - 1
-
-    for level_index, level in enumerate(levels[1:-1]):
+    for level in levels[1:-1]:
         barr = bytearray()
         level_bin = f"layer_{layer_state.layer.uuid}_level_{level}.bin"
 
@@ -55,13 +56,15 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
         if len(points) == 0:
             continue
 
+        opacity = layer_state.alpha * level
         if layer_state.color_mode == "Fixed":
             surface_color_components = color_components
         else:
-            surface_color = layer_state.cmap((level_index + 1) / isosurface_count)
+            surface_color = layer_state.cmap(level)
             surface_color_components = [int(256 * float(c)) for c in surface_color[:3]]
-            builder.add_material(surface_color_components, opacity=opacity)
-            material_index = builder.material_count - 1
+
+        builder.add_material(surface_color_components, opacity=opacity)
+        material_index = builder.material_count - 1
 
         points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, sides)) for pt in points]
         points = [[p[1], p[0], p[2]] for p in points]
@@ -137,16 +140,21 @@ def add_isosurface_layer_usd(
 
     data[~isfinite(data)] = isomin - 10
 
+    data -= isomin
+    data *= (1 / (isomax - isomin))
+
+    if hasattr(layer_state, 'stretch'):
+        data = layer_state.stretch_object(data, out=data, **layer_state.stretch_parameters)
+
     isosurface_count = int(options.isosurface_count)
-    levels = linspace(isomin, isomax, num=isosurface_count + 2)
-    opacity = layer_state.alpha
+    levels = linspace(0, 1, num=isosurface_count + 2)
     color = layer_color(layer_state)
     color_components = tuple(hex_to_components(color))
     sides = clip_sides(viewer_state, clip_size=1)
     sides = tuple(sides[i] for i in (2, 1, 0))
 
-    for level_index, level in enumerate(levels[1:-1]):
-        alpha = (3 * level_index + isosurface_count) / (4 * isosurface_count) * opacity
+    for level in levels[1:-1]:
+        alpha = layer_state.alpha * level
         points, triangles = marching_cubes(data, level)
         if len(points) == 0:
             continue
@@ -154,7 +162,7 @@ def add_isosurface_layer_usd(
         if layer_state.color_mode == "Fixed":
             surface_color_components = color_components
         else:
-            surface_color = layer_state.cmap((level_index + 1) / isosurface_count)
+            surface_color = layer_state.cmap(level)
             surface_color_components = [int(256 * float(c)) for c in surface_color[:3]]
 
         points = [tuple((-1 + (index + 0.5) * side) for index, side in zip(pt, sides)) for pt in points]
