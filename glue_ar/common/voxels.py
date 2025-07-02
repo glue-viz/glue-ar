@@ -77,7 +77,10 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            t_voxel = clamp_with_resolution((value - isomin) / isorange, 0, 1, cmap_resolution)
+            t_voxel = (value - isomin) / isorange
+            if t_voxel > 0 and hasattr(layer_state, 'stretch'):
+                t_voxel = layer_state.stretch_object([t_voxel], **layer_state.stretch_parameters)[0]
+            t_voxel = clamp_with_resolution(t_voxel, 0, 1, cmap_resolution)
             adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * t_voxel, cmap_resolution)
 
             if layer_state.color_mode == "Fixed":
@@ -283,7 +286,10 @@ def add_voxel_layers_usd(builder: USDBuilder,
         for indices in nonempty_indices:
 
             value = data[tuple(indices)]
-            t_voxel = clamp_with_resolution((value - isomin) / isorange, 0, 1, cmap_resolution)
+            t_voxel = (value - isomin) / isorange
+            if t_voxel > 0 and hasattr(layer_state, 'stretch'):
+                t_voxel = layer_state.stretch_object([t_voxel], **layer_state.stretch_parameters)[0]
+            t_voxel = clamp_with_resolution(t_voxel, 0, 1, cmap_resolution)
             adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * t_voxel, cmap_resolution)
 
             if layer_state.color_mode == "Fixed":
