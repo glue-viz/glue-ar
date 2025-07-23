@@ -1,0 +1,9 @@
+lint.ignore = [
+    # NOTE: to find a good code to fix, run:
+    # ruff check --select="ALL" --statistics glue_ar/<subpackage>
+]
+
+[lint.extend-per-file-ignores]
+"setup.py" = [
+    "E402",
+]
