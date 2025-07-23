@@ -11,12 +11,10 @@ within a Python package.
 from collections import defaultdict
 from os.path import join as pjoin
 import io
-import os
 import functools
 import re
 import shlex
 import subprocess
-import sys
 
 
 # BEFORE importing distutils, remove MANIFEST. distutils doesn't properly
