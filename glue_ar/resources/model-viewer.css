@@ -47,7 +47,7 @@ model-viewer {
   outline: none;
 }
 .ar-button:focus-visible {
-  outline: 1px solid #1f5ef1; 
+  outline: 1px solid #1f5ef1;
 }
 .info {
   display: block;
@@ -85,4 +85,3 @@ h3 {
 #layer-controls button {
   width: 100%;
 }
-

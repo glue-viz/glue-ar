@@ -28,13 +28,13 @@ except ImportError:
     GlueApplication = NoneType
     VispyScatterViewer = NoneType
 
-
-Application = Union[GlueApplication, JupyterApplication]
-ScatterViewer = Union[Type[VispyScatterViewer], Type[JupyterVispyScatterViewer], Type[IpyvolumeScatterView]]
-
 from glue_ar.common.scatter import scatter_layer_mask
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.utils import export_label_for_layer
+
+
+Application = Union[GlueApplication, JupyterApplication]
+ScatterViewer = Union[Type[VispyScatterViewer], Type[JupyterVispyScatterViewer], Type[IpyvolumeScatterView]]
 
 
 @pytest.fixture
