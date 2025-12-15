@@ -758,6 +758,9 @@ extras_require = {
     "qr": [
         "ngrok",
         "segno",
+    ],
+    "compression": [
+        "DracoPy"
     ]
 }
 
