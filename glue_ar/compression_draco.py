@@ -221,4 +221,3 @@ def create_draco_model(
 @compressor("draco")
 def compress_draco(builder: GLTFBuilder) -> GLTFBuilder:
     return create_draco_model(builder)
-
