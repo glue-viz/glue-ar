@@ -33,6 +33,12 @@ def export_viewer(viewer_state: Vispy3DViewerState,
     builder = builder_cls()
     layer_groups = defaultdict(list)
     export_groups = defaultdict(list)
+
+    exporting_gl = ext in ("gltf", "glb")
+
+    # If we want to have layer controls, we can't batch multiple layers together
+    allow_multiple = allow_multiple and not layer_controls
+
     for layer_state in layer_states:
         name, export_state = state_dictionary[export_label_for_layer(layer_state)]
         key = (type(layer_state), name)
@@ -42,6 +48,7 @@ def export_viewer(viewer_state: Vispy3DViewerState,
     for key, states in layer_groups.items():
         export_states = export_groups[key]
         layer_state_cls, name = key
+
         spec = ar_layer_export.export_spec(layer_state_cls, name, ext)
         if spec.multiple and allow_multiple:
             spec.export_method(builder, viewer_state, states, export_states, bounds)
@@ -49,10 +56,8 @@ def export_viewer(viewer_state: Vispy3DViewerState,
             for layer_state, export_state in zip(states, export_states):
                 spec.export_method(builder, viewer_state, layer_state, export_state, bounds)
 
-    if ext in ("gltf", "glb"):
-        # We can only add layer controls if we aren't using compression
-        layer_controls = layer_controls and compression == "None"
-        if (compression is not None) and (compression != "None"):
+    if exporting_gl:
+        if compression not in (None, "None"):
             builder = compress_gl(builder, method=compression)
 
         if model_viewer:
@@ -84,7 +89,11 @@ def export_modelviewer(output_path: str,
         html_template = f.read()
     with open(join(RESOURCES_DIR, "model-viewer.css")) as g:
         css_template = g.read()
-    css = Template(css_template).substitute({"bg_color": settings.BACKGROUND_COLOR})
+    css = Template(css_template)\
+            .substitute({
+                "bg_color": settings.BACKGROUND_COLOR,
+                "fg_color": settings.FOREGROUND_COLOR,
+            })
     with open(join(RESOURCES_DIR, "model-viewer.js")) as h:
         javascript = h.read()
 
