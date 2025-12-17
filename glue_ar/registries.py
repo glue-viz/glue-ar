@@ -4,7 +4,7 @@ from typing import Iterable, Protocol, Type, TypeVar, Union
 from glue.config import DictRegistry
 
 
-__all__ = ["builder", "compressor"]
+__all__ = ["Builder", "builder", "compressor"]
 
 
 T = TypeVar("T", covariant=True)

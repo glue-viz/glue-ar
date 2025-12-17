@@ -2,10 +2,8 @@ import numpy as np
 
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.registries import compressor
-from glue_ar.utils import unique_id
 
 from gltflib import AccessorType, AlphaMode, ComponentType, GLTFModel
-from gltflib.gltf import GLTF
 from gltflib.gltf_resource import GLTFResource
 import DracoPy
 
@@ -87,7 +85,13 @@ def get_data(resource: GLTFResource) -> bytes:
     raise ValueError("Resource has no data!")
 
 
-def create_draco_model(gltf: GLTF) -> GLTFBuilder:
+def create_draco_model(
+    builder: GLTFBuilder,
+    quantization_bits=10,
+    compression_level=10,
+) -> GLTFBuilder:
+
+    gltf = builder.build()
 
     model = gltf.model
 
@@ -100,15 +104,14 @@ def create_draco_model(gltf: GLTF) -> GLTFBuilder:
                 resources_data[resource.uri] = data
                 buffers_data.append(data)
 
-
     draco_bin_data = bytearray()
 
-    builder = GLTFBuilder()
-    buffer_index = builder.buffer_count
+    draco_builder = GLTFBuilder()
+    buffer_index = draco_builder.buffer_count
 
     for material in model.materials or []:
         pbr = material.pbrMetallicRoughness
-        builder.add_material(
+        draco_builder.add_material(
             color = pbr.baseColorFactor[:3],
             opacity = pbr.baseColorFactor[-1],
             metallic_factor=pbr.metallicFactor or 0,
@@ -116,90 +119,106 @@ def create_draco_model(gltf: GLTF) -> GLTFBuilder:
             alpha_mode=AlphaMode(material.alphaMode),
         )
 
-    for mesh in model.meshes or []:
-        if mesh.primitives is None:
-            continue
+    print(draco_builder.meshes_by_layer)
 
-        for primitive in mesh.primitives:
+    meshes_handled: set[int] = set()
 
-            # No POSITION - we can't Draco-encode this primitive
-            if primitive.attributes is None or primitive.attributes.POSITION is None:
+    for layer_id, mesh_indices in builder.meshes_by_layer.items():
+        for mesh_index in mesh_indices:
+
+            if mesh_index in meshes_handled:
                 continue
 
-            position_accessor_idx = primitive.attributes.POSITION
-            positions = accessor_to_numpy(model, position_accessor_idx, buffers_data)
-            positions = positions.astype(np.float32, copy=False)
+            mesh = model.meshes[mesh_index]
 
-            if primitive.indices is not None:
-                index_arr = accessor_to_numpy(model, primitive.indices, buffers_data)
-                index_arr = index_arr.astype(np.uint32, copy=False).ravel()
-            else:
-                count = positions.shape[0]
-                index_arr = np.arange(count, dtype=np.uint32)
+            if mesh.primitives is None:
+                continue
 
-            faces = index_arr.reshape(-1, 3)
+            for primitive in mesh.primitives:
 
-            draco_bytes = DracoPy.encode(positions, faces)
+                # No POSITION - we can't Draco-encode this primitive
+                if primitive.attributes is None or primitive.attributes.POSITION is None:
+                    continue
 
-            byte_offset = len(draco_bin_data)
-            draco_bin_data.extend(draco_bytes)
+                position_accessor_idx = primitive.attributes.POSITION
+                positions = accessor_to_numpy(model, position_accessor_idx, buffers_data)
+                # positions = positions.astype(np.float32, copy=False)
 
-            buffer_view_index = builder.buffer_view_count
-            builder.add_buffer_view(
-                buffer=buffer_index,
-                byte_offset=byte_offset,
-                byte_length=len(draco_bytes),
-                target=None,  # NB: We want this here for Draco; this isn't a standard ARRAY_BUFFER / ELEMENT_ARRAY_BUFFER
-            )
+                if primitive.indices is not None:
+                    index_arr = accessor_to_numpy(model, primitive.indices, buffers_data)
+                    # index_arr = index_arr.astype(np.uint32, copy=False)
+                    index_arr = index_arr.ravel()
+                else:
+                    count = positions.shape[0]
+                    index_arr = np.arange(count, dtype=np.uint32)
 
-            position_accessor = model.accessors[position_accessor_idx]
-            min_vals = (
-                position_accessor.min
-                if position_accessor.min is not None
-                else positions.min(axis=0).tolist()
-            )
-            max_vals = (
-                position_accessor.max
-                if position_accessor.max is not None
-                else positions.max(axis=0).tolist()
-            )
-            builder.add_accessor(
-                component_type=position_accessor.componentType,
-                type=AccessorType(position_accessor.type),
-                count=position_accessor.count,
-                mins=min_vals,
-                maxes=max_vals,
-                buffer_view=None,
-            )
+                faces = index_arr.reshape(-1, 3)
 
-            extensions_data = {
-                DRACO_EXTENSION: {
-                    "bufferView": buffer_view_index,
-                    "attributes": {
-                        "POSITION": 0,
+                draco_bytes = DracoPy.encode(positions, faces, quantization_bits=quantization_bits, compression_level=compression_level)
+
+                byte_offset = len(draco_bin_data)
+                draco_bin_data.extend(draco_bytes)
+
+                buffer_view_index = draco_builder.buffer_view_count
+                draco_builder.add_buffer_view(
+                    buffer=buffer_index,
+                    byte_offset=byte_offset,
+                    byte_length=len(draco_bytes),
+                    target=None,  # NB: We want this here for Draco; this isn't a standard ARRAY_BUFFER / ELEMENT_ARRAY_BUFFER
+                )
+
+                position_accessor = model.accessors[position_accessor_idx]
+                min_vals = (
+                    position_accessor.min
+                    if position_accessor.min is not None
+                    else positions.min(axis=0).tolist()
+                )
+                max_vals = (
+                    position_accessor.max
+                    if position_accessor.max is not None
+                    else positions.max(axis=0).tolist()
+                )
+                draco_builder.add_accessor(
+                    component_type=position_accessor.componentType,
+                    type=AccessorType(position_accessor.type),
+                    count=position_accessor.count,
+                    mins=min_vals,
+                    maxes=max_vals,
+                    buffer_view=None,
+                )
+
+                extensions_data = {
+                    DRACO_EXTENSION: {
+                        "bufferView": buffer_view_index,
+                        "attributes": {
+                            "POSITION": 0,
+                        }
                     }
                 }
-            }
 
-            builder.add_mesh(
-                layer_id=unique_id(),
-                position_accessor=builder.accessor_count-1,
-                material=primitive.material,
-                mode=primitive.mode,
-                extensions=extensions_data,
-            )
+                draco_builder.add_mesh(
+                    layer_id=layer_id,
+                    position_accessor=draco_builder.accessor_count-1,
+                    material=primitive.material,
+                    mode=primitive.mode,
+                    extensions=extensions_data,
+                )
+
+            meshes_handled.add(mesh_index)
 
 
     bin_uri = "draco.bin"
-    builder.add_buffer(byte_length=len(draco_bin_data), uri=bin_uri)
-    builder.add_file_resource(filename=bin_uri, data=draco_bin_data)
-    builder.add_extension(DRACO_EXTENSION, used=True, required=True)
+    draco_builder.add_buffer(byte_length=len(draco_bin_data), uri=bin_uri)
+    draco_builder.add_file_resource(filename=bin_uri, data=draco_bin_data)
+    draco_builder.add_extension(DRACO_EXTENSION, used=True, required=True)
 
-    return builder
+    print(draco_builder)
+    print(draco_builder.extensions)
+
+    return draco_builder
 
 
 @compressor("draco")
 def compress_draco(builder: GLTFBuilder) -> GLTFBuilder:
-    gltf = builder.build()
-    return create_draco_model(gltf)
+    return create_draco_model(builder)
 
