@@ -57,7 +57,7 @@
         <v-row>
           <v-checkbox
             v-if="show_modelviewer"
-            :disabled="compression_selected !== 0 || !modelviewer"
+            v-model="layer_controls"
             label="Include model-viewer layer controls"
             hide-details
           />

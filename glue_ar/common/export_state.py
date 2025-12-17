@@ -19,7 +19,7 @@ class ARExportDialogState(State):
     compression = SelectionCallbackProperty()
     method = SelectionCallbackProperty()
     modelviewer = CallbackProperty(True)
-    layer_controls = CallbackProperty(True)
+    layer_controls = CallbackProperty(False)
 
     def __init__(self, layers: Iterable[LayerState]):
 

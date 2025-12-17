@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>321</width>
-    <height>414</height>
+    <height>420</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -140,7 +140,7 @@
       <string>Include model-viewer layer controls</string>
      </property>
      <property name="checked">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
     </widget>
    </item>

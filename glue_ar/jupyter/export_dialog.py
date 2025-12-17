@@ -37,6 +37,8 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
     modelviewer = traitlets.Bool(True).tag(sync=True)
     show_modelviewer = traitlets.Bool(True).tag(sync=True)
 
+    layer_controls = traitlets.Bool(False).tag(sync=True)
+
     def __init__(self,
                  viewer: Viewer,
                  display: Optional[bool] = False,
@@ -95,9 +97,6 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         gl = filetype.lower() in ("gltf", "glb")
         self.show_compression = gl
         self.show_modelviewer = gl
-
-    def _on_compression_change(self, compression: str):
-        pass
 
     def vue_cancel_dialog(self, *args):
         self.state_dictionary = {}
