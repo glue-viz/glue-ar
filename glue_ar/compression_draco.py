@@ -1,11 +1,10 @@
-from uuid import uuid4
-
 import numpy as np
 
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.registries import compressor
+from glue_ar.utils import unique_id
 
-from gltflib import AccessorType, Buffer, ComponentType, GLTFModel, alpha_mode
+from gltflib import AccessorType, AlphaMode, ComponentType, GLTFModel
 from gltflib.gltf import GLTF
 from gltflib.gltf_resource import GLTFResource
 import DracoPy
@@ -88,7 +87,7 @@ def get_data(resource: GLTFResource) -> bytes:
     raise ValueError("Resource has no data!")
 
 
-def create_draco_model(gltf: GLTF):
+def create_draco_model(gltf: GLTF) -> GLTFBuilder:
 
     model = gltf.model
 
@@ -114,7 +113,7 @@ def create_draco_model(gltf: GLTF):
             opacity = pbr.baseColorFactor[-1],
             metallic_factor=pbr.metallicFactor or 0,
             roughness_factor = pbr.roughnessFactor or 1,
-            alpha_mode=material.alphaMode,
+            alpha_mode=AlphaMode(material.alphaMode),
         )
 
     for mesh in model.meshes or []:
@@ -128,7 +127,7 @@ def create_draco_model(gltf: GLTF):
                 continue
 
             position_accessor_idx = primitive.attributes.POSITION
-            positions = accessor_to_numpy(model, position_accessor_idx, model.buffers)
+            positions = accessor_to_numpy(model, position_accessor_idx, buffers_data)
             positions = positions.astype(np.float32, copy=False)
 
             if primitive.indices is not None:
@@ -166,10 +165,10 @@ def create_draco_model(gltf: GLTF):
             )
             builder.add_accessor(
                 component_type=position_accessor.componentType,
-                type=position_accessor.type,
+                type=AccessorType(position_accessor.type),
                 count=position_accessor.count,
-                min=min_vals,
-                max=max_vals,
+                mins=min_vals,
+                maxes=max_vals,
                 buffer_view=None,
             )
 
@@ -183,7 +182,7 @@ def create_draco_model(gltf: GLTF):
             }
 
             builder.add_mesh(
-                layer_id=uuid4(),
+                layer_id=unique_id(),
                 position_accessor=builder.accessor_count-1,
                 material=primitive.material,
                 mode=primitive.mode,
@@ -191,15 +190,16 @@ def create_draco_model(gltf: GLTF):
             )
 
 
-        builder.add_buffer(byte_length=len(draco_bin_data), uri="draco.bin")
-        builder.add_extension(DRACO_EXTENSION, used=True, required=True)
+    bin_uri = "draco.bin"
+    builder.add_buffer(byte_length=len(draco_bin_data), uri=bin_uri)
+    builder.add_file_resource(filename=bin_uri, data=draco_bin_data)
+    builder.add_extension(DRACO_EXTENSION, used=True, required=True)
 
+    return builder
 
 
 @compressor("draco")
-def compress_draco(builder: GLTFBuilder):
-
-    model = builder.build_model()
-    resources = builder.file_resources
-
+def compress_draco(builder: GLTFBuilder) -> GLTFBuilder:
+    gltf = builder.build()
+    return create_draco_model(gltf)
 

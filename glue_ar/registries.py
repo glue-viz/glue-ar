@@ -1,10 +1,20 @@
 from collections.abc import Callable
-from typing import Iterable, Type, Union
+from typing import Iterable, Protocol, Type, TypeVar, Union
 
 from glue.config import DictRegistry
 
 
 __all__ = ["builder", "compressor"]
+
+
+T = TypeVar("T", covariant=True)
+class Builder(Protocol[T]):
+    def build(self) -> T:
+        ...
+
+    def build_and_export(self, filepath: str):
+        ...
+
 
 
 class BuilderRegistry(DictRegistry):
@@ -26,13 +36,14 @@ class BuilderRegistry(DictRegistry):
 builder = BuilderRegistry()
 
 
+B = TypeVar('B', bound=Builder)
 class CompressorRegistry(DictRegistry):
 
-    def add(self, name: str, compressor: Callable[[str], None]):
+    def add(self, name: str, compressor: Callable[[B], B]):
         self._members[name] = compressor
 
     def __call__(self, name: str):
-        def adder(compressor: Callable[[str], None]):
+        def adder(compressor: Callable[[B], B]):
             self.add(name, compressor)
             return compressor
         return adder
