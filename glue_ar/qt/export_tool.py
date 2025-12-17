@@ -74,7 +74,9 @@ class QtARExportTool(Tool):
                            state_dictionary=dialog.state_dictionary,
                            filepath=export_path,
                            compression=dialog.state.compression,
-                           model_viewer=dialog.state.modelviewer)
+                           model_viewer=dialog.state.modelviewer,
+                           layer_controls=dialog.state.modelviewer and \
+                                          dialog.state.layer_controls)
 
     def _start_worker(self, exporter, **kwargs):
         _, ext = splitext(kwargs["filepath"])
