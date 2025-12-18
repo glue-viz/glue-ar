@@ -25,6 +25,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         self._connections = autoconnect_callbacks_to_qt(self.state, self.ui)
         self._layer_connections = []
         self._on_layer_change(self.state.layer)
+        self._on_filetype_change(self.state.filetype)
 
         self.ui.button_cancel.clicked.connect(self.reject)
         self.ui.button_ok.clicked.connect(self.accept)
@@ -87,8 +88,9 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         state = self._layer_export_states[self.state.layer][self.state.method]
         self._update_layer_ui(state)
         gl = filetype.lower() in ("gltf", "glb")
-        self.ui.combosel_compression.setVisible(gl)
-        self.ui.label_compression_message.setVisible(gl)
+        compression_visible = gl and len(self.state.compression_helper.choices) > 1
+        self.ui.combosel_compression.setVisible(compression_visible)
+        self.ui.label_compression_message.setVisible(compression_visible)
         self.ui.bool_modelviewer.setVisible(gl)
         self.ui.bool_layer_controls.setVisible(gl)
 
