@@ -45,7 +45,6 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         assert self.dialog.compression_items == [
             {"text": "None", "value": 0},
             {"text": "Draco", "value": 1},
-            {"text": "Meshoptimizer", "value": 2}
         ]
         assert self.dialog.compression_selected == 0
         assert self.dialog.filetype_items == [

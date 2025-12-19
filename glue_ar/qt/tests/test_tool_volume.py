@@ -63,7 +63,7 @@ class TestVolumeExportTool:
 
     @pytest.mark.parametrize("extension,compression",
                              product(("glB", "glTF", "USDA", "USDC", "USDZ", "STL"),
-                                     ("None", "Draco", "Meshoptimizer")))
+                                     ("None", "Draco")))
     def test_tool_export_call(self, extension, compression):
         auto_accept = dialog_auto_accept_with_options(filetype=extension, compression=compression)
         with patch("qtpy.compat.getsavefilename") as fd, \

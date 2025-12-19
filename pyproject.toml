@@ -83,6 +83,9 @@ build-backend = 'setuptools.build_meta'
 zip-safe = false
 include-package-data = true
 
+[project.entry-points."glue.plugins"]
+glue_ar = "glue_ar:setup"
+
 [tool.setuptools.packages.find]
 namespaces = false
 

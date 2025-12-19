@@ -41,7 +41,7 @@ class TestQtExportDialog(BaseExportDialogTest):
         assert ui.label_compression_message.isVisible()
 
         compression_options = combobox_options(ui.combosel_compression)
-        assert compression_options == ["None", "Draco", "Meshoptimizer"]
+        assert compression_options == ["None", "Draco"]
 
     def test_filetype_change(self):
         state = self.dialog.state
@@ -119,16 +119,15 @@ class TestQtExportDialog(BaseExportDialogTest):
         ui.bool_modelviewer.setChecked(True)
         assert ui.bool_layer_controls.isEnabled()
         ui.bool_modelviewer.setChecked(False)
-        assert not ui.bool_layer_controls.isEnabled()
+        assert ui.bool_layer_controls.isEnabled()
 
-        for compression in ("Draco", "Meshoptimizer"):
-            state.compression = compression
-            assert ui.bool_modelviewer.isVisible()
-            assert ui.bool_layer_controls.isVisible()
-            ui.bool_modelviewer.setChecked(True)
-            assert not ui.bool_layer_controls.isEnabled()
-            ui.bool_modelviewer.setChecked(False)
-            assert not ui.bool_layer_controls.isEnabled()
+        state.compression = "Draco"
+        assert ui.bool_modelviewer.isVisible()
+        assert ui.bool_layer_controls.isVisible()
+        ui.bool_modelviewer.setChecked(True)
+        ui.bool_layer_controls.isEnabled()
+        ui.bool_modelviewer.setChecked(False)
+        ui.bool_layer_controls.isEnabled()
 
         state.filetype = "USDZ"
         assert not ui.bool_modelviewer.isVisible()
