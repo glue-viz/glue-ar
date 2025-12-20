@@ -74,8 +74,8 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         assert not self.dialog.show_modelviewer
 
         state.filetype = "glTF"
-        assert self.dialog.show_compression
-        assert self.dialog.show_modelviewer
+        assert self.dialog.show_compression == DRACOPY_INSTALLED
+        assert self.dialog.show_modelviewer == DRACOPY_INSTALLED
 
         state.filetype = "USDA"
         assert not self.dialog.show_compression
@@ -86,8 +86,8 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         assert not self.dialog.show_modelviewer
 
         state.filetype = "glTF"
-        assert self.dialog.show_compression
-        assert self.dialog.show_modelviewer
+        assert self.dialog.show_compression == DRACOPY_INSTALLED
+        assert self.dialog.show_modelviewer == DRACOPY_INSTALLED
 
     def test_update_layer_ui(self):
         state = DummyState()

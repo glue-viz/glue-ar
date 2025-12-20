@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Dict, cast
 
 from pytest import importorskip
 
@@ -38,8 +38,8 @@ class TestQtExportDialog(BaseExportDialogTest):
         ui = self.dialog.ui
         assert ui.button_cancel.isVisible()
         assert ui.button_ok.isVisible()
-        assert ui.combosel_compression.isVisible()
-        assert ui.label_compression_message.isVisible()
+        assert ui.combosel_compression.isVisible() == DRACOPY_INSTALLED
+        assert ui.label_compression_message.isVisible() == DRACOPY_INSTALLED
 
         expected_compression_options = ["None"]
         if DRACOPY_INSTALLED:
@@ -61,8 +61,8 @@ class TestQtExportDialog(BaseExportDialogTest):
         assert not ui.label_compression_message.isVisible()
 
         state.filetype = "glTF"
-        assert ui.combosel_compression.isVisible()
-        assert ui.label_compression_message.isVisible()
+        assert ui.combosel_compression.isVisible() == DRACOPY_INSTALLED
+        assert ui.label_compression_message.isVisible() == DRACOPY_INSTALLED
 
         state.filetype = "USDA"
         assert not ui.combosel_compression.isVisible()
@@ -73,8 +73,8 @@ class TestQtExportDialog(BaseExportDialogTest):
         assert not ui.label_compression_message.isVisible()
 
         state.filetype = "glTF"
-        assert ui.combosel_compression.isVisible()
-        assert ui.label_compression_message.isVisible()
+        assert ui.combosel_compression.isVisible() == DRACOPY_INSTALLED
+        assert ui.label_compression_message.isVisible() == DRACOPY_INSTALLED
 
     def test_update_layer_ui(self):
         state = DummyState()
