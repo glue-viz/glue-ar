@@ -7,6 +7,7 @@ importorskip("glue_qt")
 from glue_qt.app import GlueApplication
 from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
 
+from glue_ar.tests.helpers import DRACOPY_INSTALLED
 from glue_ar.common.tests.test_base_dialog import BaseExportDialogTest, DummyState
 from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
 from glue_ar.qt.export_dialog import QtARExportDialog
@@ -40,8 +41,12 @@ class TestQtExportDialog(BaseExportDialogTest):
         assert ui.combosel_compression.isVisible()
         assert ui.label_compression_message.isVisible()
 
+        expected_compression_options = ["None"]
+        if DRACOPY_INSTALLED:
+            expected_compression_options.append("Draco")
+
         compression_options = combobox_options(ui.combosel_compression)
-        assert compression_options == ["None", "Draco"]
+        assert compression_options == expected_compression_options
 
     def test_filetype_change(self):
         state = self.dialog.state
@@ -121,13 +126,14 @@ class TestQtExportDialog(BaseExportDialogTest):
         ui.bool_modelviewer.setChecked(False)
         assert ui.bool_layer_controls.isEnabled()
 
-        state.compression = "Draco"
-        assert ui.bool_modelviewer.isVisible()
-        assert ui.bool_layer_controls.isVisible()
-        ui.bool_modelviewer.setChecked(True)
-        ui.bool_layer_controls.isEnabled()
-        ui.bool_modelviewer.setChecked(False)
-        ui.bool_layer_controls.isEnabled()
+        if DRACOPY_INSTALLED:
+            state.compression = "Draco"
+            assert ui.bool_modelviewer.isVisible()
+            assert ui.bool_layer_controls.isVisible()
+            ui.bool_modelviewer.setChecked(True)
+            ui.bool_layer_controls.isEnabled()
+            ui.bool_modelviewer.setChecked(False)
+            ui.bool_layer_controls.isEnabled()
 
         state.filetype = "USDZ"
         assert not ui.bool_modelviewer.isVisible()
