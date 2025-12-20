@@ -53,26 +53,32 @@ class TestQtExportDialog(BaseExportDialogTest):
         ui = self.dialog.ui
 
         state.filetype = "USDC"
+        assert not ui.bool_modelviewer.isVisible()
         assert not ui.combosel_compression.isVisible()
         assert not ui.label_compression_message.isVisible()
 
         state.filetype = "USDA"
+        assert not ui.bool_modelviewer.isVisible()
         assert not ui.combosel_compression.isVisible()
         assert not ui.label_compression_message.isVisible()
 
         state.filetype = "glTF"
+        assert ui.bool_modelviewer.isVisible()
         assert ui.combosel_compression.isVisible() == DRACOPY_INSTALLED
         assert ui.label_compression_message.isVisible() == DRACOPY_INSTALLED
 
         state.filetype = "USDA"
+        assert not ui.bool_modelviewer.isVisible()
         assert not ui.combosel_compression.isVisible()
         assert not ui.label_compression_message.isVisible()
 
         state.filetype = "STL"
+        assert not ui.bool_modelviewer.isVisible()
         assert not ui.combosel_compression.isVisible()
         assert not ui.label_compression_message.isVisible()
 
         state.filetype = "glTF"
+        assert ui.bool_modelviewer.isVisible()
         assert ui.combosel_compression.isVisible() == DRACOPY_INSTALLED
         assert ui.label_compression_message.isVisible() == DRACOPY_INSTALLED
 
