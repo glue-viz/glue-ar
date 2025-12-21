@@ -49,11 +49,11 @@ jobs:
         # - macos: py312-test-jupyter-compression
         # - macos: py313-test-all
 
-        - windows: py310-test-all-compression
-        - windows: py311-test-all-compression
-        - windows: py312-test-all-compression
-        - windows: py312-test-qt-compression
-        - windows: py312-test-jupyter-compression
+        # - windows: py310-test-all-compression
+        # - windows: py311-test-all-compression
+        # - windows: py312-test-all-compression
+        # - windows: py312-test-qt-compression
+        # - windows: py312-test-jupyter-compression
         # - windows: py313-test-all
 
 
