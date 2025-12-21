@@ -119,8 +119,6 @@ def create_draco_model(
             alpha_mode=AlphaMode(material.alphaMode),
         )
 
-    print(draco_builder.meshes_by_layer)
-
     meshes_handled: set[int] = set()
 
     for layer_id, mesh_indices in builder.meshes_by_layer.items():
@@ -211,9 +209,6 @@ def create_draco_model(
     draco_builder.add_buffer(byte_length=len(draco_bin_data), uri=bin_uri)
     draco_builder.add_file_resource(filename=bin_uri, data=draco_bin_data)
     draco_builder.add_extension(DRACO_EXTENSION, used=True, required=True)
-
-    print(draco_builder)
-    print(draco_builder.extensions)
 
     return draco_builder
 
