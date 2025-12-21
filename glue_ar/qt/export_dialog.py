@@ -25,7 +25,10 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         self._connections = autoconnect_callbacks_to_qt(self.state, self.ui)
         self._layer_connections = []
         self._on_layer_change(self.state.layer)
-        self._on_filetype_change(self.state.filetype)
+        gl = self.state.filetype.lower() in ("gltf", "glb")
+        compression_visible = gl and len(self.state.compression_helper.choices) > 1
+        self._update_gl_controls(gl)
+        self._update_compression_controls(compression_visible)
 
         self.ui.button_cancel.clicked.connect(self.reject)
         self.ui.button_ok.clicked.connect(self.accept)
@@ -53,6 +56,7 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
     def _clear_layer_layout(self):
         self._clear_layout(self.ui.layer_layout)
         self._layer_connections = []
+
 
     def _on_layer_change(self, layer_name: str):
         super()._on_layer_change(layer_name)
@@ -83,16 +87,24 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
                 row.addLayout(subrow)
             self.ui.layer_layout.addLayout(row)
 
+    def _update_gl_controls(self, gl: bool):
+        self.ui.bool_modelviewer.setVisible(gl)
+        self.ui.bool_layer_controls.setVisible(gl)
+
+    def _update_compression_controls(self, use_compression: bool):
+        self.ui.combosel_compression.setVisible(use_compression)
+        self.ui.label_compression_message.setVisible(use_compression)
+
     def _on_filetype_change(self, filetype: str):
         super()._on_filetype_change(filetype)
         state = self._layer_export_states[self.state.layer][self.state.method]
         self._update_layer_ui(state)
         gl = filetype.lower() in ("gltf", "glb")
         compression_visible = gl and len(self.state.compression_helper.choices) > 1
-        self.ui.combosel_compression.setVisible(compression_visible)
-        self.ui.label_compression_message.setVisible(compression_visible)
-        self.ui.bool_modelviewer.setVisible(gl)
-        self.ui.bool_layer_controls.setVisible(gl)
+        self._update_gl_controls(gl)
+        self._update_compression_controls(compression_visible)
+
+
 
     def _on_method_change(self, method_name: str):
         super()._on_method_change(method_name)

@@ -11,6 +11,7 @@ class ARIsosurfaceExportOptions(State):
         default=20,
         min_value=1,
         max_value=50,
+        resolution=1,
         docstring="The number of isosurfaces used in the export.",
     )
 
