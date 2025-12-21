@@ -130,16 +130,16 @@ class TestQtExportDialog(BaseExportDialogTest):
         ui.bool_modelviewer.setChecked(True)
         assert ui.bool_layer_controls.isEnabled()
         ui.bool_modelviewer.setChecked(False)
-        assert ui.bool_layer_controls.isEnabled()
+        assert not ui.bool_layer_controls.isEnabled()
 
         if DRACOPY_INSTALLED:
             state.compression = "Draco"
             assert ui.bool_modelviewer.isVisible()
             assert ui.bool_layer_controls.isVisible()
             ui.bool_modelviewer.setChecked(True)
-            ui.bool_layer_controls.isEnabled()
+            assert ui.bool_layer_controls.isEnabled()
             ui.bool_modelviewer.setChecked(False)
-            ui.bool_layer_controls.isEnabled()
+            assert not ui.bool_layer_controls.isEnabled()
 
         state.filetype = "USDZ"
         assert not ui.bool_modelviewer.isVisible()

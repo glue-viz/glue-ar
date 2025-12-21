@@ -104,9 +104,10 @@ class QtARExportDialog(ARExportDialogBase, QDialog):
         self._update_gl_controls(gl)
         self._update_compression_controls(compression_visible)
 
-
-
     def _on_method_change(self, method_name: str):
         super()._on_method_change(method_name)
         state = self._layer_export_states[self.state.layer][method_name]
         self._update_layer_ui(state)
+
+    def _on_modelviewer_change(self, use_modelviewer: bool):
+        self.ui.bool_layer_controls.setEnabled(use_modelviewer)
