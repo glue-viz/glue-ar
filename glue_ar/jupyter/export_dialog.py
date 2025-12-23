@@ -37,6 +37,8 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
     modelviewer = traitlets.Bool(True).tag(sync=True)
     show_modelviewer = traitlets.Bool(True).tag(sync=True)
 
+    layer_controls = traitlets.Bool(False).tag(sync=True)
+
     def __init__(self,
                  viewer: Viewer,
                  display: Optional[bool] = False,
@@ -48,12 +50,14 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         VuetifyTemplate.__init__(self)
 
         self._on_layer_change(self.state.layer)
+        self._on_filetype_change(self.state.filetype)
 
         link_glue_choices(self, self.state, 'layer')
         link_glue_choices(self, self.state, 'compression')
         link_glue_choices(self, self.state, 'filetype')
         link_glue_choices(self, self.state, 'method')
         link((self, 'modelviewer'), (self.state, 'modelviewer'))
+        link((self, 'layer_controls'), (self.state, 'layer_controls'))
 
         self.dialog_open = display
         self.on_cancel = on_cancel
@@ -93,11 +97,9 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
         state = self._layer_export_states[self.state.layer][self.state.method]
         self._update_layer_ui(state)
         gl = filetype.lower() in ("gltf", "glb")
-        self.show_compression = gl
+        compression_visible = gl and len(self.state.compression_helper.choices) > 1
+        self.show_compression = compression_visible
         self.show_modelviewer = gl
-
-    def _on_compression_change(self, compression: str):
-        pass
 
     def vue_cancel_dialog(self, *args):
         self.state_dictionary = {}

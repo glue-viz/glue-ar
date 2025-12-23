@@ -7,6 +7,8 @@ from glue.core.link_helpers import LinkSame
 from glue.core.state_objects import State
 from numpy import arange, ones
 
+from glue_ar.tests.helpers import DRACOPY_INSTALLED
+
 
 class DummyState(State):
     cb_int = CallbackProperty(2, docstring="Integer callback property")
@@ -49,8 +51,12 @@ class BaseExportDialogTest:
         assert state.layer == "Volume Data"
         assert state.method in {"Isosurface", "Voxel"}
 
+        compression_choices = ["None"]
+        if DRACOPY_INSTALLED:
+            compression_choices.append("Draco")
+
         assert state.filetype_helper.choices == ['glB', 'glTF', 'USDZ', 'USDC', 'USDA', 'STL']
-        assert state.compression_helper.choices == ['None', 'Draco', 'Meshoptimizer']
+        assert state.compression_helper.choices == compression_choices
         assert state.layer_helper.choices == ["Volume Data", "Scatter Data"]
         assert set(state.method_helper.choices) == {"Isosurface", "Voxel"}
 

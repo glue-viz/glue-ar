@@ -12,14 +12,7 @@ from glue_ar.utils import alpha_composite, binned_opacity, clamp, clamp_with_res
                           iterable_has_nan, iterator_count, layer_color, mask_for_bounds, ndarray_has_nan, \
                           offset_triangles, rgb_to_hex, slope_intercept_between, unique_id, xyz_bounds
 
-
-def package_installed(package):
-    from importlib.util import find_spec
-    return find_spec(package) is not None
-
-
-GLUE_QT_INSTALLED = package_installed("glue_qt")
-GLUE_JUPYTER_INSTALLED = package_installed("glue_jupyter")
+from .helpers import GLUE_QT_INSTALLED, GLUE_JUPYTER_INSTALLED
 
 
 try:

@@ -3,6 +3,7 @@ from glue.core.data_combo_helper import ComboHelper
 from glue.core.state_objects import State
 from glue_vispy_viewers.common.layer_state import LayerState
 
+from glue_ar.registries import compressor
 from glue_ar.utils import export_label_for_layer
 
 from typing import Iterable
@@ -18,7 +19,7 @@ class ARExportDialogState(State):
     compression = SelectionCallbackProperty()
     method = SelectionCallbackProperty()
     modelviewer = CallbackProperty(True)
-    layer_controls = CallbackProperty(True)
+    layer_controls = CallbackProperty(False)
 
     def __init__(self, layers: Iterable[LayerState]):
 
@@ -28,7 +29,7 @@ class ARExportDialogState(State):
         self.filetype_helper.choices = ['glB', 'glTF', 'USDZ', 'USDC', 'USDA', 'STL']
 
         self.compression_helper = ComboHelper(self, 'compression')
-        self.compression_helper.choices = ['None', 'Draco', 'Meshoptimizer']
+        self.compression_helper.choices = ['None'] + [name.title() for name in compressor.members.keys()]
 
         self.method_helper = ComboHelper(self, 'method')
 

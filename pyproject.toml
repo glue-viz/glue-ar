@@ -1,0 +1,112 @@
+[project]
+name = "glue-ar"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Visualization :: Augmented Reality",
+]
+
+description = "Export glue views to augmented reality"
+readme = "README.md"
+requires-python = ">=3.10"
+dynamic = [ "version",]
+
+authors = [
+    {name = "Jonathan Carifio", email = "jonathan.carifio@cfa.harvard.edu"},
+]
+
+dependencies = [
+    "gltflib",
+    "glue-core",
+    "glue-vispy-viewers",
+    "numpy-stl",
+    "pillow",
+    "PyMCubes",
+    "usd-core",
+]
+
+[project.urls]
+Homepage = "https://glueviz.org/glue-ar"
+
+[project.optional-dependencies]
+test = [
+    "flake8",
+    "pytest",
+    "pytest-cov",
+]
+
+qt = [
+    "glue-qt",
+    "PyQt5",
+]
+
+jupyter = [
+    "glue-jupyter",
+    "ipyfilechooser",
+    "ipyvuetify",
+    "glue-vispy-viewers[jupyter]",
+    # Temporary - see https://github.com/widgetti/ipyvolume/issues/447
+    "ipython-genutils",
+]
+
+qr = [
+    "ngrok",
+    "segno",
+]
+
+compression = [
+    "DracoPy",
+]
+
+all = [
+    "glue-ar[test]",
+    "glue-ar[qt]",
+    "glue-ar[jupyter]",
+    "glue-ar[qr]",
+    "glue-ar[compression]",
+]
+
+[build-system]
+requires = ["setuptools",
+            "setuptools_scm",
+            "wheel"]
+build-backend = 'setuptools.build_meta'
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[project.entry-points."glue.plugins"]
+glue_ar = "glue_ar:setup"
+
+[tool.setuptools.packages.find]
+namespaces = false
+
+[tool.setuptools_scm]
+version_file = "glue_ar/_version.py"
+
+[tool.setuptools.package-data]
+"glue_ar" = ["py.typed", "resources/**", "**/*.vue", "**/*.ui"]
+
+[tool.ruff.lint.flake8-annotations]
+ignore-fully-untyped = true
+mypy-init-return = true
+
+[tool.ruff.lint.flake8-comprehensions]
+allow-dict-calls-with-keyword-arguments = true
+
+[tool.ruff.lint.flake8-type-checking]
+exempt-modules = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["glue", "glue_core", "glue_jupyter"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"

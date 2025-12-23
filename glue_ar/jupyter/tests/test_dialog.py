@@ -2,6 +2,7 @@ from pytest import importorskip
 from unittest.mock import MagicMock
 from typing import cast
 
+
 importorskip("glue_jupyter")
 
 from glue_jupyter import JupyterApplication
@@ -11,6 +12,7 @@ from glue_jupyter.ipyvolume.volume import IpyvolumeVolumeView
 
 from glue_ar.common.tests.test_base_dialog import BaseExportDialogTest, DummyState
 from glue_ar.jupyter.export_dialog import JupyterARExportDialog
+from glue_ar.tests.helpers import DRACOPY_INSTALLED
 
 
 class TestJupyterExportDialog(BaseExportDialogTest):
@@ -42,11 +44,10 @@ class TestJupyterExportDialog(BaseExportDialogTest):
             {"text": "Scatter Data", "value": 1}
         ]
         assert self.dialog.layer_selected == 0
-        assert self.dialog.compression_items == [
-            {"text": "None", "value": 0},
-            {"text": "Draco", "value": 1},
-            {"text": "Meshoptimizer", "value": 2}
-        ]
+        compression_items = [{"text": "None", "value": 0}]
+        if DRACOPY_INSTALLED:
+            compression_items.append({"text": "Draco", "value": 1})
+        assert self.dialog.compression_items == compression_items
         assert self.dialog.compression_selected == 0
         assert self.dialog.filetype_items == [
             {"text": "glB", "value": 0},
@@ -73,8 +74,8 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         assert not self.dialog.show_modelviewer
 
         state.filetype = "glTF"
-        assert self.dialog.show_compression
         assert self.dialog.show_modelviewer
+        assert self.dialog.show_compression == DRACOPY_INSTALLED
 
         state.filetype = "USDA"
         assert not self.dialog.show_compression
@@ -85,8 +86,8 @@ class TestJupyterExportDialog(BaseExportDialogTest):
         assert not self.dialog.show_modelviewer
 
         state.filetype = "glTF"
-        assert self.dialog.show_compression
         assert self.dialog.show_modelviewer
+        assert self.dialog.show_compression == DRACOPY_INSTALLED
 
     def test_update_layer_ui(self):
         state = DummyState()

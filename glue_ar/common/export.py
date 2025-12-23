@@ -2,7 +2,7 @@ from collections import defaultdict
 from math import floor
 from os.path import extsep, join, split, splitext
 from string import Template
-from typing import Dict, Optional
+from typing import Dict, Optional, TypeVar
 from glue.core.state_objects import State
 from glue.config import settings
 from glue.viewers.common.state import LayerState
@@ -11,13 +11,10 @@ from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.registries import builder as builder_registry, compressor as compressor_registry
-from glue_ar.utils import PACKAGE_DIR, RESOURCES_DIR, Bounds, BoundsWithResolution, export_label_for_layer, rgb_to_hex
+from glue_ar.registries import Builder, builder as builder_registry, compressor as compressor_registry
+from glue_ar.utils import RESOURCES_DIR, Bounds, BoundsWithResolution, export_label_for_layer, rgb_to_hex
 
 from typing import List, Tuple, Union
-
-
-NODE_MODULES_DIR = join(PACKAGE_DIR, "js", "node_modules")
 
 
 def export_viewer(viewer_state: Vispy3DViewerState,
@@ -36,6 +33,12 @@ def export_viewer(viewer_state: Vispy3DViewerState,
     builder = builder_cls()
     layer_groups = defaultdict(list)
     export_groups = defaultdict(list)
+
+    exporting_gl = ext in ("gltf", "glb")
+
+    # If we want to have layer controls, we can't batch multiple layers together
+    allow_multiple = allow_multiple and not layer_controls
+
     for layer_state in layer_states:
         name, export_state = state_dictionary[export_label_for_layer(layer_state)]
         key = (type(layer_state), name)
@@ -45,6 +48,7 @@ def export_viewer(viewer_state: Vispy3DViewerState,
     for key, states in layer_groups.items():
         export_states = export_groups[key]
         layer_state_cls, name = key
+
         spec = ar_layer_export.export_spec(layer_state_cls, name, ext)
         if spec.multiple and allow_multiple:
             spec.export_method(builder, viewer_state, states, export_states, bounds)
@@ -52,13 +56,10 @@ def export_viewer(viewer_state: Vispy3DViewerState,
             for layer_state, export_state in zip(states, export_states):
                 spec.export_method(builder, viewer_state, layer_state, export_state, bounds)
 
-    builder.build_and_export(filepath)
+    if exporting_gl:
+        if compression not in (None, "None"):
+            builder = compress_gl(builder, method=compression)
 
-    if ext in ("gltf", "glb"):
-        # We can only add layer controls if we aren't using compression
-        layer_controls = layer_controls and compression == "None"
-        if (compression is not None) and (compression != "None"):
-            compress_gl(filepath, method=compression)
         if model_viewer:
             mv_path = f"{base}{extsep}html"
             export_modelviewer(output_path=mv_path,
@@ -67,12 +68,15 @@ def export_viewer(viewer_state: Vispy3DViewerState,
                                alt_text=viewer_state.title,
                                layer_controls=layer_controls)
 
+    builder.build_and_export(filepath)
 
-def compress_gl(filepath: str, method: str = "draco"):
+
+B = TypeVar("B", bound=Builder)
+def compress_gl(builder: B, method: str = "draco") -> B:
     compressor = compressor_registry.members.get(method.lower(), None)
     if compressor is None:
         raise ValueError("Invalid compression method specified")
-    compressor(filepath)
+    return compressor(builder)
 
 
 def export_modelviewer(output_path: str,
@@ -85,7 +89,11 @@ def export_modelviewer(output_path: str,
         html_template = f.read()
     with open(join(RESOURCES_DIR, "model-viewer.css")) as g:
         css_template = g.read()
-    css = Template(css_template).substitute({"bg_color": settings.BACKGROUND_COLOR})
+    css = Template(css_template)\
+            .substitute({
+                "bg_color": settings.BACKGROUND_COLOR,
+                "fg_color": settings.FOREGROUND_COLOR,
+            })
     with open(join(RESOURCES_DIR, "model-viewer.js")) as h:
         javascript = h.read()
 

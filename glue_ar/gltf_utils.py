@@ -33,12 +33,6 @@ class GLTFIndexExportOption(Enum):
         return (2 ** (8 * self.byte_size)) - 1
 
 
-GLTF_COMPRESSION_EXTENSIONS = {
-    "draco": "KHR_draco_mesh_compression",
-    "meshoptimizer": "EXT_meshopt_compression",
-}
-
-
 def byte_size_format(component_type: ComponentType | int) -> Tuple[int, str]:
     match component_type:
         case ComponentType.UNSIGNED_BYTE:

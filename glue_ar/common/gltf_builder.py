@@ -51,7 +51,8 @@ class GLTFBuilder:
                  position_accessor: int,
                  indices_accessor: Optional[int] = None,
                  material: Optional[int] = None,
-                 mode: PrimitiveMode = PrimitiveMode.TRIANGLES) -> GLTFBuilder:
+                 mode: PrimitiveMode = PrimitiveMode.TRIANGLES,
+                 extensions: Optional[dict] = None) -> GLTFBuilder:
 
         primitive_kwargs = {
                 "attributes": Attributes(POSITION=position_accessor),
@@ -62,6 +63,10 @@ class GLTFBuilder:
         if material is not None:
             primitive_kwargs["material"] = material
         mesh_index = self.mesh_count
+
+        if extensions is not None:
+            primitive_kwargs["extensions"] = extensions
+
         self.meshes.append(
             Mesh(primitives=[
                 Primitive(**primitive_kwargs)]

@@ -27,12 +27,15 @@ from gltflib import AccessorType, BufferTarget, ComponentType
 def add_voxel_layers_gltf(builder: GLTFBuilder,
                           viewer_state: Vispy3DVolumeViewerState,
                           layer_states: Union[List[VolumeLayerState], VolumeLayerState],
-                          options: Iterable[ARVoxelExportOptions],
+                          options: Union[Iterable[ARVoxelExportOptions], ARVoxelExportOptions],
                           bounds: Optional[BoundsWithResolution] = None,
-                          voxels_per_mesh: Optional[int] = 1):
+                          voxels_per_mesh: Optional[int] = None):
 
     if isinstance(layer_states, VolumeLayerState):
         layer_states = [layer_states]
+
+    if isinstance(options, ARVoxelExportOptions):
+        options = [options]
 
     if len(layer_states) == 1:
         layer_id = export_label_for_layer(layer_states[0])
@@ -88,6 +91,9 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
             else:
                 index = round(t_voxel / cmap_resolution)
                 voxel_color_components = voxel_colors[index]
+
+            if adjusted_opacity == 0:
+                continue
 
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
