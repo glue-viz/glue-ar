@@ -82,6 +82,10 @@ h3 {
   background-color: transparent;
 }
 
+#layer-controls:empty {
+  display: none;
+}
+
 #layer-controls button {
   width: 100%;
 }
