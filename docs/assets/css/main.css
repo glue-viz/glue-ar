@@ -20,6 +20,7 @@
 
     html {
         scroll-padding-top: 6em;
+        overscroll-behavior: none;
     }
 
 	code {
@@ -3277,6 +3278,8 @@
   display: inline;
   width: fit-content;
 }
+
+
 
 @media screen and (max-width: 840px) {
     #nav {
