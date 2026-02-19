@@ -38,16 +38,22 @@ def scatter_layer_mask(
     else:
         mask = None
 
-    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
     fixed_size = layer_state.size_mode == "Fixed"
-    cmap_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
+    cmap_mode_attr = "color_mode" \
+            if hasattr(layer_state, "color_mode") \
+            else "cmap_mode"
     fixed_color = getattr(layer_state, cmap_mode_attr, "Fixed") == "Fixed"
-    size_attr = "size_attribute" if vispy_layer_state else "size_att"
+
+    size_attr = "size_attribute" \
+            if hasattr(layer_state, "size_attribute") \
+            else "size_att"
     if not fixed_size:
         size_data = ensure_numerical(layer_state.layer[getattr(layer_state, size_attr)])
         size_mask = isfinite(size_data)
         mask = size_mask if mask is None else (mask & size_mask)
-    cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
+    cmap_attr = "cmap_attribute" if \
+            hasattr(layer_state, "cmap_attribute") \
+            else "cmap_att"
     if not fixed_color:
         color_data = ensure_numerical(layer_state.layer[getattr(layer_state, cmap_attr)])
         color_mask = isfinite(color_data)
@@ -99,7 +105,7 @@ def clip_vector_data(viewer_state: Viewer3DState,
                      layer_state: ScatterLayerState3D,
                      bounds: Bounds,
                      mask: Optional[ndarray] = None) -> ndarray:
-    if isinstance(layer_state, ScatterLayerState):
+    if all(hasattr(layer_state, f"v{c}_attribute") for c in ("x", "y", "z")):
         atts = [layer_state.vx_attribute, layer_state.vy_attribute, layer_state.vz_attribute]
     else:
         atts = [layer_state.vx_att, layer_state.vy_att, layer_state.vz_att]
@@ -122,8 +128,8 @@ def clip_error_data(viewer_state: Viewer3DState,
                     bounds: Bounds,
                     axis: Literal["x", "y", "z"],
                     mask: Optional[ndarray] = None) -> ndarray:
-    att_ending = "attribute" if isinstance(layer_state, ScatterLayerState) else "att"
-    err_att = getattr(layer_state, f"{axis}err_{att_ending}")
+    attribute = f"{axis}_attribute"
+    err_att = attribute if hasattr(layer_state, attribute) else f"{axis}_att"
     error_data = ensure_numerical(layer_state.layer[err_att].ravel()[mask]).astype(float)
     error_data[~isfinite(error_data)] = 0.0
 

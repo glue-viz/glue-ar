@@ -83,12 +83,15 @@ def add_vectors_gltf(builder: GLTFBuilder,
 
     point_mins = None
     point_maxes = None
-    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
-    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
+    color_mode_attr = "color_mode" \
+            if hasattr(layer_state, "color_mode") \
+            else "cmap_mode"
     fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
 
     if not fixed_color:
-        cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
+        cmap_attr = "cmap_attribute" \
+                if hasattr(layer_state, "cmap_attribute") \
+                else "cmap_att"
         cmap_att = getattr(layer_state, cmap_attr)
         cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
