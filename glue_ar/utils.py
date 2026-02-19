@@ -1,3 +1,4 @@
+from contextlib import suppress
 from numbers import Number
 from os.path import abspath, dirname, join
 from uuid import uuid4
@@ -339,18 +340,16 @@ def is_volume_viewer(viewer: Viewer) -> bool:
     return False
 
 
-def get_resolution(viewer_state: Viewer3DState) -> int:
-    if hasattr(viewer_state, "resolution"):
-        return viewer_state.resolution
+def get_resolution(viewer_state):
+    resolution = getattr(viewer_state, "resolution", None)
+    if resolution is not None:
+        return resolution
 
-    try:
-        from glue_jupyter.common.state3d import VolumeViewerState
-        if isinstance(viewer_state, VolumeViewerState):
-            return max((resolution for state in viewer_state.layers
-                        if (resolution := getattr(state, "max_resolution", None)) is not None),
-                       default=256)
-    except ImportError:
-        pass
+    resolutions = tuple(getattr(state, "max_resolution", None)
+                                for state in viewer_state.layers)
+
+    with suppress(ValueError):
+        return max((res for res in resolutions if res is not None), default=256)
 
     return 256
 

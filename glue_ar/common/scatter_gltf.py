@@ -15,7 +15,7 @@ from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, 
                                   normalize, rectangular_prism_triangulation, sphere_triangles
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_export_option, \
                                index_mins, index_maxes
-from glue_ar.utils import Viewer3DState, export_label_for_layer, iterable_has_nan, hex_to_components, \
+from glue_ar.utils import Viewer3DState, export_label_for_layer, instance_attribute, iterable_has_nan, hex_to_components, \
                           layer_color, offset_triangles, unique_id, xyz_bounds, xyz_for_layer, Bounds
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
@@ -83,15 +83,11 @@ def add_vectors_gltf(builder: GLTFBuilder,
 
     point_mins = None
     point_maxes = None
-    color_mode_attr = "color_mode" \
-            if hasattr(layer_state, "color_mode") \
-            else "cmap_mode"
+    color_mode_attr = instance_attribute(layer_state, "color_mode", "cmap_mode")
     fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
 
     if not fixed_color:
-        cmap_attr = "cmap_attribute" \
-                if hasattr(layer_state, "cmap_attribute") \
-                else "cmap_att"
+        cmap_attr = instance_attribute(layer_state, "cmap_attribute", "cmap_att")
         cmap_att = getattr(layer_state, cmap_attr)
         cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
@@ -176,11 +172,10 @@ def add_error_bars_gltf(builder: GLTFBuilder,
                         mask: Optional[ndarray] = None):
     err_values = clip_error_data(viewer_state, layer_state, bounds, axis, mask)
 
-    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
-    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
+    color_mode_attr = instance_attribute(layer_state, "color_mode", "cmap_mode")
     fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
     if not fixed_color:
-        cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
+        cmap_attr = instance_attribute("cmap_attribute", "cmap_att")
         cmap_att = getattr(layer_state, cmap_attr)
         cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
@@ -250,9 +245,8 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
     bounds = xyz_bounds(viewer_state, with_resolution=False)
 
-    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
     fixed_size = layer_state.size_mode == "Fixed"
-    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
+    color_mode_attr = instance_attribute("color_mode", "cmap_mode")
     fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
     radius = radius_for_scatter_layer(layer_state)
     mask = scatter_layer_mask(viewer_state, layer_state, bounds, clip_to_bounds)
@@ -268,7 +262,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
     buffer = builder.buffer_count
     cmap = layer_state.cmap
-    cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
+    cmap_attr = instance_attribute(layer_state, "cmap_attribute", "cmap_att")
     cmap_att = getattr(layer_state, cmap_attr)
     cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
     crange = layer_state.cmap_vmax - layer_state.cmap_vmin

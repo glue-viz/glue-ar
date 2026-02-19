@@ -16,7 +16,7 @@ from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
 from glue_ar.usd_utils import sanitize_path
-from glue_ar.utils import Viewer3DState, export_label_for_layer, iterable_has_nan, hex_to_components, \
+from glue_ar.utils import Viewer3DState, export_label_for_layer, instance_attribute, iterable_has_nan, hex_to_components, \
                           layer_color, offset_triangles, xyz_for_layer, Bounds, NoneType
 
 try:
@@ -91,9 +91,8 @@ def add_scatter_layer_usd(
     clip_to_bounds: bool = True,
 ):
 
-    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
     fixed_size = layer_state.size_mode == "Fixed"
-    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
+    color_mode_attr = instance_attribute(layer_state, "color_mode", "cmap_mode")
     fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
 
     identifier = sanitize_path(export_label_for_layer(layer_state))
@@ -117,7 +116,7 @@ def add_scatter_layer_usd(
 
     if not fixed_color:
         cmap = layer_state.cmap
-        cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
+        cmap_attr = instance_attribute(layer_state, "cmap_attribute", "cmap_att")
         cmap_att = getattr(layer_state, cmap_attr)
         cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
