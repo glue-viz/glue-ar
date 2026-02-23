@@ -50,7 +50,20 @@ class ARExportLayerOptionsRegistry(DictRegistry):
         return self.method_state_types[(state_cls, name)]
 
     def export_spec(self, state_cls, name, extension) -> ARExportSpecification:
-        return self._members[(state_cls, name, extension)]
+        # If the tuple (cls, name, extension) is directly in _members, return that
+        # Otherwise return the closest tuple of the form (supercls, name, extension)
+        # where "closest" is relative to the class hierarchy
+        try:
+            return self._members[(state_cls, name, extension)]
+        except KeyError:
+            possibilities = tuple(
+                    k for k in self._members.keys() if
+                    k[1] == name and k[2] == extension
+                    and issubclass(state_cls, k[0])
+            )
+            if len(possibilities) == 0:
+                raise ValueError("No specification found!")
+            return sorted(possibilities, key=lambda k: len(k[0].mro()), reverse=True)[0]
 
     def method_names(self, layer_state_cls, extension) -> List[str]:
         extension = extension.lower()
