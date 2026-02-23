@@ -10,9 +10,12 @@ from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_tr
 from glue_ar.utils import Bounds, NoneType, Viewer3DState, get_stretches, instance_attribute, mask_for_bounds
 
 try:
-    from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
+    from glue.viewers.scatter3d.layer_state import ScatterLayerState3D as Scatter3DLayerState
 except ImportError:
-    Scatter3DLayerState = NoneType
+    try:
+        from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
+    except ImportError:
+        Scatter3DLayerState = NoneType
 
 ScatterLayerState3D = Union[ScatterLayerState, Scatter3DLayerState]
 
