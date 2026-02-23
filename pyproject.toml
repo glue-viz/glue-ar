@@ -24,7 +24,7 @@ authors = [
 
 dependencies = [
     "gltflib",
-    "glue-core",
+    "glue-core>=1.25.0",
     "glue-vispy-viewers",
     "numpy-stl",
     "pillow",
