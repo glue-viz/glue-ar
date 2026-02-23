@@ -1,10 +1,10 @@
 from collections import defaultdict
 from math import ceil
-from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from numpy import isfinite, argwhere, transpose
 from typing import Iterable, List, Optional, Union
 
-from glue_vispy_viewers.volume.layer_state import VolumeLayerState
+from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
+from glue.viewers.volume3d.layer_state import VolumeLayerState3D
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
@@ -23,15 +23,15 @@ from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_tr
 from gltflib import AccessorType, BufferTarget, ComponentType
 
 
-@ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ("gltf", "glb"), multiple=True)
+@ar_layer_export(VolumeLayerState3D, "Voxel", ARVoxelExportOptions, ("gltf", "glb"), multiple=True)
 def add_voxel_layers_gltf(builder: GLTFBuilder,
-                          viewer_state: Vispy3DVolumeViewerState,
-                          layer_states: Union[List[VolumeLayerState], VolumeLayerState],
+                          viewer_state: VolumeViewerState3D,
+                          layer_states: Union[List[VolumeLayerState3D], VolumeLayerState3D],
                           options: Union[Iterable[ARVoxelExportOptions], ARVoxelExportOptions],
                           bounds: Optional[BoundsWithResolution] = None,
                           voxels_per_mesh: Optional[int] = None):
 
-    if isinstance(layer_states, VolumeLayerState):
+    if isinstance(layer_states, VolumeLayerState3D):
         layer_states = [layer_states]
 
     if isinstance(options, ARVoxelExportOptions):
@@ -245,10 +245,10 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     builder.add_file_resource(points_bin, data=points_barr)
 
 
-@ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ("usda", "usdc", "usdz"), multiple=True)
+@ar_layer_export(VolumeLayerState3D, "Voxel", ARVoxelExportOptions, ("usda", "usdc", "usdz"), multiple=True)
 def add_voxel_layers_usd(builder: USDBuilder,
-                         viewer_state: Vispy3DVolumeViewerState,
-                         layer_states: Iterable[VolumeLayerState],
+                         viewer_state: VolumeViewerState3D,
+                         layer_states: Iterable[VolumeLayerState3D],
                          options: Iterable[ARVoxelExportOptions],
                          bounds: Optional[BoundsWithResolution] = None):
 
@@ -350,10 +350,10 @@ def add_voxel_layers_usd(builder: USDBuilder,
     return builder
 
 
-@ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ("stl",), multiple=True)
+@ar_layer_export(VolumeLayerState3D, "Voxel", ARVoxelExportOptions, ("stl",), multiple=True)
 def add_voxel_layers_stl(builder: STLBuilder,
-                         viewer_state: Vispy3DVolumeViewerState,
-                         layer_states: Iterable[VolumeLayerState],
+                         viewer_state: VolumeViewerState3D,
+                         layer_states: Iterable[VolumeLayerState3D],
                          options: Iterable[ARVoxelExportOptions],
                          bounds: Optional[BoundsWithResolution] = None):
 
