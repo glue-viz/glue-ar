@@ -175,7 +175,7 @@ def add_error_bars_gltf(builder: GLTFBuilder,
     color_mode_attr = instance_attribute(layer_state, "color_mode", "cmap_mode")
     fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
     if not fixed_color:
-        cmap_attr = instance_attribute("cmap_attribute", "cmap_att")
+        cmap_attr = instance_attribute(layer_state, "cmap_attribute", "cmap_att")
         cmap_att = getattr(layer_state, cmap_attr)
         cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
@@ -246,7 +246,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
     bounds = xyz_bounds(viewer_state, with_resolution=False)
 
     fixed_size = layer_state.size_mode == "Fixed"
-    color_mode_attr = instance_attribute("color_mode", "cmap_mode")
+    color_mode_attr = instance_attribute(layer_state, "color_mode", "cmap_mode")
     fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
     radius = radius_for_scatter_layer(layer_state)
     mask = scatter_layer_mask(viewer_state, layer_state, bounds, clip_to_bounds)
