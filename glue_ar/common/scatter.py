@@ -1,20 +1,24 @@
 from functools import partial
 from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
-from typing import Callable, Dict, List, Literal, Optional, Tuple, Union
+from typing import Callable, Dict, List, Literal, Optional, Tuple
 
 from glue.utils import ensure_numerical
-from glue.viewers.scatter3d.layer_state import ScatterLayerState3D as Scatter3DLayerState
-from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
+from glue.viewers.common3d.viewer_state import ViewerState3D
+from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 
 from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation, \
                                   sphere_points, sphere_triangles
-from glue_ar.utils import Bounds, Viewer3DState, get_stretches, instance_attribute, mask_for_bounds
-
-ScatterLayerState3D = Union[ScatterLayerState, Scatter3DLayerState]
+from glue_ar.utils import Bounds, NoneType, get_stretches, instance_attribute, mask_for_bounds
 
 Point = Tuple[float, float, float]
 FullPointsGetter = Callable[[ScatterLayerState3D, Bounds, ndarray, Point, float], List[Point]]
 PointsGetter = Callable[[Point, float], List[Point]]
+
+try:
+    from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState
+except ImportError:
+    Scatter3DLayerState = NoneType
+
 
 VECTOR_OFFSETS = {
     'tail': 0.5,
@@ -24,7 +28,7 @@ VECTOR_OFFSETS = {
 
 
 def scatter_layer_mask(
-        viewer_state: Viewer3DState,
+        viewer_state: ViewerState3D,
         layer_state: ScatterLayerState3D,
         bounds: Bounds,
         clip_to_bounds: bool = True) -> ndarray:
@@ -68,7 +72,7 @@ def sizes_for_scatter_layer(layer_state: ScatterLayerState3D,
                             bounds: Bounds,
                             mask: ndarray) -> Optional[ndarray]:
     factor = max((abs(b[1] - b[0]) for b in bounds))
-    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
+    vispy_layer_state = isinstance(layer_state, ScatterLayerState3D)
     if not vispy_layer_state:
         factor *= 2
 
@@ -92,7 +96,7 @@ def sizes_for_scatter_layer(layer_state: ScatterLayerState3D,
     return sizes
 
 
-def clip_vector_data(viewer_state: Viewer3DState,
+def clip_vector_data(viewer_state: ViewerState3D,
                      layer_state: ScatterLayerState3D,
                      bounds: Bounds,
                      mask: Optional[ndarray] = None) -> ndarray:
@@ -111,7 +115,7 @@ def clip_vector_data(viewer_state: Viewer3DState,
     return vector_data
 
 
-def clip_error_data(viewer_state: Viewer3DState,
+def clip_error_data(viewer_state: ViewerState3D,
                     layer_state: ScatterLayerState3D,
                     bounds: Bounds,
                     axis: Literal["x", "y", "z"],
