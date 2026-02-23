@@ -1,6 +1,5 @@
 from collections import defaultdict
 from typing import List, Optional, Tuple
-from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState
 
 from numpy import ndarray
 from numpy.linalg import norm
