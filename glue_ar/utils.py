@@ -1,3 +1,4 @@
+from contextlib import suppress
 from numbers import Number
 from os.path import abspath, dirname, join
 from uuid import uuid4
@@ -7,17 +8,14 @@ from glue.core import BaseData
 from glue.core.subset_group import GroupedSubset
 from glue.viewers.common.state import ViewerState
 from glue.viewers.common.viewer import LayerArtist, Viewer
+from glue.viewers.common3d.layer_state import LayerState3D
+from glue.viewers.common3d.viewer_state import ViewerState3D
+from glue.viewers.volume3d.layer_state import VolumeLayerState3D
+from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
 
-from glue_vispy_viewers.common.layer_state import LayerState, VispyLayerState
-from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
-from glue_vispy_viewers.volume.layer_state import VolumeLayerState
-from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
+
 from numpy import array, inf, isnan, ndarray
 
-try:
-    from glue_jupyter.common.state3d import ViewerState3D
-except ImportError:
-    ViewerState3D = Vispy3DViewerState
 
 # Backwards compatibility for Python < 3.10
 try:
@@ -46,10 +44,8 @@ RESOURCES_DIR = join(PACKAGE_DIR, "resources")
 Bounds = List[Tuple[float, float]]
 BoundsWithResolution = List[Tuple[float, float, int]]
 
-Viewer3DState = Union[Vispy3DViewerState, ViewerState3D]
 
-
-def data_count(layers: Iterable[Union[LayerArtist, LayerState]]) -> int:
+def data_count(layers: Iterable[Union[LayerArtist, LayerState3D]]) -> int:
     """
     Count the number of unique Data objects (either directly or as parents of subsets)
     used in the set of layers
@@ -58,7 +54,7 @@ def data_count(layers: Iterable[Union[LayerArtist, LayerState]]) -> int:
     return len(data)
 
 
-def export_label_for_layer(layer: Union[LayerArtist, LayerState],
+def export_label_for_layer(layer: Union[LayerArtist, LayerState3D],
                            add_data_label: bool = True) -> str:
     if (not add_data_label) or isinstance(layer.layer, BaseData):
         return layer.layer.label
@@ -71,7 +67,7 @@ def layers_to_export(viewer: Viewer) -> List[LayerArtist]:
     return list(filter(lambda artist: artist.enabled and artist.visible, viewer.layers))
 
 
-def isomin_for_layer(viewer_state: ViewerState, layer_state: VolumeLayerState) -> float:
+def isomin_for_layer(viewer_state: ViewerState, layer_state: VolumeLayerState3D) -> float:
     if isinstance(layer_state.layer, GroupedSubset):
         for viewer_layer in viewer_state.layers:
             if viewer_layer.layer is layer_state.layer.data:
@@ -80,7 +76,7 @@ def isomin_for_layer(viewer_state: ViewerState, layer_state: VolumeLayerState) -
     return layer_state.vmin
 
 
-def isomax_for_layer(viewer_state: ViewerState, layer_state: VolumeLayerState) -> float:
+def isomax_for_layer(viewer_state: ViewerState, layer_state: VolumeLayerState3D) -> float:
     if isinstance(layer_state.layer, GroupedSubset):
         for viewer_layer in viewer_state.layers:
             if viewer_layer.layer is layer_state.layer.data:
@@ -90,14 +86,14 @@ def isomax_for_layer(viewer_state: ViewerState, layer_state: VolumeLayerState) -
 
 
 @overload
-def xyz_bounds(viewer_state: Viewer3DState, with_resolution: Literal[False]) -> Bounds: ...
+def xyz_bounds(viewer_state: ViewerState3D, with_resolution: Literal[False]) -> Bounds: ...
 
 
 @overload
-def xyz_bounds(viewer_state: Viewer3DState, with_resolution: Literal[True]) -> BoundsWithResolution: ...
+def xyz_bounds(viewer_state: ViewerState3D, with_resolution: Literal[True]) -> BoundsWithResolution: ...
 
 
-def xyz_bounds(viewer_state: Viewer3DState, with_resolution: bool) -> Union[Bounds, BoundsWithResolution]:
+def xyz_bounds(viewer_state: ViewerState3D, with_resolution: bool) -> Union[Bounds, BoundsWithResolution]:
     bounds: Bounds = [(viewer_state.x_min, viewer_state.x_max),
                       (viewer_state.y_min, viewer_state.y_max),
                       (viewer_state.z_min, viewer_state.z_max)]
@@ -109,19 +105,19 @@ def xyz_bounds(viewer_state: Viewer3DState, with_resolution: bool) -> Union[Boun
 
 
 @overload
-def bounds_3d_from_layers(viewer_state: Viewer3DState,
-                          layer_states: Iterable[VispyLayerState],
+def bounds_3d_from_layers(viewer_state: ViewerState3D,
+                          layer_states: Iterable[LayerState3D],
                           with_resolution: Literal[False]) -> Bounds: ...
 
 
 @overload
-def bounds_3d_from_layers(viewer_state: Viewer3DState,
-                          layer_states: Iterable[VispyLayerState],
+def bounds_3d_from_layers(viewer_state: ViewerState3D,
+                          layer_states: Iterable[LayerState3D],
                           with_resolution: Literal[True]) -> BoundsWithResolution: ...
 
 
-def bounds_3d_from_layers(viewer_state: Viewer3DState,
-                          layer_states: Iterable[VispyLayerState],
+def bounds_3d_from_layers(viewer_state: ViewerState3D,
+                          layer_states: Iterable[LayerState3D],
                           with_resolution: bool) -> Union[Bounds, BoundsWithResolution]:
     mins = [inf, inf, inf]
     maxes = [-inf, -inf, -inf]
@@ -161,14 +157,14 @@ def clip_linear_transformations(bounds: Union[Bounds, BoundsWithResolution],
 # TODO: Make this better?
 # glue-plotly has had to deal with similar issues,
 # the utilities there are at least better than this
-def layer_color(layer_state: LayerState) -> str:
+def layer_color(layer_state: LayerState3D) -> str:
     layer_color = layer_state.color
     if layer_color == '0.35' or layer_color == '0.75':
         layer_color = '#808080'
     return layer_color
 
 
-def clip_sides(viewer_state: Viewer3DState,
+def clip_sides(viewer_state: ViewerState3D,
                clip_size: float = 1.0) -> Tuple[float, float, float]:
 
     stretches = get_stretches(viewer_state)
@@ -207,8 +203,8 @@ def bring_into_clip(data,
     return scaled
 
 
-def mask_for_bounds(viewer_state: Viewer3DState,
-                    layer_state: LayerState,
+def mask_for_bounds(viewer_state: ViewerState3D,
+                    layer_state: LayerState3D,
                     bounds: Union[Bounds, BoundsWithResolution]):
     data = layer_state.layer
     bounds = [(min(b), max(b)) for b in bounds]
@@ -220,7 +216,7 @@ def mask_for_bounds(viewer_state: Viewer3DState,
            (data[viewer_state.z_att] <= bounds[2][1])
 
 
-def get_stretches(viewer_state: Viewer3DState) -> Tuple[float, float, float]:
+def get_stretches(viewer_state: ViewerState3D) -> Tuple[float, float, float]:
     return tuple(
             getattr(viewer_state, f"{axis}_stretch", 1.0)
             for axis in ("x", "y", "z")
@@ -229,8 +225,8 @@ def get_stretches(viewer_state: Viewer3DState) -> Tuple[float, float, float]:
 
 # TODO: Worry about efficiency later
 # and just generally make this better
-def xyz_for_layer(viewer_state: Viewer3DState,
-                  layer_state: LayerState,
+def xyz_for_layer(viewer_state: ViewerState3D,
+                  layer_state: LayerState3D,
                   scaled: bool = False,
                   preserve_aspect: bool = True,
                   mask: Optional[ndarray] = None) -> ndarray:
@@ -277,7 +273,7 @@ def alpha_composite(over: List[float], under: List[float]) -> List[float]:
     return rgba_new
 
 
-def data_for_layer(layer_or_state: Union[LayerArtist, LayerState]) -> BaseData:
+def data_for_layer(layer_or_state: Union[LayerArtist, LayerState3D]) -> BaseData:
     if isinstance(layer_or_state.layer, BaseData):
         return layer_or_state.layer
     else:
@@ -285,12 +281,12 @@ def data_for_layer(layer_or_state: Union[LayerArtist, LayerState]) -> BaseData:
 
 
 def frb_for_layer(viewer_state: ViewerState,
-                  layer_or_state: Union[LayerArtist, LayerState],
+                  layer_or_state: Union[LayerArtist, LayerState3D],
                   bounds: BoundsWithResolution) -> ndarray:
 
     bounds = list(reversed(bounds))
     data = data_for_layer(layer_or_state)
-    layer_state = layer_or_state if isinstance(layer_or_state, LayerState) else layer_or_state.state
+    layer_state = layer_or_state if isinstance(layer_or_state, LayerState3D) else layer_or_state.state
     is_data_layer = data is layer_or_state.layer
     target_data = getattr(viewer_state, 'reference_data', data)
     data_frb = data.compute_fixed_resolution_buffer(
@@ -327,7 +323,7 @@ def iterator_count(iter: Iterator) -> int:
 
 
 def is_volume_viewer(viewer: Viewer) -> bool:
-    if isinstance(viewer, VispyVolumeViewerMixin):
+    if isinstance(viewer.state, VolumeViewerState3D):
         return True
     try:
         from glue_jupyter.ipyvolume.volume import IpyvolumeVolumeView
@@ -339,18 +335,16 @@ def is_volume_viewer(viewer: Viewer) -> bool:
     return False
 
 
-def get_resolution(viewer_state: Viewer3DState) -> int:
-    if hasattr(viewer_state, "resolution"):
-        return viewer_state.resolution
+def get_resolution(viewer_state):
+    resolution = getattr(viewer_state, "resolution", None)
+    if resolution is not None:
+        return resolution
 
-    try:
-        from glue_jupyter.common.state3d import VolumeViewerState
-        if isinstance(viewer_state, VolumeViewerState):
-            return max((resolution for state in viewer_state.layers
-                        if (resolution := getattr(state, "max_resolution", None)) is not None),
-                       default=256)
-    except ImportError:
-        pass
+    resolutions = tuple(getattr(state, "max_resolution", None)
+                                for state in viewer_state.layers)
+
+    with suppress(ValueError):
+        return max((res for res in resolutions if res is not None), default=256)
 
     return 256
 
@@ -374,3 +368,6 @@ def binned_opacity(raw_opacity: float, resolution: float) -> float:
 
 def offset_triangles(triangle_indices, offset):
     return [tuple(idx + offset for idx in triangle) for triangle in triangle_indices]
+
+def instance_attribute(instance, attribute, fallback):
+    return attribute if hasattr(instance, attribute) else fallback

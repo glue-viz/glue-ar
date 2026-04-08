@@ -24,7 +24,7 @@ authors = [
 
 dependencies = [
     "gltflib",
-    "glue-core",
+    "glue-core>=1.25.0",
     "glue-vispy-viewers",
     "numpy-stl",
     "pillow",
@@ -48,7 +48,7 @@ qt = [
 ]
 
 jupyter = [
-    "glue-jupyter",
+    "glue-jupyter>=0.26",
     "ipyfilechooser",
     "ipyvuetify",
     "glue-vispy-viewers[jupyter]",
