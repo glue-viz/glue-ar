@@ -1,7 +1,8 @@
 from collections import defaultdict
+from math import ceil
 from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
 from numpy import isfinite, argwhere, transpose
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional, Union
 
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
 
@@ -11,11 +12,11 @@ from glue_ar.common.stl_builder import STLBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARVoxelExportOptions
 from glue_ar.usd_utils import material_for_color, sanitize_path
-from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamp, \
-                          clip_sides, frb_for_layer, hex_to_components, isomin_for_layer, \
+from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamp, clamp_with_resolution, \
+                          clip_sides, export_label_for_layer, frb_for_layer, hex_to_components, isomin_for_layer, \
                           isomax_for_layer, layer_color, offset_triangles, unique_id, xyz_bounds
 
-from glue_ar.gltf_utils import SHORT_MAX, add_points_to_bytearray, add_triangles_to_bytearray, \
+from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_export_option, \
                                index_mins, index_maxes
 from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation
 
@@ -25,10 +26,21 @@ from gltflib import AccessorType, BufferTarget, ComponentType
 @ar_layer_export(VolumeLayerState, "Voxel", ARVoxelExportOptions, ("gltf", "glb"), multiple=True)
 def add_voxel_layers_gltf(builder: GLTFBuilder,
                           viewer_state: Vispy3DVolumeViewerState,
-                          layer_states: Iterable[VolumeLayerState],
-                          options: Iterable[ARVoxelExportOptions],
+                          layer_states: Union[List[VolumeLayerState], VolumeLayerState],
+                          options: Union[Iterable[ARVoxelExportOptions], ARVoxelExportOptions],
                           bounds: Optional[BoundsWithResolution] = None,
                           voxels_per_mesh: Optional[int] = None):
+
+    if isinstance(layer_states, VolumeLayerState):
+        layer_states = [layer_states]
+
+    if isinstance(options, ARVoxelExportOptions):
+        options = [options]
+
+    if len(layer_states) == 1:
+        layer_id = export_label_for_layer(layer_states[0])
+    else:
+        layer_id = "Voxel Layers"
 
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
     sides = clip_sides(viewer_state, clip_size=1)
@@ -38,13 +50,16 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     points_bin = f"points_{voxels_id}.bin"
     triangles_bin = f"triangles_{voxels_id}.bin"
 
-    opacity_factor = 1
     occupied_voxels = {}
 
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
-        opacity_resolution = clamp(option.opacity_resolution, 0, 1)
+        cmap_resolution = clamp(option.cmap_resolution, 0, 1)
+        opacity_factor = clamp(option.opacity_factor, 0, 2) / 2
         data = frb_for_layer(viewer_state, layer_state, bounds)
+
+        if len(data) == 0:
+            continue
 
         isomin = isomin_for_layer(viewer_state, layer_state)
         isomax = isomax_for_layer(viewer_state, layer_state)
@@ -59,18 +74,35 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
 
+        if layer_state.color_mode == "Linear":
+            voxel_colors = layer_state.cmap([i * cmap_resolution for i in range(ceil(1 / cmap_resolution) + 1)])
+            voxel_colors = [[int(256 * float(c)) for c in vc[:3]] for vc in voxel_colors]
+
         for indices in nonempty_indices:
             value = data[tuple(indices)]
-            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange,
-                                              opacity_resolution)
+            t_voxel = (value - isomin) / isorange
+            if t_voxel > 0 and hasattr(layer_state, 'stretch'):
+                t_voxel = layer_state.stretch_object([t_voxel], **layer_state.stretch_parameters)[0]
+            t_voxel = clamp_with_resolution(t_voxel, 0, 1, cmap_resolution)
+            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * t_voxel, cmap_resolution)
+
+            if layer_state.color_mode == "Fixed":
+                voxel_color_components = color_components
+            else:
+                index = round(t_voxel / cmap_resolution)
+                voxel_color_components = voxel_colors[index]
+
+            if adjusted_opacity == 0:
+                continue
+
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
-                adjusted_a_color = color_components[:3] + [adjusted_opacity]
+                adjusted_a_color = voxel_color_components[:3] + [adjusted_opacity]
                 new_color = alpha_composite(adjusted_a_color, current_color)
                 occupied_voxels[indices_tpl] = new_color
             else:
-                occupied_voxels[indices_tpl] = color_components[:3] + [adjusted_opacity]
+                occupied_voxels[indices_tpl] = voxel_color_components[:3] + [adjusted_opacity]
 
     # Once we're done doing the alpha compositing, we want to reverse our dictionary setup
     # Right now we have (key, value) as (indices, color)
@@ -92,7 +124,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                     rgba[3],
                 )
 
-    max_points_per_opacity = max(len(voxels) for voxels in voxels_by_color.values())
+    max_points_per_opacity = max((len(voxels) for voxels in voxels_by_color.values()), default=0)
     if voxels_per_mesh is None:
         voxels_per_mesh = max_points_per_opacity
 
@@ -109,10 +141,10 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
     triangles_count = len(tris)
     mesh_triangles = [tri for box in tris for tri in box]
     max_triangle_index = max(idx for tri in mesh_triangles for idx in tri)
-    use_short = max_triangle_index <= SHORT_MAX
+    index_format = index_export_option(max_triangle_index)
 
     triangles_barr = bytearray()
-    add_triangles_to_bytearray(triangles_barr, mesh_triangles, short=use_short)
+    add_triangles_to_bytearray(triangles_barr, mesh_triangles, export_option=index_format)
     triangles_len = len(triangles_barr)
 
     builder.add_buffer(byte_length=len(triangles_barr), uri=triangles_bin)
@@ -127,10 +159,9 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
         target=BufferTarget.ELEMENT_ARRAY_BUFFER,
     )
 
-    component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
     builder.add_accessor(
         buffer_view=builder.buffer_view_count-1,
-        component_type=component_type,
+        component_type=index_format.component_type,
         count=len(mesh_triangles)*3,
         type=AccessorType.SCALAR,
         mins=[0],
@@ -192,10 +223,9 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                     target=BufferTarget.ELEMENT_ARRAY_BUFFER,
                 )
 
-                component_type = ComponentType.UNSIGNED_SHORT if use_short else ComponentType.UNSIGNED_INT
                 builder.add_accessor(
                     buffer_view=builder.buffer_view_count-1,
-                    component_type=component_type,
+                    component_type=index_format.component_type,
                     count=len(last_mesh_triangles)*3,
                     type=AccessorType.SCALAR,
                     mins=[0],
@@ -204,6 +234,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                 triangles_accessor = builder.accessor_count - 1
 
             builder.add_mesh(
+                layer_id=layer_id,
                 position_accessor=points_accessor,
                 indices_accessor=triangles_accessor,
                 material=materials_map[rgba],
@@ -235,8 +266,11 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
-        opacity_resolution = clamp(option.opacity_resolution, 0, 1)
+        cmap_resolution = clamp(option.cmap_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
+
+        if len(data) == 0:
+            continue
 
         isomin = isomin_for_layer(viewer_state, layer_state)
         isomax = isomax_for_layer(viewer_state, layer_state)
@@ -251,22 +285,37 @@ def add_voxel_layers_usd(builder: USDBuilder,
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
 
+        if layer_state.color_mode == "Linear":
+            voxel_colors = layer_state.cmap([i * cmap_resolution for i in range(ceil(1 / cmap_resolution) + 1)])
+            voxel_colors = [[int(256 * float(c)) for c in vc[:3]] for vc in voxel_colors]
+
         for indices in nonempty_indices:
+
             value = data[tuple(indices)]
-            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * (value - isomin) / isorange,
-                                              opacity_resolution)
+            t_voxel = (value - isomin) / isorange
+            if t_voxel > 0 and hasattr(layer_state, 'stretch'):
+                t_voxel = layer_state.stretch_object([t_voxel], **layer_state.stretch_parameters)[0]
+            t_voxel = clamp_with_resolution(t_voxel, 0, 1, cmap_resolution)
+            adjusted_opacity = binned_opacity(layer_state.alpha * opacity_factor * t_voxel, cmap_resolution)
+
+            if layer_state.color_mode == "Fixed":
+                voxel_color_components = color_components
+            else:
+                index = round(t_voxel / cmap_resolution)
+                voxel_color_components = voxel_colors[index]
+
             indices_tpl = tuple(indices)
             if indices_tpl in occupied_voxels:
                 current_color = occupied_voxels[indices_tpl]
-                adjusted_a_color = color_components[:3] + [adjusted_opacity]
+                adjusted_a_color = voxel_color_components[:3] + [adjusted_opacity]
                 new_color = alpha_composite(adjusted_a_color, current_color)
                 occupied_voxels[indices_tpl] = new_color
                 colors_map[current_color].remove(indices_tpl)
                 colors_map[new_color].add(indices_tpl)
             elif adjusted_opacity >= opacity_cutoff:
-                color = color_components[:3] + [adjusted_opacity]
-                occupied_voxels[indices_tpl] = color
-                colors_map[tuple(color)].add(indices_tpl)
+                vcolor = voxel_color_components[:3] + [adjusted_opacity]
+                occupied_voxels[indices_tpl] = vcolor
+                colors_map[tuple(vcolor)].add(indices_tpl)
 
     materials_map = {}
 
@@ -321,6 +370,9 @@ def add_voxel_layers_stl(builder: STLBuilder,
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
         opacity_resolution = clamp(option.opacity_resolution, 0, 1)
         data = frb_for_layer(viewer_state, layer_state, bounds)
+
+        if len(data) == 0:
+            continue
 
         isomin = isomin_for_layer(viewer_state, layer_state)
         isomax = isomax_for_layer(viewer_state, layer_state)

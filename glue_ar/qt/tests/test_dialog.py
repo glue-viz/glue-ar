@@ -7,6 +7,7 @@ importorskip("glue_qt")
 from glue_qt.app import GlueApplication
 from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
 
+from glue_ar.tests.helpers import DRACOPY_INSTALLED
 from glue_ar.common.tests.test_base_dialog import BaseExportDialogTest, DummyState
 from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
 from glue_ar.qt.export_dialog import QtARExportDialog
@@ -37,39 +38,49 @@ class TestQtExportDialog(BaseExportDialogTest):
         ui = self.dialog.ui
         assert ui.button_cancel.isVisible()
         assert ui.button_ok.isVisible()
-        assert ui.combosel_compression.isVisible()
-        assert ui.label_compression_message.isVisible()
+        assert ui.combosel_compression.isVisible() == DRACOPY_INSTALLED
+        assert ui.label_compression_message.isVisible() == DRACOPY_INSTALLED
+
+        expected_compression_options = ["None"]
+        if DRACOPY_INSTALLED:
+            expected_compression_options.append("Draco")
 
         compression_options = combobox_options(ui.combosel_compression)
-        assert compression_options == ["None", "Draco", "Meshoptimizer"]
+        assert compression_options == expected_compression_options
 
     def test_filetype_change(self):
         state = self.dialog.state
         ui = self.dialog.ui
 
         state.filetype = "USDC"
+        assert not ui.bool_modelviewer.isVisible()
         assert not ui.combosel_compression.isVisible()
         assert not ui.label_compression_message.isVisible()
 
         state.filetype = "USDA"
+        assert not ui.bool_modelviewer.isVisible()
         assert not ui.combosel_compression.isVisible()
         assert not ui.label_compression_message.isVisible()
 
         state.filetype = "glTF"
-        assert ui.combosel_compression.isVisible()
-        assert ui.label_compression_message.isVisible()
+        assert ui.bool_modelviewer.isVisible()
+        assert ui.combosel_compression.isVisible() == DRACOPY_INSTALLED
+        assert ui.label_compression_message.isVisible() == DRACOPY_INSTALLED
 
         state.filetype = "USDA"
+        assert not ui.bool_modelviewer.isVisible()
         assert not ui.combosel_compression.isVisible()
         assert not ui.label_compression_message.isVisible()
 
         state.filetype = "STL"
+        assert not ui.bool_modelviewer.isVisible()
         assert not ui.combosel_compression.isVisible()
         assert not ui.label_compression_message.isVisible()
 
         state.filetype = "glTF"
-        assert ui.combosel_compression.isVisible()
-        assert ui.label_compression_message.isVisible()
+        assert ui.bool_modelviewer.isVisible()
+        assert ui.combosel_compression.isVisible() == DRACOPY_INSTALLED
+        assert ui.label_compression_message.isVisible() == DRACOPY_INSTALLED
 
     def test_update_layer_ui(self):
         state = DummyState()
@@ -104,5 +115,33 @@ class TestQtExportDialog(BaseExportDialogTest):
         state.layer = "Scatter Data"
         assert ui.combosel_method.currentText() == state.method
         assert combobox_options(ui.combosel_method) == ["Scatter", "Points"]
-        assert ui.label_method.isVisible()
-        assert ui.combosel_method.isVisible()
+        assert combobox_options(ui.combosel_method) == ["Scatter"]
+        assert not ui.label_method.isVisible()
+        assert not ui.combosel_method.isVisible()
+
+    def test_modelviewer_ui(self):
+        state = self.dialog.state
+        ui = self.dialog.ui
+
+        state.filetype = "glB"
+
+        state.compression = "None"
+        assert ui.bool_modelviewer.isVisible()
+        assert ui.bool_layer_controls.isVisible()
+        ui.bool_modelviewer.setChecked(True)
+        assert ui.bool_layer_controls.isEnabled()
+        ui.bool_modelviewer.setChecked(False)
+        assert not ui.bool_layer_controls.isEnabled()
+
+        if DRACOPY_INSTALLED:
+            state.compression = "Draco"
+            assert ui.bool_modelviewer.isVisible()
+            assert ui.bool_layer_controls.isVisible()
+            ui.bool_modelviewer.setChecked(True)
+            assert ui.bool_layer_controls.isEnabled()
+            ui.bool_modelviewer.setChecked(False)
+            assert not ui.bool_layer_controls.isEnabled()
+
+        state.filetype = "USDZ"
+        assert not ui.bool_modelviewer.isVisible()
+        assert not ui.bool_layer_controls.isVisible()

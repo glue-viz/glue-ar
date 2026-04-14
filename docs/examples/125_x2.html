@@ -1,0 +1,150 @@
+<html>
+  <head>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+      <style>:root {
+  --glue-red: #eb1c24;
+}
+
+body {
+  margin: 0;
+  background-color: black;
+}
+
+model-viewer {
+  width: 100%;
+  height: 100%;
+}
+
+/* This keeps child nodes hidden while the element loads */
+:not(:defined) > * {
+  display: none;
+}
+.ar-button {
+  background-repeat: no-repeat;
+  background-size: 20px 20px;
+  background-position: 12px 50%;
+  background-color: #f5c6c888;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 16px;
+  padding: 0px 16px 0px 40px;
+  font-family: Roboto Regular, Helvetica Neue, sans-serif;
+  font-size: 60pt;
+  font-weight: bold;
+  color: var(--glue-red);
+  height: 200px;
+  width: max(300px, 80%);
+  border-radius: 18px;
+  border: 5px solid var(--glue-red);
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.ar-button:active {
+  background-color: #E8EAED;
+}
+.ar-button:focus {
+  outline: none;
+}
+.ar-button:focus-visible {
+  outline: 1px solid #1f5ef1; 
+}
+.info {
+  display: block;
+  position: absolute;
+  font-family: Futura, Helvetica Neue, sans-serif;
+  color: rgba(0, 0, 0, 0.8);
+  font-weight: 700;
+  font-size: 18px;
+  max-width: 128px;
+  padding: 0.5em 1em;
+  background: #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  left: calc(100% + 1em);
+  top: 50%;
+}
+
+h3 {
+  color: white;
+}
+
+#layer-controls {
+  position: relative;
+  top: 20px;
+  left: 20px;
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 2px solid white;
+  border-radius: 5px;
+  background-color: transparent;
+}
+
+#layer-controls button {
+  width: 100%;
+}
+
+</style>
+  </head>
+  <body>
+    <model-viewer
+      src="125_x2.glb"
+      camera-orbit="0.9677rad 1.2427rad auto"
+      shadow-intensity="1"
+      ar
+      ar-modes="webxr quick-look"
+      camera-controls
+      alt="None"
+    >
+      <button slot="ar-button" class="ar-button">
+        View in AR
+      </button>
+      <div class="controls" id="layer-controls">
+        <h3>Toggle Layers</h3>
+        <button data-layer="0">Density</button>
+        <button data-layer="1">Momentum</button>
+      </div>
+    </model-viewer>
+    <script>
+      function componentToHex(c) {
+        return Math.round(c * 256).toString(16).padStart(2, "0");
+      }
+      
+      function rgbToHex(r, g, b) {
+        return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+      }
+
+      function updateButtonStyle(button, on, color) {
+        button.style.color = on ? color : "black";
+        button.style.border = on ? `1px solid ${color}` : "none";
+        button.style.borderRadius = "2px";
+      }
+
+      const modelViewer = document.querySelector("model-viewer");
+      modelViewer.addEventListener("load", (_event) => {
+        const colors = modelViewer.model.materials.map(material => material.pbrMetallicRoughness.baseColorFactor);
+        const originalOpacities = colors.map(color => color[3]);
+        const layersOn = colors.map(_ => true);
+
+        const layerControls = document.querySelector("#layer-controls");
+        const buttons = [...layerControls.querySelectorAll("button")];
+        const hexColors = colors.map(color => rgbToHex(...color.slice(0, 3)));
+        buttons.forEach((button, index) => updateButtonStyle(button, true, hexColors[index]));
+        layerControls.addEventListener("click", (event) => {
+          const index = Number(event.target.dataset.layer);
+          const material = modelViewer.model.materials[index];
+          const rgb = material.pbrMetallicRoughness.baseColorFactor.slice(0, 3);
+          const wasOn = layersOn[index];
+          material.pbrMetallicRoughness.setBaseColorFactor([...rgb, wasOn ? 0.0 : originalOpacities[index]]);
+          updateButtonStyle(buttons[index], !wasOn, hexColors[index]);
+          layersOn[index] = !wasOn;
+        });
+      });
+    </script>
+  </body>
+</html>

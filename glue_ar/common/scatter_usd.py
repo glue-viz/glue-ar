@@ -1,5 +1,6 @@
 from collections import defaultdict
 from typing import List, Optional, Tuple
+from glue.utils.array import ensure_numerical
 
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
@@ -33,8 +34,8 @@ def add_vectors_usd(builder: USDBuilder,
                     tip_height: float,
                     shaft_radius: float,
                     tip_radius: float,
-                    tip_resolution: int = 10,
-                    shaft_resolution: int = 10,
+                    tip_resolution: int = 6,
+                    shaft_resolution: int = 6,
                     colors: Optional[List[Tuple[int, int, int]]] = None,
                     mask: Optional[ndarray] = None):
 
@@ -101,6 +102,10 @@ def add_scatter_layer_usd(
                          preserve_aspect=viewer_state.native_aspect,
                          mask=mask,
                          scaled=True)
+
+    if len(data) == 0:
+        return
+
     data = data[:, [1, 2, 0]]
     color = layer_color(layer_state)
     color_components = tuple(hex_to_components(color))
@@ -113,7 +118,7 @@ def add_scatter_layer_usd(
         cmap = layer_state.cmap
         cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
         cmap_att = getattr(layer_state, cmap_attr)
-        cmap_vals = layer_state.layer[cmap_att][mask]
+        cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
         normalized = [max(min((cval - layer_state.cmap_vmin) / crange, 1), 0) for cval in cmap_vals]
         colors = [tuple(int(256 * c) for c in cmap(norm)[:3]) for norm in normalized]

@@ -1,4 +1,4 @@
-recursive-include glue_ar/js *
+recursive-exclude docs *
 recursive-include glue_ar/resources *
 include **/*.vue
 include **/*.ui

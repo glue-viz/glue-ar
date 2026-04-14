@@ -23,10 +23,10 @@ def get_local_ip():
     return IP
 
 
-def create_qr(url, with_logo=True, color=GLUE_RED):
-    qr = segno.make_qr(url)
+def create_qr(url, with_logo=True, color=GLUE_RED, error_level="H"):
+    qr = segno.make_qr(url, error=error_level)
     out = BytesIO()
-    qr.save(out, kind="png", scale=7, dark=color, light="white")
+    qr.save(out, kind="png", scale=10, dark=color, light="white")
     out.seek(0)
     img = Image.open(out)
     img = img.convert("RGB")
@@ -35,7 +35,7 @@ def create_qr(url, with_logo=True, color=GLUE_RED):
         logo_max_size = height // 3
         logo_img = Image.open(GLUE_LOGO)
         # Resize the logo to logo_max_size
-        logo_img.thumbnail((logo_max_size, logo_max_size), Image.Resampling.LANCZOS)
+        logo_img.thumbnail((logo_max_size, logo_max_size), resample=Image.Resampling.LANCZOS)
         # Calculate the center of the QR code
         box = ((width - logo_img.size[0]) // 2, (height - logo_img.size[1]) // 2)
         img.paste(logo_img, box)

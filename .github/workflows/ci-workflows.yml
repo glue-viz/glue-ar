@@ -32,26 +32,29 @@ jobs:
           - libegl1-mesa-dev
           - libhdf5-dev
       envs: |
-        - linux: py39-test-all
-        - linux: py310-test-all
-        - linux: py311-test-all
-        - linux: py312-test-all
+        - linux: py310-test-both-compression
+        - linux: py311-test-both-compression
+        - linux: py312-test-both-compression
+        - linux: py312-test-both
+        - linux: py312-test-qt-compression
+        - linux: py312-test-jupyter-compression
         - linux: py312-test-qt
         - linux: py312-test-jupyter
+        # - linux: py313-test-both
 
-        - macos: py39-test-all
-        - macos: py310-test-all
-        - macos: py311-test-all
-        - macos: py312-test-all
-        - macos: py312-test-qt
-        # - macos: py312-test-jupyter
+        - macos: py310-test-both-compression
+        - macos: py311-test-both-compression
+        - macos: py312-test-both-compression
+        - macos: py312-test-qt-compression
+        # - macos: py312-test-jupyter-compression
+        # - macos: py313-test-both
 
-        - windows: py39-test-all
-        - windows: py310-test-all
-        - windows: py311-test-all
-        - windows: py312-test-all
-        - windows: py312-test-qt
-        - windows: py312-test-jupyter
+        # - windows: py310-test-both-compression
+        # - windows: py311-test-both-compression
+        # - windows: py312-test-both-compression
+        # - windows: py312-test-qt-compression
+        # - windows: py312-test-jupyter-compression
+        # - windows: py313-test-both
 
 
   deploy-examples:
@@ -66,5 +69,4 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: docs 
-
+          folder: docs

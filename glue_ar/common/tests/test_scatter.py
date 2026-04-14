@@ -1,3 +1,4 @@
+from inspect import getfullargspec
 from itertools import product
 from math import sqrt
 from numpy import array, array_equal, nan, ones
@@ -27,13 +28,13 @@ except ImportError:
     GlueApplication = NoneType
     VispyScatterViewer = NoneType
 
-
-Application = Union[GlueApplication, JupyterApplication]
-ScatterViewer = Union[Type[VispyScatterViewer], Type[JupyterVispyScatterViewer], Type[IpyvolumeScatterView]]
-
 from glue_ar.common.scatter import scatter_layer_mask
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.utils import export_label_for_layer
+
+
+Application = Union[GlueApplication, JupyterApplication]
+ScatterViewer = Union[Type[VispyScatterViewer], Type[JupyterVispyScatterViewer], Type[IpyvolumeScatterView]]
 
 
 @pytest.fixture
@@ -176,7 +177,15 @@ class BaseScatterTest:
             remove(self.tmpfile.name)
         if hasattr(self, 'viewer'):
             if hasattr(self.viewer, "close"):
-                self.viewer.close(warn=False)
+                spec = getfullargspec(self.viewer.close)
+                args = spec[0]
+                try:
+                    if "warn" in args:
+                        self.viewer.close(warn=False)
+                    else:
+                        self.viewer.close()
+                except NotImplementedError:
+                    pass
             self.viewer = None
         if hasattr(self, 'app'):
             if hasattr(self.app, 'close'):

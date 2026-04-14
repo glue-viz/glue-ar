@@ -47,7 +47,7 @@ model-viewer {
   outline: none;
 }
 .ar-button:focus-visible {
-  outline: 1px solid #1f5ef1; 
+  outline: 1px solid #1f5ef1;
 }
 .info {
   display: block;
@@ -65,3 +65,27 @@ model-viewer {
   top: 50%;
 }
 
+h3 {
+  color: $fg_color;
+}
+
+#layer-controls {
+  position: relative;
+  top: 20px;
+  left: 20px;
+  width: fit-content;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 2px solid $fg_color;
+  border-radius: 5px;
+  background-color: transparent;
+}
+
+#layer-controls:empty {
+  display: none;
+}
+
+#layer-controls button {
+  width: 100%;
+}

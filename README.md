@@ -39,7 +39,7 @@ has no additional dependencies and can be served using static file hosting.
 
 ## glTF compression
 
-The files exported by glue-ar can, in their original form, be quite large. In order to mitigate this problem for glTF files, glue-ar allows using 
+The files exported by glue-ar can, in their original form, be quite large. In order to mitigate this problem for glTF files, glue-ar allows using
 [Draco compression](https://google.github.io/draco/) via the [`gltf-pipeline`](https://github.com/CesiumGS/gltf-pipeline) package, or
 [Meshopt](https://meshoptimizer.org/) via the [`gltfpack`](https://meshoptimizer.org/gltf/) package.
 These compression methods allow for a considerable reduction in file size (often an order of magnitude or more),

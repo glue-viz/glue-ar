@@ -18,9 +18,15 @@
 		vertical-align: baseline;
 	}
 
+  html {
+    scroll-padding-top: 6em;
+  }
+
+  @media (pointer: fine) and (hover: hover) {
     html {
-        scroll-padding-top: 6em;
+      overscroll-behavior: none;
     }
+  }
 
 	code {
 		font-family: monospace;
@@ -2064,7 +2070,8 @@
 
 		.image.featured {
 			display: block;
-			margin: 0 0 2em 0;
+			/* margin: 0 auto 2em auto; */
+      margin: 0 0 2em 0;
 		}
 
 			.image.featured img {
@@ -2356,7 +2363,6 @@
 
 	#header {
 		text-align: center;
-		background-color: #fff;
 		/*background-image: url("images/bg02.png"), url("images/bg02.png"), url("images/bg01.png");*/
 		background-position: top left,					top left,					top left;
 		background-size: 100% 6em,					100% 6em,					auto;
@@ -2375,7 +2381,15 @@
 			#header h1 a {
 				letter-spacing: -0.025em;
 				border: 0;
+        -webkit-user-select: none; /* Safari */        
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* IE10+/Edge */
+        user-select: none; /* Standard */
 			}
+
+      #header h1 a:hover {
+        color: inherit;
+      }
 
 	#nav {
     position: sticky;
@@ -3185,8 +3199,8 @@
   transition: all 0s;
   box-sizing: border-box;
   min-width: 100px;
-  width: 150px;
-  height: 150px;
+  width: 125px;
+  height: 125px;
   display: inline;
 }
 
@@ -3204,6 +3218,10 @@
   width: 80%;
 }
 
+#examples {
+  margin-bottom: 2em;
+}
+
 /* Grid borders adapted from https://geary.co/internal-borders-css-grid/ */
 #examples-container {
   display: grid;
@@ -3219,16 +3237,13 @@
 }
 
 .example-img {
-  min-height: 150px;
-  max-height: 200px;
+  height: 200px;
   min-width: 200px;
   max-width: calc(100% - 170px);
   object-fit: contain;
 }
 
 .example-section {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
   position: relative;
 }
 
@@ -3254,6 +3269,23 @@
   inset-inline-start: calc(var(--line-offset) * -1);
 }
 
+.example-section p {
+  height: 60px;
+}
+
+.qr-highlight {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.qr-item {
+  display: inline;
+  width: fit-content;
+}
+
+
+
 @media screen and (max-width: 840px) {
     #nav {
         display: none;
@@ -3267,14 +3299,24 @@
       margin: auto;
     }
 
-    .qr-code {
-        width: 75%;
-        height: 75%;
-    }
-
     #examples-container {
       grid-template-columns: 1fr;
     }
+}
+
+@media screen and (max-width: 500px) {
+  .qr-code {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+@media screen and (max-width: 350px) {
+  .qr-code {
+    width: 75px;
+    height: 75px;
+    min-width: 75px;
+  }
 }
 
 

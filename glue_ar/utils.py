@@ -11,7 +11,7 @@ from glue.viewers.common.viewer import LayerArtist, Viewer
 from glue_vispy_viewers.common.layer_state import LayerState, VispyLayerState
 from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
 from glue_vispy_viewers.volume.layer_state import VolumeLayerState
-from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState, Vispy3DVolumeViewerState
+from glue_vispy_viewers.volume.viewer_state import Vispy3DViewerState
 from numpy import array, inf, isnan, ndarray
 
 try:
@@ -251,6 +251,14 @@ def hex_to_components(color: str) -> List[int]:
     return [int(color[idx:idx+2], 16) for idx in range(1, len(color), 2)]
 
 
+def color_component_to_hex(c: float) -> str:
+    return hex(round(c * 255))[2:].zfill(2)
+
+
+def rgb_to_hex(r: float, g: float, b: float) -> str:
+    return "#" + "".join(color_component_to_hex(c) for c in (r, g, b))
+
+
 def unique_id() -> str:
     return uuid4().hex
 
@@ -332,7 +340,7 @@ def is_volume_viewer(viewer: Viewer) -> bool:
 
 
 def get_resolution(viewer_state: Viewer3DState) -> int:
-    if isinstance(viewer_state, Vispy3DVolumeViewerState):
+    if hasattr(viewer_state, "resolution"):
         return viewer_state.resolution
 
     try:

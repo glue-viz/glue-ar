@@ -41,7 +41,8 @@ class JupyterARExportTool(Tool):
             display(self.export_dialog)
 
     def _open_file_dialog(self):
-        file_chooser = FileChooser(getcwd(), filter_pattern=f"*.{self.export_dialog.state.filetype}")
+        filetype = self.export_dialog.state.filetype.lower()
+        file_chooser = FileChooser(getcwd(), filter_pattern=f"*.{filetype}")
         ok_btn = v.Btn(color='success', disabled=True, children=['Ok'])
         close_btn = v.Btn(color='error', children=['Close'])
         dialog = v.Dialog(
@@ -77,6 +78,11 @@ class JupyterARExportTool(Tool):
             display(dialog)
 
     def maybe_save_figure(self, filepath):
+
+        if "." not in filepath:
+            filetype = self.export_dialog.state.filetype.lower()
+            filepath += f".{filetype}"
+
         if exists(filepath):
             yes_btn = v.Btn(color='success', children=["Yes"])
             no_btn = v.Btn(color='error', children=["No"])
@@ -117,4 +123,6 @@ class JupyterARExportTool(Tool):
                       state_dictionary=state_dict,
                       filepath=filepath,
                       compression=self.export_dialog.state.compression,
-                      model_viewer=self.export_dialog.state.modelviewer)
+                      model_viewer=self.export_dialog.state.modelviewer,
+                      layer_controls=self.export_dialog.state.modelviewer and \
+                                     self.export_dialog.state.layer_controls)

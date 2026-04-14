@@ -19,6 +19,10 @@ from glue_ar.qt.export_dialog import QtARExportDialog
 from glue_ar.qt.export_tool import QtARExportTool
 from glue_ar.qt.tests.utils import dialog_auto_accept_with_options
 
+from glue_ar.tests.helpers import DRACOPY_INSTALLED
+
+compression_options = ("None", "Draco") if DRACOPY_INSTALLED else ("None",)
+
 
 class TestVolumeExportTool:
 
@@ -63,7 +67,7 @@ class TestVolumeExportTool:
 
     @pytest.mark.parametrize("extension,compression",
                              product(("glB", "glTF", "USDA", "USDC", "USDZ", "STL"),
-                                     ("None", "Draco", "Meshoptimizer")))
+                                     compression_options))
     def test_tool_export_call(self, extension, compression):
         auto_accept = dialog_auto_accept_with_options(filetype=extension, compression=compression)
         with patch("qtpy.compat.getsavefilename") as fd, \
