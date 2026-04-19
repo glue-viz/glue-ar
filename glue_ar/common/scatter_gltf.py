@@ -446,7 +446,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
             builder.add_buffer_view(
                 buffer=buffer,
-                byte_length=triangles_end-triangles_start,
+                byte_length=triangles_len,
                 byte_offset=triangles_start,
                 target=BufferTarget.ELEMENT_ARRAY_BUFFER,
             )
