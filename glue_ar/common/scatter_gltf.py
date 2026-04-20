@@ -5,6 +5,7 @@ from glue_vispy_viewers.common.viewer_state import Vispy3DViewerState
 from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
 from numpy import ndarray
 from numpy.linalg import norm
+import struct
 
 from typing import List, Literal, Optional, Tuple
 
@@ -312,10 +313,11 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         index_format = index_export_option(max_triangle_index)
         triangles_start = len(barr)
         add_triangles_to_bytearray(barr, mesh_triangles, export_option=index_format)
-        triangles_len = len(barr)
+        triangles_end = len(barr)
+        triangles_len = triangles_end - triangles_start
         builder.add_buffer_view(
             buffer=buffer,
-            byte_length=triangles_len-triangles_start,
+            byte_length=triangles_len,
             byte_offset=triangles_start,
             target=BufferTarget.ELEMENT_ARRAY_BUFFER,
         )
@@ -330,6 +332,16 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
         start = 0
         triangles_accessor = builder.accessor_count - 1
+
+        # We always store point values as FLOAT, which has a size of 4 bytes.
+        # Since the total bytearray at this point may not be divisible by 4,
+        # we add a bit of padding.
+        # Note that this will be at most 3 bytes
+        float_size = 4
+        off = float_size - (len(barr) % float_size)
+        for _ in range(off):
+            barr.extend(struct.pack("B", 0))
+
         while start < n_points:
             mesh_points = [pt for pts in points[start:start+points_per_mesh] for pt in pts]
             barr_offset = len(barr)
@@ -429,11 +441,12 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             index_format = index_export_option(max_triangle_index)
             triangles_start = len(barr)
             add_triangles_to_bytearray(barr, mesh_triangles, export_option=index_format)
-            triangles_len = len(barr)
+            triangles_end = len(barr)
+            triangles_len = triangles_end - triangles_start
 
             builder.add_buffer_view(
                 buffer=buffer,
-                byte_length=triangles_len-triangles_start,
+                byte_length=triangles_len,
                 byte_offset=triangles_start,
                 target=BufferTarget.ELEMENT_ARRAY_BUFFER,
             )
