@@ -48,7 +48,7 @@ qt = [
 ]
 
 jupyter = [
-    "glue-jupyter",
+    "glue-jupyter<0.26",
     "ipyfilechooser",
     "ipyvuetify",
     "glue-vispy-viewers[jupyter]",
