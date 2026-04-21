@@ -1,9 +1,8 @@
 from collections import defaultdict
 from typing import List, Optional, Tuple
 from glue.utils.array import ensure_numerical
-
-from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
-from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
+from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
+from glue.viewers.scatter3d.viewer_state import ViewerState3D
 from numpy import ndarray
 from numpy.linalg import norm
 
@@ -19,12 +18,11 @@ from glue_ar.usd_utils import sanitize_path
 from glue_ar.utils import Viewer3DState, export_label_for_layer, iterable_has_nan, hex_to_components, \
                           layer_color, offset_triangles, xyz_for_layer, Bounds, NoneType
 
+
 try:
-    from glue_jupyter.common.state3d import ViewerState3D
-    from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState
+    from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState as IpyvolumeScatterLayerState
 except ImportError:
-    ViewerState3D = NoneType
-    Scatter3DLayerState = NoneType
+    IpyvolumeScatterLayerState = NoneType
 
 
 def add_vectors_usd(builder: USDBuilder,
@@ -91,10 +89,8 @@ def add_scatter_layer_usd(
     clip_to_bounds: bool = True,
 ):
 
-    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
     fixed_size = layer_state.size_mode == "Fixed"
-    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
-    fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
+    fixed_color = layer_state.color_mode == "Fixed"
 
     identifier = sanitize_path(export_label_for_layer(layer_state))
 
@@ -117,9 +113,7 @@ def add_scatter_layer_usd(
 
     if not fixed_color:
         cmap = layer_state.cmap
-        cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
-        cmap_att = getattr(layer_state, cmap_attr)
-        cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
+        cmap_vals = ensure_numerical(layer_state.layer[layer_state.cmap_att][mask])
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
         normalized = [max(min((cval - layer_state.cmap_vmin) / crange, 1), 0) for cval in cmap_vals]
         colors = [tuple(int(256 * c) for c in cmap(norm)[:3]) for norm in normalized]
@@ -193,10 +187,10 @@ def add_scatter_layer_usd(
         )
 
 
-@ar_layer_export(ScatterLayerState, "Scatter", ARVispyScatterExportOptions, ("usdz", "usdc", "usda"))
+@ar_layer_export(ScatterLayerState3D, "Scatter", ARVispyScatterExportOptions, ("usdz", "usdc", "usda"))
 def add_vispy_scatter_layer_usd(builder: USDBuilder,
-                                viewer_state: Vispy3DViewerState,
-                                layer_state: ScatterLayerState,
+                                viewer_state: ViewerState3D,
+                                layer_state: ScatterLayerState3D,
                                 options: ARVispyScatterExportOptions,
                                 bounds: Bounds,
                                 clip_to_bounds: bool = True):
@@ -219,23 +213,24 @@ def add_vispy_scatter_layer_usd(builder: USDBuilder,
                           clip_to_bounds=clip_to_bounds)
 
 
-@ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("usdz", "usdc", "usda"))
-def add_ipyvolume_scatter_layer_usd(builder: USDBuilder,
-                                    viewer_state: ViewerState3D,
-                                    layer_state: Scatter3DLayerState,
-                                    options: ARIpyvolumeScatterExportOptions,
-                                    bounds: Bounds,
-                                    clip_to_bounds: bool = True):
-    # TODO: What to do for circle2d?
-    geometry = str(layer_state.geo)
-    triangle_getter = IPYVOLUME_TRIANGLE_GETTERS.get(geometry, rectangular_prism_triangulation)
-    triangles = triangle_getter()
-    points_getter = IPYVOLUME_POINTS_GETTERS.get(geometry, box_points_getter)
-
-    add_scatter_layer_usd(builder=builder,
-                          viewer_state=viewer_state,
-                          layer_state=layer_state,
-                          points_getter=points_getter,
-                          triangles=triangles,
-                          bounds=bounds,
-                          clip_to_bounds=clip_to_bounds)
+if IpyvolumeScatterLayerState is not NoneType:
+    @ar_layer_export(IpyvolumeScatterLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("usdz", "usdc", "usda"))
+    def add_ipyvolume_scatter_layer_usd(builder: USDBuilder,
+                                        viewer_state: ViewerState3D,
+                                        layer_state: IpyvolumeScatterLayerState,
+                                        options: ARIpyvolumeScatterExportOptions,
+                                        bounds: Bounds,
+                                        clip_to_bounds: bool = True):
+        # TODO: What to do for circle2d?
+        geometry = str(layer_state.geo)
+        triangle_getter = IPYVOLUME_TRIANGLE_GETTERS.get(geometry, rectangular_prism_triangulation)
+        triangles = triangle_getter()
+        points_getter = IPYVOLUME_POINTS_GETTERS.get(geometry, box_points_getter)
+    
+        add_scatter_layer_usd(builder=builder,
+                              viewer_state=viewer_state,
+                              layer_state=layer_state,
+                              points_getter=points_getter,
+                              triangles=triangles,
+                              bounds=bounds,
+                              clip_to_bounds=clip_to_bounds)
