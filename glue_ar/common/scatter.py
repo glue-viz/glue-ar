@@ -1,6 +1,6 @@
 from functools import partial
 from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
-from typing import Callable, Dict, List, Literal, Optional, Tuple, Union
+from typing import Callable, Dict, List, Literal, Optional, Tuple
 
 from glue.utils import ensure_numerical
 from glue.viewers.scatter3d.layer_state import ScatterLayerState3D

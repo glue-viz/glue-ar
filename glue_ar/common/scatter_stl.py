@@ -5,8 +5,8 @@ from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, PointsGetter, \
-                                   ScatterLayerState3D, box_points_getter, radius_for_scatter_layer, \
-                                   scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter
+                                   box_points_getter, radius_for_scatter_layer, scatter_layer_mask, \
+                                   sizes_for_scatter_layer, sphere_points_getter
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.shapes import rectangular_prism_triangulation, sphere_triangles
 from glue_ar.common.stl_builder import STLBuilder

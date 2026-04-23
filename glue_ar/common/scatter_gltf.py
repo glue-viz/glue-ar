@@ -18,8 +18,7 @@ from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearr
 from glue_ar.utils import export_label_for_layer, iterable_has_nan, hex_to_components, \
                           layer_color, offset_triangles, unique_id, xyz_bounds, xyz_for_layer, Bounds, NoneType
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.common.scatter import ScatterLayerState3D, \
-                                   PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
+from glue_ar.common.scatter import PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
                                    IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, clip_error_data, clip_vector_data, \
                                    radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, \
                                    sphere_points_getter
