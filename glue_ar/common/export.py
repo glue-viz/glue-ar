@@ -6,7 +6,7 @@ from typing import Dict, Optional, TypeVar
 from glue.core.state_objects import State
 from glue.config import settings
 from glue.viewers.common.state import LayerState
-from glue_vispy_viewers.scatter.viewer_state import Vispy3DViewerState
+from glue.viewers.common3d.viewer_state import ViewerState3D
 
 
 from glue_ar.common.export_options import ar_layer_export
@@ -17,7 +17,7 @@ from glue_ar.utils import RESOURCES_DIR, Bounds, BoundsWithResolution, export_la
 from typing import List, Tuple, Union
 
 
-def export_viewer(viewer_state: Vispy3DViewerState,
+def export_viewer(viewer_state: ViewerState3D,
                   layer_states: List[LayerState],
                   bounds: Union[Bounds, BoundsWithResolution],
                   state_dictionary: Dict[str, Tuple[str, State]],

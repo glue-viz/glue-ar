@@ -3,14 +3,14 @@ import os
 from os.path import split
 from tempfile import NamedTemporaryFile
 from threading import Thread
-from typing import Type
+from typing import Tuple
 
 from glue.config import viewer_tool
 from glue.core.state_objects import State
 from glue.viewers.common.state import LayerState
 from glue.viewers.common.tool import Tool
-from glue_vispy_viewers.scatter.layer_artist import ScatterLayerState
-from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
+from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
+from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
 
 from glue_ar.utils import AR_ICON, export_label_for_layer, xyz_bounds
 from glue_ar.common.export import export_modelviewer, export_viewer
@@ -31,8 +31,8 @@ class ARLocalQRTool(Tool):
     action_text = "3D view via QR"
     tool_tip = "Get a QR code for the current view in 3D"
 
-    def _export_items_for_layer(self, layer: LayerState) -> Type[State]:
-        if isinstance(layer, ScatterLayerState):
+    def _export_items_for_layer(self, layer: LayerState) -> Tuple[str, State]:
+        if isinstance(layer, ScatterLayerState3D):
             return ("Scatter", ARVispyScatterExportOptions())
         else:
             return ("Isosurface", ARIsosurfaceExportOptions(isosurface_count=8))
@@ -40,7 +40,7 @@ class ARLocalQRTool(Tool):
     def activate(self):
         layer_states = [layer.state for layer in self.viewer.layers
                         if layer.enabled and layer.state.visible]
-        bounds = xyz_bounds(self.viewer.state, with_resolution=isinstance(self.viewer, VispyVolumeViewerMixin))
+        bounds = xyz_bounds(self.viewer.state, with_resolution=isinstance(self.viewer.state, VolumeViewerState3D))
         state_dictionary = {
             export_label_for_layer(state): self._export_items_for_layer(state)
             for state in layer_states
