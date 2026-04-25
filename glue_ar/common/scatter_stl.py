@@ -1,8 +1,7 @@
 from typing import List, Tuple
 
-from glue.viewers.scatter3d.viewer_state import ViewerState3D
-from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 from glue.viewers.common3d.viewer_state import ViewerState3D
+from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, PointsGetter, \
