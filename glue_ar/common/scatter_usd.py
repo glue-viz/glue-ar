@@ -15,7 +15,7 @@ from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
 from glue_ar.usd_utils import sanitize_path
-from glue_ar.utils import Viewer3DState, export_label_for_layer, iterable_has_nan, hex_to_components, \
+from glue_ar.utils import export_label_for_layer, iterable_has_nan, hex_to_components, \
                           layer_color, offset_triangles, xyz_for_layer, Bounds, NoneType
 
 
@@ -26,7 +26,7 @@ except ImportError:
 
 
 def add_vectors_usd(builder: USDBuilder,
-                    viewer_state: Viewer3DState,
+                    viewer_state: ViewerState3D,
                     layer_state: ScatterLayerState3D,
                     data: ndarray,
                     bounds: Bounds,
@@ -81,7 +81,7 @@ def add_vectors_usd(builder: USDBuilder,
 
 def add_scatter_layer_usd(
     builder: USDBuilder,
-    viewer_state: Viewer3DState,
+    viewer_state: ViewerState3D,
     layer_state: ScatterLayerState3D,
     points_getter: PointsGetter,
     triangles: List[Tuple[int, int, int]],

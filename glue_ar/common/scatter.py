@@ -3,11 +3,12 @@ from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
 from typing import Callable, Dict, List, Literal, Optional, Tuple
 
 from glue.utils import ensure_numerical
+from glue.viewers.common3d.viewer_state import ViewerState3D
 from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 
 from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation, \
                                   sphere_points, sphere_triangles
-from glue_ar.utils import Bounds, NoneType, Viewer3DState, get_stretches, mask_for_bounds
+from glue_ar.utils import Bounds, NoneType, get_stretches, mask_for_bounds
 
 try:
     from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState as IpyvolumeScatterLayerState
@@ -26,7 +27,7 @@ VECTOR_OFFSETS = {
 
 
 def scatter_layer_mask(
-        viewer_state: Viewer3DState,
+        viewer_state: ViewerState3D,
         layer_state: ScatterLayerState3D,
         bounds: Bounds,
         clip_to_bounds: bool = True) -> ndarray:
@@ -88,7 +89,7 @@ def sizes_for_scatter_layer(layer_state: ScatterLayerState3D,
     return sizes
 
 
-def clip_vector_data(viewer_state: Viewer3DState,
+def clip_vector_data(viewer_state: ViewerState3D,
                      layer_state: ScatterLayerState3D,
                      bounds: Bounds,
                      mask: Optional[ndarray] = None) -> ndarray:
@@ -107,7 +108,7 @@ def clip_vector_data(viewer_state: Viewer3DState,
     return vector_data
 
 
-def clip_error_data(viewer_state: Viewer3DState,
+def clip_error_data(viewer_state: ViewerState3D,
                     layer_state: ScatterLayerState3D,
                     bounds: Bounds,
                     axis: Literal["x", "y", "z"],
