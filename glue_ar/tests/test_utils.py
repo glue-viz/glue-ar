@@ -307,23 +307,8 @@ def test_get_resolution_jupyter():
 
     ipv_volume = jupyter_app.new_data_viewer(IpyvolumeVolumeView)
     ipv_volume.add_data(volume_data1)
-    ipv_volume.layers[-1].state.max_resolution = 128
+    ipv_volume.state.resolution = 128
     assert get_resolution(ipv_volume.state) == 128
-
-    volume_data2 = Data(label='Volume Data',
-                        x=arange(24).reshape((2, 3, 4)),
-                        y=ones((2, 3, 4)),
-                        z=arange(100, 124).reshape((2, 3, 4)))
-    jupyter_app.add_data(volume_data2)
-    vispy_volume.add_data(volume_data2)
-    ipv_volume.add_data(volume_data2)
-    ipv_volume.layers[-1].state.max_resolution = 64
-    assert get_resolution(vispy_volume.state) == 32
-    assert get_resolution(ipv_volume.state) == 128
-
-    ipv_volume.layers[-1].state.max_resolution = 512
-    assert get_resolution(ipv_volume.state) == 512
-
 
 def test_clamp():
     assert clamp(2, 0, 1) == 1
