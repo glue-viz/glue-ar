@@ -1,14 +1,13 @@
 from collections import defaultdict
 from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
 from glue.utils.array import ensure_numerical
-from glue_vispy_viewers.common.viewer_state import Vispy3DViewerState
-from glue_vispy_viewers.scatter.layer_state import ScatterLayerState
+from glue.viewers.scatter3d.viewer_state import ViewerState3D
+from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 from numpy import ndarray
 from numpy.linalg import norm
 import struct
 
 from typing import List, Literal, Optional, Tuple
-
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
@@ -16,23 +15,23 @@ from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, 
                                   normalize, rectangular_prism_triangulation, sphere_triangles
 from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_export_option, \
                                index_mins, index_maxes
-from glue_ar.utils import Viewer3DState, export_label_for_layer, iterable_has_nan, hex_to_components, \
-                          layer_color, offset_triangles, unique_id, xyz_bounds, xyz_for_layer, Bounds
+from glue_ar.utils import export_label_for_layer, iterable_has_nan, hex_to_components, \
+                          layer_color, offset_triangles, unique_id, xyz_bounds, xyz_for_layer, Bounds, NoneType
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.common.scatter import Scatter3DLayerState, ScatterLayerState3D, \
-                                   PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
+from glue_ar.common.scatter import PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
                                    IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, clip_error_data, clip_vector_data, \
                                    radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, \
-                                   sphere_points_getter, NoneType
+                                   sphere_points_getter
+
 
 try:
-    from glue_jupyter.common.state3d import ViewerState3D
+    from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState as IpyvolumeScatterLayerState
 except ImportError:
-    ViewerState3D = NoneType
+    IpyvolumeScatterLayerState = NoneType
 
 
 def add_vectors_gltf(builder: GLTFBuilder,
-                     viewer_state: Viewer3DState,
+                     viewer_state: ViewerState3D,
                      layer_state: ScatterLayerState3D,
                      layer_id: str,
                      data: ndarray,
@@ -84,14 +83,10 @@ def add_vectors_gltf(builder: GLTFBuilder,
 
     point_mins = None
     point_maxes = None
-    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
-    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
-    fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
+    fixed_color = layer_state.color_mode == "Fixed"
 
     if not fixed_color:
-        cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
-        cmap_att = getattr(layer_state, cmap_attr)
-        cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
+        cmap_vals = ensure_numerical(layer_state.layer[layer_state.cmap_att][mask])
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
 
     for i, (pt, v) in enumerate(zip(data, vector_data)):
@@ -164,7 +159,7 @@ def add_vectors_gltf(builder: GLTFBuilder,
 
 
 def add_error_bars_gltf(builder: GLTFBuilder,
-                        viewer_state: Viewer3DState,
+                        viewer_state: ViewerState3D,
                         layer_state: ScatterLayerState3D,
                         layer_id: str,
                         axis: Literal["x", "y", "z"],
@@ -174,13 +169,9 @@ def add_error_bars_gltf(builder: GLTFBuilder,
                         mask: Optional[ndarray] = None):
     err_values = clip_error_data(viewer_state, layer_state, bounds, axis, mask)
 
-    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
-    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
-    fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
+    fixed_color = layer_state.color_mode == "Fixed"
     if not fixed_color:
-        cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
-        cmap_att = getattr(layer_state, cmap_attr)
-        cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
+        cmap_vals = ensure_numerical(layer_state.layer[layer_state.cmap_att][mask])
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
 
     # NB: This ordering is intentional to account for glTF coordinate system
@@ -236,7 +227,7 @@ def add_error_bars_gltf(builder: GLTFBuilder,
 
 
 def add_scatter_layer_gltf(builder: GLTFBuilder,
-                           viewer_state: Viewer3DState,
+                           viewer_state: ViewerState3D,
                            layer_state: ScatterLayerState3D,
                            points_getter: PointsGetter,
                            triangles: List[Tuple[int, int, int]],
@@ -248,10 +239,8 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
     bounds = xyz_bounds(viewer_state, with_resolution=False)
 
-    vispy_layer_state = isinstance(layer_state, ScatterLayerState)
     fixed_size = layer_state.size_mode == "Fixed"
-    color_mode_attr = "color_mode" if vispy_layer_state else "cmap_mode"
-    fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
+    fixed_color = layer_state.color_mode == "Fixed"
     radius = radius_for_scatter_layer(layer_state)
     mask = scatter_layer_mask(viewer_state, layer_state, bounds, clip_to_bounds)
 
@@ -266,9 +255,7 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
     buffer = builder.buffer_count
     cmap = layer_state.cmap
-    cmap_attr = "cmap_attribute" if vispy_layer_state else "cmap_att"
-    cmap_att = getattr(layer_state, cmap_attr)
-    cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
+    cmap_vals = ensure_numerical(layer_state.layer[layer_state.cmap_att][mask])
     crange = layer_state.cmap_vmax - layer_state.cmap_vmin
     uri = f"layer_{unique_id()}.bin"
 
@@ -560,10 +547,10 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         )
 
 
-@ar_layer_export(ScatterLayerState, "Scatter", ARVispyScatterExportOptions, ("gltf", "glb"))
+@ar_layer_export(ScatterLayerState3D, "Scatter", ARVispyScatterExportOptions, ("gltf", "glb"))
 def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
-                                 viewer_state: Vispy3DViewerState,
-                                 layer_state: ScatterLayerState,
+                                 viewer_state: ViewerState3D,
+                                 layer_state: ScatterLayerState3D,
                                  options: ARVispyScatterExportOptions,
                                  bounds: Bounds,
                                  clip_to_bounds: bool = True):
@@ -592,29 +579,30 @@ def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
                            points_per_mesh=ppm)
 
 
-@ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("gltf", "glb"))
-def add_ipyvolume_scatter_layer_gltf(builder: GLTFBuilder,
-                                     viewer_state: ViewerState3D,
-                                     layer_state: Scatter3DLayerState,
-                                     options: ARIpyvolumeScatterExportOptions,
-                                     bounds: Bounds,
-                                     clip_to_bounds: bool = True):
-    # TODO: What to do for circle2d?
-    geometry = str(layer_state.geo)
-    triangle_getter = IPYVOLUME_TRIANGLE_GETTERS.get(geometry, rectangular_prism_triangulation)
-    triangles = triangle_getter()
-    points_getter = IPYVOLUME_POINTS_GETTERS.get(geometry, box_points_getter)
-    log_ppm = int(options.log_points_per_mesh)
-    if log_ppm == 7:
-        ppm = None
-    else:
-        ppm = 10 ** log_ppm
-
-    add_scatter_layer_gltf(builder=builder,
-                           viewer_state=viewer_state,
-                           layer_state=layer_state,
-                           points_getter=points_getter,
-                           triangles=triangles,
-                           bounds=bounds,
-                           clip_to_bounds=clip_to_bounds,
-                           points_per_mesh=ppm)
+if IpyvolumeScatterLayerState is not NoneType:
+    @ar_layer_export(IpyvolumeScatterLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("gltf", "glb"))
+    def add_ipyvolume_scatter_layer_gltf(builder: GLTFBuilder,
+                                         viewer_state: ViewerState3D,
+                                         layer_state: IpyvolumeScatterLayerState,
+                                         options: ARIpyvolumeScatterExportOptions,
+                                         bounds: Bounds,
+                                         clip_to_bounds: bool = True):
+        # TODO: What to do for circle2d?
+        geometry = str(layer_state.geo)
+        triangle_getter = IPYVOLUME_TRIANGLE_GETTERS.get(geometry, rectangular_prism_triangulation)
+        triangles = triangle_getter()
+        points_getter = IPYVOLUME_POINTS_GETTERS.get(geometry, box_points_getter)
+        log_ppm = int(options.log_points_per_mesh)
+        if log_ppm == 7:
+            ppm = None
+        else:
+            ppm = 10 ** log_ppm
+    
+        add_scatter_layer_gltf(builder=builder,
+                               viewer_state=viewer_state,
+                               layer_state=layer_state,
+                               points_getter=points_getter,
+                               triangles=triangles,
+                               bounds=bounds,
+                               clip_to_bounds=clip_to_bounds,
+                               points_per_mesh=ppm)

@@ -3,8 +3,8 @@ from numpy import isfinite, linspace
 
 from gltflib import AccessorType, BufferTarget, ComponentType
 
-from glue_vispy_viewers.volume.layer_state import VolumeLayerState
-from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState
+from glue.viewers.volume3d.layer_state import VolumeLayerState3D
+from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
@@ -17,10 +17,10 @@ from glue_ar.utils import BoundsWithResolution, clip_sides, export_label_for_lay
                           isomin_for_layer, isomax_for_layer, layer_color
 
 
-@ar_layer_export(VolumeLayerState, "Isosurface", ARIsosurfaceExportOptions, ("gltf", "glb"))
+@ar_layer_export(VolumeLayerState3D, "Isosurface", ARIsosurfaceExportOptions, ("gltf", "glb"))
 def add_isosurface_layer_gltf(builder: GLTFBuilder,
-                              viewer_state: Vispy3DVolumeViewerState,
-                              layer_state: VolumeLayerState,
+                              viewer_state: VolumeViewerState3D,
+                              layer_state: VolumeLayerState3D,
                               options: ARIsosurfaceExportOptions,
                               bounds: BoundsWithResolution):
     data = frb_for_layer(viewer_state, layer_state, bounds)
@@ -121,11 +121,11 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
         builder.add_file_resource(level_bin, data=barr)
 
 
-@ar_layer_export(VolumeLayerState, "Isosurface", ARIsosurfaceExportOptions, ("usdz", "usdc", "usda"))
+@ar_layer_export(VolumeLayerState3D, "Isosurface", ARIsosurfaceExportOptions, ("usdz", "usdc", "usda"))
 def add_isosurface_layer_usd(
     builder: USDBuilder,
-    viewer_state: Vispy3DVolumeViewerState,
-    layer_state: VolumeLayerState,
+    viewer_state: VolumeViewerState3D,
+    layer_state: VolumeLayerState3D,
     options: ARIsosurfaceExportOptions,
     bounds: BoundsWithResolution,
 ):
@@ -170,11 +170,11 @@ def add_isosurface_layer_usd(
         builder.add_mesh(points, triangles, surface_color_components, alpha)
 
 
-@ar_layer_export(VolumeLayerState, "Isosurface", ARIsosurfaceExportOptions, ("stl",))
+@ar_layer_export(VolumeLayerState3D, "Isosurface", ARIsosurfaceExportOptions, ("stl",))
 def add_isosurface_layer_stl(
     builder: STLBuilder,
-    viewer_state: Vispy3DVolumeViewerState,
-    layer_state: VolumeLayerState,
+    viewer_state: VolumeViewerState3D,
+    layer_state: VolumeLayerState3D,
     options: ARIsosurfaceExportOptions,
     bounds: BoundsWithResolution,
 ):
