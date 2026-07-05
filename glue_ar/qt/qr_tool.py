@@ -9,7 +9,7 @@ from glue.config import viewer_tool
 from glue.core.state_objects import State
 from glue.viewers.common.state import LayerState
 from glue.viewers.common.tool import Tool
-from glue_vispy_viewers.scatter.layer_artist import ScatterLayerState
+from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 from glue_vispy_viewers.volume.volume_viewer import VispyVolumeViewerMixin
 
 from glue_ar.utils import AR_ICON, export_label_for_layer, xyz_bounds
@@ -32,7 +32,7 @@ class ARLocalQRTool(Tool):
     tool_tip = "Get a QR code for the current view in 3D"
 
     def _export_items_for_layer(self, layer: LayerState) -> Type[State]:
-        if isinstance(layer, ScatterLayerState):
+        if isinstance(layer, ScatterLayerState3D):
             return ("Scatter", ARVispyScatterExportOptions())
         else:
             return ("Isosurface", ARIsosurfaceExportOptions(isosurface_count=8))
