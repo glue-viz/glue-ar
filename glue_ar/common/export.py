@@ -8,7 +8,6 @@ from glue.config import settings
 from glue.viewers.common.state import LayerState
 from glue.viewers.common3d.viewer_state import ViewerState3D
 
-
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.registries import Builder, builder as builder_registry, compressor as compressor_registry

@@ -1,9 +1,11 @@
 from collections import defaultdict
 from math import ceil
-from glue.viewers.volume3d.layer_state import VolumeLayerState3D
-from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
+
 from numpy import isfinite, argwhere, transpose
 from typing import Iterable, List, Optional, Union
+
+from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
+from glue.viewers.volume3d.layer_state import VolumeLayerState3D
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder

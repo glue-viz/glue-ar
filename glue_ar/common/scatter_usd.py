@@ -1,10 +1,12 @@
 from collections import defaultdict
 from typing import List, Optional, Tuple
-from glue.utils.array import ensure_numerical
-from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
-from glue.viewers.scatter3d.viewer_state import ViewerState3D
+
 from numpy import ndarray
 from numpy.linalg import norm
+
+from glue.utils.array import ensure_numerical
+from glue.viewers.common3d.viewer_state import ViewerState3D
+from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, PointsGetter, \
@@ -15,9 +17,8 @@ from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
                                   normalize, rectangular_prism_triangulation, sphere_triangles
 from glue_ar.usd_utils import sanitize_path
-from glue_ar.utils import export_label_for_layer, iterable_has_nan, hex_to_components, \
+from glue_ar.utils import export_label_for_layer, instance_attribute, iterable_has_nan, hex_to_components, \
                           layer_color, offset_triangles, xyz_for_layer, Bounds, NoneType
-
 
 try:
     from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState as IpyvolumeScatterLayerState
@@ -90,7 +91,8 @@ def add_scatter_layer_usd(
 ):
 
     fixed_size = layer_state.size_mode == "Fixed"
-    fixed_color = layer_state.color_mode == "Fixed"
+    color_mode_attr = instance_attribute(layer_state, "color_mode", "cmap_mode")
+    fixed_color = getattr(layer_state, color_mode_attr, "Fixed") == "Fixed"
 
     identifier = sanitize_path(export_label_for_layer(layer_state))
 
@@ -113,7 +115,9 @@ def add_scatter_layer_usd(
 
     if not fixed_color:
         cmap = layer_state.cmap
-        cmap_vals = ensure_numerical(layer_state.layer[layer_state.cmap_att][mask])
+        cmap_attr = instance_attribute(layer_state, "cmap_attribute", "cmap_att")
+        cmap_att = getattr(layer_state, cmap_attr)
+        cmap_vals = ensure_numerical(layer_state.layer[cmap_att][mask])
         crange = layer_state.cmap_vmax - layer_state.cmap_vmin
         normalized = [max(min((cval - layer_state.cmap_vmin) / crange, 1), 0) for cval in cmap_vals]
         colors = [tuple(int(256 * c) for c in cmap(norm)[:3]) for norm in normalized]

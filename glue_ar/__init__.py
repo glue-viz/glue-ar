@@ -1,8 +1,7 @@
-from contextlib import suppress
 import importlib.metadata
+from contextlib import suppress
 
-
-__version__ = importlib.metadata.version('glue-ar')
+__version__ = importlib.metadata.version("glue-ar")
 
 
 def setup_common():

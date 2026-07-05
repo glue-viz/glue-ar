@@ -31,20 +31,18 @@ except ImportError:
     pass
 
 
-def test_data_count():
-    data1 = Data(label="Data 1")
-    data2 = Data(label="Data 2")
+def test_data_count(data_3d, data2_3d):
     viewer_state = Vispy3DVolumeViewerState()
 
-    layer1 = LayerArtist(viewer_state, layer=data1)
-    layer1_2 = LayerArtist(viewer_state, layer=data1)
-    layer2 = LayerArtist(viewer_state, layer=data2)
+    layer1 = LayerArtist(viewer_state, layer=data_3d)
+    layer1_2 = LayerArtist(viewer_state, layer=data_3d)
+    layer2 = LayerArtist(viewer_state, layer=data2_3d)
 
     assert data_count((layer1,)) == 1
     assert data_count((layer1, layer1_2)) == 1
     assert data_count((layer1, layer2)) == 2
 
-    subset = data1.new_subset()
+    subset = data_3d.new_subset()
     subset_layer = LayerArtist(viewer_state, layer=subset)
 
     assert data_count((subset_layer,)) == 1
@@ -52,11 +50,10 @@ def test_data_count():
     assert data_count((layer2, subset_layer)) == 2
 
 
-def test_export_label_for_layer():
-    data = Data(label="Data")
-    subset = data.new_subset(label="Subset")
+def test_export_label_for_layer(data_3d):
+    subset = data_3d.new_subset(label="Subset")
     viewer_state = Vispy3DVolumeViewerState()
-    data_layer = LayerArtist(viewer_state, layer=data)
+    data_layer = LayerArtist(viewer_state, layer=data_3d)
     subset_layer = LayerArtist(viewer_state, layer=subset)
 
     assert export_label_for_layer(data_layer, add_data_label=True) == "Data"
@@ -102,10 +99,9 @@ def test_clip_linear_transformations():
     ]
 
 
-def test_layer_color():
-    data = Data(label="Data")
+def test_layer_color(data_3d):
     viewer_state = Vispy3DVolumeViewerState()
-    layer = LayerArtist(viewer_state, layer=data)
+    layer = LayerArtist(viewer_state, layer=data_3d)
     layer.state.color = "#abcdef"
 
     assert layer_color(layer.state) == "#abcdef"
@@ -222,15 +218,14 @@ def test_alpha_composite():
     assert alpha_composite(over, under) == over + [1]
 
 
-def test_data_for_layer():
-    data = Data(label="Data")
-    subset = data.new_subset(label="Subset")
+def test_data_for_layer(data_3d):
+    subset = data_3d.new_subset(label="Subset")
     viewer_state = Vispy3DVolumeViewerState()
-    data_layer = LayerArtist(viewer_state, layer=data)
+    data_layer = LayerArtist(viewer_state, layer=data_3d)
     subset_layer = LayerArtist(viewer_state, layer=subset)
 
-    assert data_for_layer(data_layer) == data
-    assert data_for_layer(subset_layer) == data
+    assert data_for_layer(data_layer) == data_3d
+    assert data_for_layer(subset_layer) == data_3d
 
 
 def test_ndarray_has_nan():
@@ -309,6 +304,21 @@ def test_get_resolution_jupyter():
     ipv_volume.add_data(volume_data1)
     ipv_volume.state.resolution = 128
     assert get_resolution(ipv_volume.state) == 128
+
+    volume_data2 = Data(label='Volume Data',
+                        x=arange(24).reshape((2, 3, 4)),
+                        y=ones((2, 3, 4)),
+                        z=arange(100, 124).reshape((2, 3, 4)))
+    jupyter_app.add_data(volume_data2)
+    vispy_volume.add_data(volume_data2)
+    ipv_volume.add_data(volume_data2)
+    ipv_volume.state.resolution = 128
+    assert get_resolution(vispy_volume.state) == 32
+    assert get_resolution(ipv_volume.state) == 128
+
+    ipv_volume.state.resolution = 512
+    assert get_resolution(ipv_volume.state) == 512
+
 
 def test_clamp():
     assert clamp(2, 0, 1) == 1

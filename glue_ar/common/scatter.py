@@ -8,16 +8,19 @@ from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 
 from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation, \
                                   sphere_points, sphere_triangles
-from glue_ar.utils import Bounds, NoneType, get_stretches, mask_for_bounds
+
+from glue_ar.utils import Bounds, NoneType, get_stretches, instance_attribute, mask_for_bounds
 
 try:
     from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState as IpyvolumeScatterLayerState
 except ImportError:
     IpyvolumeScatterLayerState = NoneType
 
+    
 Point = Tuple[float, float, float]
 FullPointsGetter = Callable[[ScatterLayerState3D, Bounds, ndarray, Point, float], List[Point]]
 PointsGetter = Callable[[Point, float], List[Point]]
+
 
 VECTOR_OFFSETS = {
     'tail': 0.5,
@@ -38,13 +41,18 @@ def scatter_layer_mask(
         mask = None
 
     fixed_size = layer_state.size_mode == "Fixed"
-    fixed_color = layer_state.color_mode == "Fixed"
+    cmap_mode_attr = instance_attribute(layer_state, "color_mode", "cmap_mode")
+    fixed_color = getattr(layer_state, cmap_mode_attr, "Fixed") == "Fixed"
+
     if not fixed_size:
-        size_data = ensure_numerical(layer_state.layer[layer_state.size_att])
+        size_attr = instance_attribute(layer_state, "size_attribute", "size_att")
+        size_data = ensure_numerical(layer_state.layer[getattr(layer_state, size_attr)])
         size_mask = isfinite(size_data)
         mask = size_mask if mask is None else (mask & size_mask)
+
     if not fixed_color:
-        color_data = ensure_numerical(layer_state.layer[layer_state.cmap_att])
+        cmap_attr = instance_attribute(layer_state, "cmap_attribute", "cmap_att")
+        color_data = ensure_numerical(layer_state.layer[getattr(layer_state, cmap_attr)])
         color_mask = isfinite(color_data)
         mask = color_mask if mask is None else (mask & color_mask)
 
@@ -76,7 +84,8 @@ def sizes_for_scatter_layer(layer_state: ScatterLayerState3D,
         return None
     else:
         # The specific size calculation is taken from the scatter layer artist
-        size_data = ensure_numerical(layer_state.layer[layer_state.size_att][mask].ravel())
+        size_attr = instance_attribute(layer_state, "size_attribute", "size_att")
+        size_data = ensure_numerical(layer_state.layer[getattr(layer_state, size_attr)][mask].ravel())
         size_data = clip(size_data, layer_state.size_vmin, layer_state.size_vmax)
         if layer_state.size_vmax == layer_state.size_vmin:
             sizes = sqrt(ones(size_data.shape) * 10)
@@ -93,7 +102,7 @@ def clip_vector_data(viewer_state: ViewerState3D,
                      layer_state: ScatterLayerState3D,
                      bounds: Bounds,
                      mask: Optional[ndarray] = None) -> ndarray:
-    atts = [layer_state.vx_att, layer_state.vy_att, layer_state.vz_att]
+    atts = [getattr(layer_state, f"v{c}_attribute", getattr(layer_state, f"v{c}_att")) for c in ("x", "y", "z")]
     vector_data = [ensure_numerical(layer_state.layer[att].ravel()[mask]) for att in atts]
 
     stretches = get_stretches(viewer_state)
@@ -113,7 +122,7 @@ def clip_error_data(viewer_state: ViewerState3D,
                     bounds: Bounds,
                     axis: Literal["x", "y", "z"],
                     mask: Optional[ndarray] = None) -> ndarray:
-    err_att = getattr(layer_state, f"{axis}err_att")
+    err_att = instance_attribute(layer_state, f"{axis}err_attribute", f"{axis}err_att")
     error_data = ensure_numerical(layer_state.layer[err_att].ravel()[mask]).astype(float)
     error_data[~isfinite(error_data)] = 0.0
 

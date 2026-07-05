@@ -1,3 +1,4 @@
+from contextlib import suppress
 from numbers import Number
 from os.path import abspath, dirname, join
 from uuid import uuid4
@@ -5,7 +6,7 @@ from typing import Iterator, Literal, overload, Iterable, List, Optional, Tuple,
 
 from glue.core import BaseData
 from glue.core.subset_group import GroupedSubset
-from glue.viewers.common.state import LayerState, ViewerState
+from glue.viewers.common.state import ViewerState
 from glue.viewers.common.viewer import LayerArtist, Viewer
 from glue.viewers.common3d.layer_state import LayerState3D
 from glue.viewers.common3d.viewer_state import ViewerState3D
@@ -42,7 +43,7 @@ Bounds = List[Tuple[float, float]]
 BoundsWithResolution = List[Tuple[float, float, int]]
 
 
-def data_count(layers: Iterable[Union[LayerArtist, LayerState]]) -> int:
+def data_count(layers: Iterable[Union[LayerArtist, LayerState3D]]) -> int:
     """
     Count the number of unique Data objects (either directly or as parents of subsets)
     used in the set of layers
@@ -51,7 +52,7 @@ def data_count(layers: Iterable[Union[LayerArtist, LayerState]]) -> int:
     return len(data)
 
 
-def export_label_for_layer(layer: Union[LayerArtist, LayerState],
+def export_label_for_layer(layer: Union[LayerArtist, LayerState3D],
                            add_data_label: bool = True) -> str:
     if (not add_data_label) or isinstance(layer.layer, BaseData):
         return layer.layer.label
@@ -154,7 +155,7 @@ def clip_linear_transformations(bounds: Union[Bounds, BoundsWithResolution],
 # TODO: Make this better?
 # glue-plotly has had to deal with similar issues,
 # the utilities there are at least better than this
-def layer_color(layer_state: LayerState) -> str:
+def layer_color(layer_state: LayerState3D) -> str:
     layer_color = layer_state.color
     if layer_color == '0.35' or layer_color == '0.75':
         layer_color = '#808080'
@@ -201,7 +202,7 @@ def bring_into_clip(data,
 
 
 def mask_for_bounds(viewer_state: ViewerState3D,
-                    layer_state: LayerState,
+                    layer_state: LayerState3D,
                     bounds: Union[Bounds, BoundsWithResolution]):
     data = layer_state.layer
     bounds = [(min(b), max(b)) for b in bounds]
@@ -223,7 +224,7 @@ def get_stretches(viewer_state: ViewerState3D) -> Tuple[float, float, float]:
 # TODO: Worry about efficiency later
 # and just generally make this better
 def xyz_for_layer(viewer_state: ViewerState3D,
-                  layer_state: LayerState,
+                  layer_state: LayerState3D,
                   scaled: bool = False,
                   preserve_aspect: bool = True,
                   mask: Optional[ndarray] = None) -> ndarray:
@@ -270,7 +271,7 @@ def alpha_composite(over: List[float], under: List[float]) -> List[float]:
     return rgba_new
 
 
-def data_for_layer(layer_or_state: Union[LayerArtist, LayerState]) -> BaseData:
+def data_for_layer(layer_or_state: Union[LayerArtist, LayerState3D]) -> BaseData:
     if isinstance(layer_or_state.layer, BaseData):
         return layer_or_state.layer
     else:
@@ -278,12 +279,12 @@ def data_for_layer(layer_or_state: Union[LayerArtist, LayerState]) -> BaseData:
 
 
 def frb_for_layer(viewer_state: ViewerState,
-                  layer_or_state: Union[LayerArtist, LayerState],
+                  layer_or_state: Union[LayerArtist, LayerState3D],
                   bounds: BoundsWithResolution) -> ndarray:
 
     bounds = list(reversed(bounds))
     data = data_for_layer(layer_or_state)
-    layer_state = layer_or_state if isinstance(layer_or_state, LayerState) else layer_or_state.state
+    layer_state = layer_or_state if isinstance(layer_or_state, LayerState3D) else layer_or_state.state
     is_data_layer = data is layer_or_state.layer
     target_data = getattr(viewer_state, 'reference_data', data)
     data_frb = data.compute_fixed_resolution_buffer(
@@ -320,21 +321,28 @@ def iterator_count(iter: Iterator) -> int:
 
 
 def is_volume_viewer(viewer: Viewer) -> bool:
-    return isinstance(viewer.state, VolumeViewerState3D)
-
-
-def get_resolution(viewer_state: ViewerState3D) -> int:
-    if hasattr(viewer_state, "resolution"):
-        return viewer_state.resolution
-
+    if isinstance(viewer.state, VolumeViewerState3D):
+        return True
     try:
-        from glue_jupyter.common.state3d import VolumeViewerState
-        if isinstance(viewer_state, VolumeViewerState):
-            return max((resolution for state in viewer_state.layers
-                        if (resolution := getattr(state, "max_resolution", None)) is not None),
-                       default=256)
+        from glue_jupyter.ipyvolume.volume import IpyvolumeVolumeView
+        if isinstance(viewer, IpyvolumeVolumeView):
+            return True
     except ImportError:
         pass
+
+    return False
+
+
+def get_resolution(viewer_state):
+    resolution = getattr(viewer_state, "resolution", None)
+    if resolution is not None:
+        return resolution
+
+    resolutions = tuple(getattr(state, "max_resolution", None)
+                                for state in viewer_state.layers)
+
+    with suppress(ValueError):
+        return max((res for res in resolutions if res is not None), default=256)
 
     return 256
 
@@ -358,3 +366,6 @@ def binned_opacity(raw_opacity: float, resolution: float) -> float:
 
 def offset_triangles(triangle_indices, offset):
     return [tuple(idx + offset for idx in triangle) for triangle in triangle_indices]
+
+def instance_attribute(instance, attribute, fallback):
+    return attribute if hasattr(instance, attribute) else fallback
