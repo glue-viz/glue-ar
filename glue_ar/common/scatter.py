@@ -9,7 +9,7 @@ from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation, \
                                   sphere_points, sphere_triangles
 
-from glue_ar.utils import Bounds, NoneType, get_stretches, mask_for_bounds
+from glue_ar.utils import Bounds, NoneType, get_stretches, instance_attribute, mask_for_bounds
 
 try:
     from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState as IpyvolumeScatterLayerState
