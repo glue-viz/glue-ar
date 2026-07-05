@@ -5,9 +5,9 @@ from glue.viewers.common3d.viewer_state import ViewerState3D
 from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 from numpy import ndarray
 from numpy.linalg import norm
+import struct
 
 from typing import List, Literal, Optional, Tuple
-
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
@@ -21,7 +21,13 @@ from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.scatter import PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
                                    IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, clip_error_data, clip_vector_data, \
                                    radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, \
-                                   sphere_points_getter, Scatter3DLayerState
+                                   sphere_points_getter
+
+
+try:
+    from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState as IpyvolumeScatterLayerState
+except ImportError:
+    IpyvolumeScatterLayerState = NoneType
 
 
 def add_vectors_gltf(builder: GLTFBuilder,
@@ -303,10 +309,11 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
         index_format = index_export_option(max_triangle_index)
         triangles_start = len(barr)
         add_triangles_to_bytearray(barr, mesh_triangles, export_option=index_format)
-        triangles_len = len(barr)
+        triangles_end = len(barr)
+        triangles_len = triangles_end - triangles_start
         builder.add_buffer_view(
             buffer=buffer,
-            byte_length=triangles_len-triangles_start,
+            byte_length=triangles_len,
             byte_offset=triangles_start,
             target=BufferTarget.ELEMENT_ARRAY_BUFFER,
         )
@@ -321,6 +328,16 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
 
         start = 0
         triangles_accessor = builder.accessor_count - 1
+
+        # We always store point values as FLOAT, which has a size of 4 bytes.
+        # Since the total bytearray at this point may not be divisible by 4,
+        # we add a bit of padding.
+        # Note that this will be at most 3 bytes
+        float_size = 4
+        off = float_size - (len(barr) % float_size)
+        for _ in range(off):
+            barr.extend(struct.pack("B", 0))
+
         while start < n_points:
             mesh_points = [pt for pts in points[start:start+points_per_mesh] for pt in pts]
             barr_offset = len(barr)
@@ -420,11 +437,12 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
             index_format = index_export_option(max_triangle_index)
             triangles_start = len(barr)
             add_triangles_to_bytearray(barr, mesh_triangles, export_option=index_format)
-            triangles_len = len(barr)
+            triangles_end = len(barr)
+            triangles_len = triangles_end - triangles_start
 
             builder.add_buffer_view(
                 buffer=buffer,
-                byte_length=triangles_len-triangles_start,
+                byte_length=triangles_len,
                 byte_offset=triangles_start,
                 target=BufferTarget.ELEMENT_ARRAY_BUFFER,
             )
@@ -570,11 +588,11 @@ def add_vispy_scatter_layer_gltf(builder: GLTFBuilder,
                            points_per_mesh=ppm)
 
 
-if Scatter3DLayerState is not NoneType:
-    @ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("gltf", "glb"))
+if IpyvolumeScatterLayerState is not NoneType:
+    @ar_layer_export(IpyvolumeScatterLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("gltf", "glb"))
     def add_ipyvolume_scatter_layer_gltf(builder: GLTFBuilder,
                                          viewer_state: ViewerState3D,
-                                         layer_state: Scatter3DLayerState,
+                                         layer_state: IpyvolumeScatterLayerState,
                                          options: ARIpyvolumeScatterExportOptions,
                                          bounds: Bounds,
                                          clip_to_bounds: bool = True):

@@ -14,6 +14,12 @@ from glue_ar.common.stl_builder import STLBuilder
 from glue_ar.utils import Bounds, NoneType, xyz_bounds, xyz_for_layer
 
 
+try:
+    from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState as IpyvolumeScatterLayerState
+except ImportError:
+    IpyvolumeScatterLayerState = NoneType
+
+
 def add_scatter_layer_stl(builder: STLBuilder,
                           viewer_state: ViewerState3D,
                           layer_state: ScatterLayerState3D,
@@ -75,11 +81,11 @@ def add_vispy_scatter_layer_stl(builder: STLBuilder,
                           clip_to_bounds=clip_to_bounds)
 
 
-if Scatter3DLayerState is not NoneType:
-    @ar_layer_export(ScatterLayerState3D, "Scatter", ARIpyvolumeScatterExportOptions, ("stl",))
-    def add_ipyvolume_scatter_layer_usd(builder: STLBuilder,
+if IpyvolumeScatterLayerState is not NoneType:
+    @ar_layer_export(IpyvolumeScatterLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("stl",))
+    def add_ipyvolume_scatter_layer_stl(builder: STLBuilder,
                                         viewer_state: ViewerState3D,
-                                        layer_state: ScatterLayerState3D,
+                                        layer_state: IpyvolumeScatterLayerState,
                                         options: ARIpyvolumeScatterExportOptions,
                                         bounds: Bounds,
                                         clip_to_bounds: bool = True):

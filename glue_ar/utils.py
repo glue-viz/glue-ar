@@ -6,16 +6,14 @@ from typing import Iterator, Literal, overload, Iterable, List, Optional, Tuple,
 
 from glue.core import BaseData
 from glue.core.subset_group import GroupedSubset
-from glue.viewers.common.state import ViewerState
+from glue.viewers.common.state import LayerState, ViewerState
 from glue.viewers.common.viewer import LayerArtist, Viewer
 from glue.viewers.common3d.layer_state import LayerState3D
 from glue.viewers.common3d.viewer_state import ViewerState3D
 from glue.viewers.volume3d.layer_state import VolumeLayerState3D
 from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
 
-
 from numpy import array, inf, isnan, ndarray
-
 
 # Backwards compatibility for Python < 3.10
 try:

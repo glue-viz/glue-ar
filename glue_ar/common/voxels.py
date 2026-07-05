@@ -1,5 +1,6 @@
 from collections import defaultdict
 from math import ceil
+
 from numpy import isfinite, argwhere, transpose
 from typing import Iterable, List, Optional, Union
 

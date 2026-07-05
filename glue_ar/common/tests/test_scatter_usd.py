@@ -12,15 +12,22 @@ from glue_ar.usd_utils import material_for_mesh
 from glue_ar.utils import export_label_for_layer, hex_to_components, iterator_count, layers_to_export, xyz_bounds
 
 
+EXTENSION_OPTIONS = ("usda", "usdc", "usdz")
+
+TEST_OPTIONS = list((app_type, viewer_type, extension)
+               for (app_type, viewer_type), extension
+               in zip(APP_VIEWER_OPTIONS, EXTENSION_OPTIONS))
+
+
 class TestVispyScatterUSD(BaseScatterTest):
 
-    @pytest.mark.parametrize("app_type,viewer_type", APP_VIEWER_OPTIONS)
-    def test_basic_export(self, app_type: str, viewer_type: str):
+    @pytest.mark.parametrize("app_type,viewer_type,extension", TEST_OPTIONS)
+    def test_basic_export(self, app_type: str, viewer_type: str, extension: str):
         if app_type == "jupyter" and viewer_type == "vispy" and platform == "win32":
             return
         self.basic_setup(app_type, viewer_type)
         bounds = xyz_bounds(self.viewer.state, with_resolution=False)
-        self.tmpfile = NamedTemporaryFile(suffix=".usdc", delete=False)
+        self.tmpfile = NamedTemporaryFile(suffix=f".{extension}", delete=False)
         self.tmpfile.close()
         layer_states = [layer.state for layer in layers_to_export(self.viewer)]
         export_viewer(self.viewer.state,

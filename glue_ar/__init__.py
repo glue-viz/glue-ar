@@ -1,7 +1,6 @@
 import importlib.metadata
 from contextlib import suppress
 
-
 __version__ = importlib.metadata.version("glue-ar")
 
 

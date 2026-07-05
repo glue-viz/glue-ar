@@ -8,16 +8,18 @@ from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 
 from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation, \
                                   sphere_points, sphere_triangles
-from glue_ar.utils import Bounds, NoneType, get_stretches, instance_attribute, mask_for_bounds
 
+from glue_ar.utils import Bounds, NoneType, get_stretches, mask_for_bounds
+
+try:
+    from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState as IpyvolumeScatterLayerState
+except ImportError:
+    IpyvolumeScatterLayerState = NoneType
+
+    
 Point = Tuple[float, float, float]
 FullPointsGetter = Callable[[ScatterLayerState3D, Bounds, ndarray, Point, float], List[Point]]
 PointsGetter = Callable[[Point, float], List[Point]]
-
-try:
-    from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState
-except ImportError:
-    Scatter3DLayerState = NoneType
 
 
 VECTOR_OFFSETS = {
@@ -72,8 +74,8 @@ def sizes_for_scatter_layer(layer_state: ScatterLayerState3D,
                             bounds: Bounds,
                             mask: ndarray) -> Optional[ndarray]:
     factor = max((abs(b[1] - b[0]) for b in bounds))
-    vispy_layer_state = isinstance(layer_state, ScatterLayerState3D)
-    if not vispy_layer_state:
+    ipyvolume_layer_state = isinstance(layer_state, IpyvolumeScatterLayerState)
+    if ipyvolume_layer_state:
         factor *= 2
 
     # We calculate this even if we aren't using fixed size as we might also use this for vectors
@@ -120,7 +122,7 @@ def clip_error_data(viewer_state: ViewerState3D,
                     bounds: Bounds,
                     axis: Literal["x", "y", "z"],
                     mask: Optional[ndarray] = None) -> ndarray:
-    err_att = instance_attribute(layer_state, f"{axis}_attribute", f"{axis}_att")
+    err_att = instance_attribute(layer_state, f"{axis}err_attribute", f"{axis}err_att")
     error_data = ensure_numerical(layer_state.layer[err_att].ravel()[mask]).astype(float)
     error_data[~isfinite(error_data)] = 0.0
 

@@ -10,9 +10,8 @@ from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, PointsGetter, \
-                                    box_points_getter, clip_vector_data, radius_for_scatter_layer, \
-                                   scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter, \
-                                   Scatter3DLayerState
+                                   box_points_getter, clip_vector_data, radius_for_scatter_layer, scatter_layer_mask, \
+                                   sizes_for_scatter_layer, sphere_points_getter
 from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
@@ -20,6 +19,11 @@ from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, 
 from glue_ar.usd_utils import sanitize_path
 from glue_ar.utils import export_label_for_layer, instance_attribute, iterable_has_nan, hex_to_components, \
                           layer_color, offset_triangles, xyz_for_layer, Bounds, NoneType
+
+try:
+    from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState as IpyvolumeScatterLayerState
+except ImportError:
+    IpyvolumeScatterLayerState = NoneType
 
 
 def add_vectors_usd(builder: USDBuilder,
@@ -213,11 +217,11 @@ def add_vispy_scatter_layer_usd(builder: USDBuilder,
                           clip_to_bounds=clip_to_bounds)
 
 
-if Scatter3DLayerState is not NoneType:
-    @ar_layer_export(Scatter3DLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("usdz", "usdc", "usda"))
+if IpyvolumeScatterLayerState is not NoneType:
+    @ar_layer_export(IpyvolumeScatterLayerState, "Scatter", ARIpyvolumeScatterExportOptions, ("usdz", "usdc", "usda"))
     def add_ipyvolume_scatter_layer_usd(builder: USDBuilder,
                                         viewer_state: ViewerState3D,
-                                        layer_state: Scatter3DLayerState,
+                                        layer_state: IpyvolumeScatterLayerState,
                                         options: ARIpyvolumeScatterExportOptions,
                                         bounds: Bounds,
                                         clip_to_bounds: bool = True):

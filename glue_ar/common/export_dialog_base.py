@@ -2,8 +2,9 @@ from typing import Dict, List, Tuple
 
 from echo import delay_callback
 from glue.core.state_objects import State
-from glue.viewers.common.viewer import LayerArtist, Viewer
-from glue_vispy_viewers.scatter.layer_artist import VispyLayerArtist
+from glue.viewers.common.layer_artist import LayerArtist
+from glue.viewers.common.viewer import Viewer
+from glue.viewers.common3d.layer_state import LayerState3D
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.export_state import ARExportDialogState
@@ -48,23 +49,22 @@ class ARExportDialogBase:
                 self.state_dictionary[label] = (method, state)
             self._layer_export_states[label][method] = state
 
-    def _layer_for_label(self, label: str) -> VispyLayerArtist:
+    def _layer_for_label(self, label: str) -> LayerState3D:
         return next(layer for layer in self.state.layers if export_label_for_layer(layer) == label)
 
     def _update_layer_ui(self, state: State):
         pass
 
-    def _on_layer_change(self, layer_name: str):
+    def _update_state(self, layer_name: str, filetype: str):
         layer = self._layer_for_label(layer_name)
         layer_state_cls = type(layer.state)
-        method_names = ar_layer_export.method_names(layer_state_cls, self.state.filetype)
+        method_names = ar_layer_export.method_names(layer_state_cls, filetype)
         if layer_name in self.state_dictionary:
             method, state = self.state_dictionary[layer_name]
         else:
             method = method_names[0]
             state = ar_layer_export.options_class(layer_state_cls, method)()
             self.state_dictionary[layer_name] = (method, state)
-
         with delay_callback(self.state, 'method'):
             method_change = method != self.state.method
             self.state.method_helper.choices = method_names
@@ -73,8 +73,11 @@ class ARExportDialogBase:
         if not method_change:
             self._update_layer_ui(state)
 
+    def _on_layer_change(self, layer_name: str):
+        self._update_state(layer_name, self.state.filetype)
+
     def _on_filetype_change(self, filetype: str):
-        pass
+        self._update_state(self.state.layer, filetype)
 
     def _on_compression_change(self, compression: str):
         pass
