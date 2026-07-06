@@ -1,7 +1,7 @@
 from collections import defaultdict
 from math import ceil
 
-from numpy import isfinite, argwhere, transpose
+from numpy import apply_along_axis, isfinite, argwhere, fromfunction, transpose
 from typing import Iterable, List, Optional, Union
 
 from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
@@ -71,7 +71,16 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         isorange = isomax - isomin
         nonempty_indices = argwhere(data > isomin)
-
+        cut_plane = None
+        if getattr(viewer_state, "cut_enabled", False):
+            from glue_vispy_viewers.volume.viewer_state import cutting_plane_from_state
+            cut_plane = cutting_plane_from_state(viewer_state)
+            if cut_plane is not None:
+                resolution_factors = [256 / bound[2] for bound in bounds]
+                cut_plane_coeffs = [factor * coeff for factor, coeff in zip(resolution_factors, cut_plane[:3])]
+                def cut_plane_index_check(indices):
+                    return cut_plane_coeffs[0] * indices[0] + cut_plane_coeffs[1] * indices[1] + cut_plane_coeffs[2] * indices[2] + cut_plane[3] < 0
+            
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
 
@@ -80,7 +89,10 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
             voxel_colors = [[int(256 * float(c)) for c in vc[:3]] for vc in voxel_colors]
 
         for indices in nonempty_indices:
-            value = data[tuple(indices)]
+            index_tuple = tuple(indices)
+            if cut_plane is not None and cut_plane_index_check(index_tuple):
+                continue
+            value = data[index_tuple]
             t_voxel = (value - isomin) / isorange
             if t_voxel > 0 and hasattr(layer_state, 'stretch'):
                 t_voxel = layer_state.stretch_object([t_voxel], **layer_state.stretch_parameters)[0]
