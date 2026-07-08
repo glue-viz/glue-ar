@@ -76,7 +76,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
             from glue_vispy_viewers.volume.viewer_state import cutting_plane_from_state
             cut_plane = cutting_plane_from_state(viewer_state)
             if cut_plane is not None:
-                resolution_factors = [256 / bound[2] for bound in bounds]
+                resolution_factors = [viewer_state.resolution / bound[2] for bound in bounds]
                 cut_plane_coeffs = [factor * coeff for factor, coeff in zip(resolution_factors, cut_plane[:3])]
                 def cut_plane_index_check(indices):
                     return cut_plane_coeffs[0] * indices[0] + cut_plane_coeffs[1] * indices[1] + cut_plane_coeffs[2] * indices[2] + cut_plane[3] < 0
