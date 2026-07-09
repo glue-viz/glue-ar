@@ -1,7 +1,7 @@
 from collections import defaultdict
 from math import ceil
 
-from numpy import apply_along_axis, isfinite, argwhere, fromfunction, transpose
+from numpy import isfinite, argwhere, transpose
 from typing import Iterable, List, Optional, Union
 
 from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
