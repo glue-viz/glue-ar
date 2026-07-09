@@ -79,7 +79,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
                 resolution_factors = [viewer_state.resolution / bound[2] for bound in bounds]
                 cut_plane_coeffs = [factor * coeff for factor, coeff in zip(resolution_factors, cut_plane[:3])]
                 def cut_plane_index_check(indices):
-                    return cut_plane_coeffs[0] * indices[0] + cut_plane_coeffs[1] * indices[1] + cut_plane_coeffs[2] * indices[2] + cut_plane[3] < 0
+                    return cut_plane_coeffs[1] * indices[0] + cut_plane_coeffs[2] * indices[1] + cut_plane_coeffs[0] * indices[2] + cut_plane[3] > 0
             
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
@@ -302,7 +302,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
                 resolution_factors = [viewer_state.resolution / bound[2] for bound in bounds]
                 cut_plane_coeffs = [factor * coeff for factor, coeff in zip(resolution_factors, cut_plane[:3])]
                 def cut_plane_index_check(indices):
-                    return cut_plane_coeffs[0] * indices[0] + cut_plane_coeffs[1] * indices[1] + cut_plane_coeffs[2] * indices[2] + cut_plane[3] < 0
+                    return cut_plane_coeffs[1] * indices[0] + cut_plane_coeffs[2] * indices[1] + cut_plane_coeffs[0] * indices[2] + cut_plane[3] > 0
 
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
