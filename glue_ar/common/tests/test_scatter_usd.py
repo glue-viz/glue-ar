@@ -1,16 +1,21 @@
 from sys import platform
 from tempfile import NamedTemporaryFile
 
-from pxr import Usd
 import pytest
+from pxr import Usd
 
 from glue_ar.common.export import export_viewer
 from glue_ar.common.shapes import sphere_points_count, sphere_triangles_count
 from glue_ar.common.tests.helpers import APP_VIEWER_OPTIONS
 from glue_ar.common.tests.test_scatter import BaseScatterTest
 from glue_ar.usd_utils import material_for_mesh
-from glue_ar.utils import export_label_for_layer, hex_to_components, iterator_count, layers_to_export, xyz_bounds
-
+from glue_ar.utils import (
+    export_label_for_layer,
+    hex_to_components,
+    iterator_count,
+    layers_to_export,
+    xyz_bounds,
+)
 
 EXTENSION_OPTIONS = ("usda", "usdc", "usdz")
 

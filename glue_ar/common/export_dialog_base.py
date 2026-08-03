@@ -1,4 +1,3 @@
-from typing import Dict, List, Tuple
 
 from echo import delay_callback
 from glue.core.state_objects import State
@@ -19,11 +18,11 @@ class ARExportDialogBase:
         layers = [layer for layer in self.viewer.layers if layer.enabled and layer.state.visible]
         self.state = ARExportDialogState(layers)
 
-        self._layer_export_states: Dict[str, Dict[str, State]] = {
+        self._layer_export_states: dict[str, dict[str, State]] = {
             export_label_for_layer(layer): {}
             for layer in layers
         }
-        self.state_dictionary: Dict[str, Tuple[str, State]] = {}
+        self.state_dictionary: dict[str, tuple[str, State]] = {}
         self._initialize_dictionaries(layers)
 
         self.state.add_callback('layer', self._on_layer_change)
@@ -32,7 +31,7 @@ class ARExportDialogBase:
         self.state.add_callback('compression', self._on_compression_change)
         self.state.add_callback('modelviewer', self._on_modelviewer_change)
 
-    def _initialize_dictionaries(self, layers: List[LayerArtist]):
+    def _initialize_dictionaries(self, layers: list[LayerArtist]):
         for layer in layers:
             method = self.state.method
             label = export_label_for_layer(layer)

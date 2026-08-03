@@ -1,5 +1,5 @@
-from qtpy.QtWidgets import QDialog, QLabel, QVBoxLayout
 from qtpy.QtCore import Qt, QTimer
+from qtpy.QtWidgets import QDialog, QLabel, QVBoxLayout
 
 __all__ = ['ExportingDialog']
 
@@ -9,7 +9,7 @@ class ExportingDialog(QDialog):
     _max_dots = 3
 
     def __init__(self, parent=None, filetype=None):
-        super(ExportingDialog, self).__init__(parent=parent, flags=Qt.FramelessWindowHint)
+        super().__init__(parent=parent, flags=Qt.FramelessWindowHint)
 
         target = filetype if filetype else "3D file"
         self.message = f"Exporting to {target}"
@@ -33,5 +33,5 @@ class ExportingDialog(QDialog):
         self.label.setText(text)
 
     def close(self):
-        super(ExportingDialog, self).close()
+        super().close()
         self.timer.stop()

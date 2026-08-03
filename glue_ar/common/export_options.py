@@ -1,9 +1,8 @@
+from collections.abc import Callable, Iterable
+
 from glue.config import DictRegistry
 from glue.core.state_objects import State
 from glue.viewers.common.state import LayerState
-
-from typing import Callable, Iterable, List, Tuple, Type
-
 
 __all__ = ["ar_layer_export"]
 
@@ -12,7 +11,7 @@ class ARExportSpecification:
 
     def __init__(self,
                  export_method: Callable,
-                 layer_options_state: Type[State],
+                 layer_options_state: type[State],
                  multiple: bool = False):
         self.export_method = export_method
         self.layer_options_state = layer_options_state
@@ -26,9 +25,9 @@ class ARExportLayerOptionsRegistry(DictRegistry):
         self.method_state_types = {}
 
     def add(self,
-            layer_state_cls: Type[LayerState],
+            layer_state_cls: type[LayerState],
             name: str,
-            layer_options_state: Type[State],
+            layer_options_state: type[State],
             extensions: Iterable[str],
             multiple: bool,
             export_method: Callable):
@@ -42,11 +41,11 @@ class ARExportLayerOptionsRegistry(DictRegistry):
             key = (layer_state_cls, name, extension)
             self._members[key] = spec
 
-    def export_state_classes(self, layer_state_cls) -> List[Tuple[str, Type[State]]]:
+    def export_state_classes(self, layer_state_cls) -> list[tuple[str, type[State]]]:
         return [(name, export_state_cls) for (state_cls, name), export_state_cls in
                 self.method_state_types.items() if layer_state_cls == state_cls]
 
-    def options_class(self, state_cls, name) -> Type[State]:
+    def options_class(self, state_cls, name) -> type[State]:
         return self.method_state_types[(state_cls, name)]
 
     def export_spec(self, state_cls, name, extension) -> ARExportSpecification:
@@ -65,15 +64,15 @@ class ARExportLayerOptionsRegistry(DictRegistry):
                 raise ValueError("No specification found!")
             return sorted(possibilities, key=lambda k: len(k[0].mro()), reverse=True)[0]
 
-    def method_names(self, layer_state_cls, extension) -> List[str]:
+    def method_names(self, layer_state_cls, extension) -> list[str]:
         extension = extension.lower()
         return [name for (state_cls, name, ext) in self._members.keys()
                 if state_cls == layer_state_cls and ext == extension]
 
     def __call__(self,
-                 layer_state_cls: Type[LayerState],
+                 layer_state_cls: type[LayerState],
                  name: str,
-                 layer_options_state: Type[State],
+                 layer_options_state: type[State],
                  extensions: Iterable[str],
                  multiple: bool = False):
         def adder(export_method: Callable):

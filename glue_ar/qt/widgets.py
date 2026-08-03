@@ -1,12 +1,20 @@
 from math import floor, log
 from os.path import join
-from typing import Tuple
 
 from echo import CallbackProperty, HasCallbackProperties, add_callback, remove_callback
 from echo.qt import BaseConnection, connect_checkable_button, connect_value
+from qtpy.QtCore import QEvent, Qt
 from qtpy.QtGui import QCursor, QEnterEvent, QIcon
-from qtpy.QtCore import Qt, QEvent
-from qtpy.QtWidgets import QCheckBox, QPushButton, QSpacerItem, QToolTip, QLabel, QSizePolicy, QSlider, QWidget
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QLabel,
+    QPushButton,
+    QSizePolicy,
+    QSlider,
+    QSpacerItem,
+    QToolTip,
+    QWidget,
+)
 
 from glue_ar.utils import RESOURCES_DIR
 
@@ -48,7 +56,7 @@ def info_button(cb_property: CallbackProperty) -> QPushButton:
 def boolean_callback_widgets(instance: HasCallbackProperties,
                              property: str,
                              display_name: str,
-                             **kwargs) -> Tuple[Tuple[Tuple[QWidget]], connect_checkable_button]:
+                             **kwargs) -> tuple[tuple[tuple[QWidget]], connect_checkable_button]:
 
     value = getattr(instance, property)
     instance_type = type(instance)
@@ -70,7 +78,7 @@ def number_callback_widgets(instance: HasCallbackProperties,
                             property: str,
                             display_name: str,
                             label_for_value=True,
-                            **kwargs) -> Tuple[Tuple[Tuple[QWidget]], connect_value]:
+                            **kwargs) -> tuple[tuple[tuple[QWidget]], connect_value]:
 
     value = getattr(instance, property)
     instance_type = type(instance)
@@ -134,7 +142,7 @@ def number_callback_widgets(instance: HasCallbackProperties,
 def widgets_for_callback_property(instance: HasCallbackProperties,
                                   property: str,
                                   display_name: str,
-                                  **kwargs) -> Tuple[Tuple[Tuple[QWidget]], BaseConnection]:
+                                  **kwargs) -> tuple[tuple[tuple[QWidget]], BaseConnection]:
 
     t = type(getattr(instance, property))
     if t is bool:

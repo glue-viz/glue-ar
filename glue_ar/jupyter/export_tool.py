@@ -1,18 +1,16 @@
 from os import getcwd
 from os.path import exists
 
+import ipyvuetify as v
 from glue.config import viewer_tool
 from glue.viewers.common.tool import Tool
+from ipyfilechooser import FileChooser
+from IPython.display import display
+from ipywidgets import HBox, Layout
 
 from glue_ar.common.export import export_viewer
 from glue_ar.jupyter.export_dialog import JupyterARExportDialog
 from glue_ar.utils import AR_ICON, is_volume_viewer, xyz_bounds
-
-import ipyvuetify as v  # noqa
-from ipywidgets import HBox, Layout # noqa
-from IPython.display import display  # noqa
-from ipyfilechooser import FileChooser
-
 
 __all__ = ["JupyterARExportTool"]
 

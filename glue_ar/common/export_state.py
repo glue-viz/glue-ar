@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 from echo import CallbackProperty, SelectionCallbackProperty
 from glue.core.data_combo_helper import ComboHelper
 from glue.core.state_objects import State
@@ -5,9 +7,6 @@ from glue.viewers.common3d.layer_state import LayerState3D
 
 from glue_ar.registries import compressor
 from glue_ar.utils import export_label_for_layer
-
-from typing import Iterable
-
 
 __all__ = ["ARExportDialogState"]
 
@@ -23,7 +22,7 @@ class ARExportDialogState(State):
 
     def __init__(self, layers: Iterable[LayerState3D]):
 
-        super(ARExportDialogState, self).__init__()
+        super().__init__()
 
         self.filetype_helper = ComboHelper(self, 'filetype')
         self.filetype_helper.choices = ['glB', 'glTF', 'USDZ', 'USDC', 'USDA', 'STL']

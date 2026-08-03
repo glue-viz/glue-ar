@@ -1,20 +1,30 @@
-from typing import List, Tuple
 
 from glue.viewers.common3d.viewer_state import ViewerState3D
 from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 
 from glue_ar.common.export_options import ar_layer_export
-from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, PointsGetter, \
-                                   box_points_getter, radius_for_scatter_layer, \
-                                   scatter_layer_mask, sizes_for_scatter_layer, sphere_points_getter
-from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
+from glue_ar.common.scatter import (
+    IPYVOLUME_POINTS_GETTERS,
+    IPYVOLUME_TRIANGLE_GETTERS,
+    PointsGetter,
+    box_points_getter,
+    radius_for_scatter_layer,
+    scatter_layer_mask,
+    sizes_for_scatter_layer,
+    sphere_points_getter,
+)
+from glue_ar.common.scatter_export_options import (
+    ARIpyvolumeScatterExportOptions,
+    ARVispyScatterExportOptions,
+)
 from glue_ar.common.shapes import rectangular_prism_triangulation, sphere_triangles
 from glue_ar.common.stl_builder import STLBuilder
 from glue_ar.utils import Bounds, NoneType, xyz_bounds, xyz_for_layer
 
-
 try:
-    from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState as IpyvolumeScatterLayerState
+    from glue_jupyter.ipyvolume.scatter.layer_state import (
+        Scatter3DLayerState as IpyvolumeScatterLayerState,
+    )
 except ImportError:
     IpyvolumeScatterLayerState = NoneType
 
@@ -23,7 +33,7 @@ def add_scatter_layer_stl(builder: STLBuilder,
                           viewer_state: ViewerState3D,
                           layer_state: ScatterLayerState3D,
                           points_getter: PointsGetter,
-                          triangles: List[Tuple[int, int, int]],
+                          triangles: list[tuple[int, int, int]],
                           bounds: Bounds,
                           clip_to_bounds: bool = True):
 

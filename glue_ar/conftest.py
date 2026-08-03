@@ -1,7 +1,6 @@
-import pytest
-
-from glue.core import Data
 import numpy as np
+import pytest
+from glue.core import Data
 
 
 def pytest_configure(config):

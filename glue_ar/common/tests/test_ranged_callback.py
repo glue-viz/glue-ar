@@ -1,4 +1,5 @@
 from glue.core.state_objects import State
+
 from glue_ar.common.ranged_callback import RangedCallbackProperty
 
 

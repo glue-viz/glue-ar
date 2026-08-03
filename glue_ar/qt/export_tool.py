@@ -1,17 +1,15 @@
 from os.path import splitext
 
-from qtpy import compat
-from qtpy.QtWidgets import QDialog
-
 from glue.config import viewer_tool
 from glue.viewers.common.tool import SimpleToolMenu, Tool
 from glue_qt.utils.threading import Worker
+from qtpy import compat
+from qtpy.QtWidgets import QDialog
 
-from glue_ar.utils import AR_ICON, is_volume_viewer, xyz_bounds
 from glue_ar.common.export import export_viewer
 from glue_ar.qt.export_dialog import QtARExportDialog
 from glue_ar.qt.exporting_dialog import ExportingDialog
-
+from glue_ar.utils import AR_ICON, is_volume_viewer, xyz_bounds
 
 __all__ = ["ARToolMenu", "QtARExportTool"]
 

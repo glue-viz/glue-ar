@@ -1,18 +1,32 @@
 from sys import platform
 from tempfile import NamedTemporaryFile
 
+import pytest
 from gltflib import AccessorType, AlphaMode, BufferTarget, ComponentType, GLTFModel
 from gltflib.gltf import GLTF
-import pytest
 
 from glue_ar.common.export import export_viewer
-from glue_ar.common.shapes import sphere_points_count, sphere_triangles, sphere_triangles_count
-from glue_ar.common.tests.gltf_helpers import count_indices, count_vertices, unpack_vertices
+from glue_ar.common.shapes import (
+    sphere_points_count,
+    sphere_triangles,
+    sphere_triangles_count,
+)
+from glue_ar.common.tests.gltf_helpers import (
+    count_indices,
+    count_vertices,
+    unpack_vertices,
+)
 from glue_ar.common.tests.helpers import APP_VIEWER_OPTIONS
 from glue_ar.common.tests.test_scatter import BaseScatterTest
 from glue_ar.gltf_utils import index_export_option
-from glue_ar.utils import export_label_for_layer, hex_to_components, layers_to_export, mask_for_bounds, \
-                          xyz_bounds, xyz_for_layer
+from glue_ar.utils import (
+    export_label_for_layer,
+    hex_to_components,
+    layers_to_export,
+    mask_for_bounds,
+    xyz_bounds,
+    xyz_for_layer,
+)
 
 
 class TestScatterGLTF(BaseScatterTest):

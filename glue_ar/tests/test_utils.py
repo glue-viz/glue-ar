@@ -1,19 +1,39 @@
 from itertools import product
-from numpy import arange, array, array_equal, nan, ones
-import pytest
 
+import pytest
 from glue.core import Data
 from glue.viewers.common.viewer import LayerArtist
 from glue_vispy_viewers.volume.volume_viewer import Vispy3DVolumeViewerState
+from numpy import arange, array, array_equal, nan, ones
 
-from glue_ar.utils import alpha_composite, binned_opacity, clamp, clamp_with_resolution, clamped_opacity, \
-                          clip_linear_transformations, clip_sides, color_component_to_hex, data_count, data_for_layer, \
-                          export_label_for_layer, get_resolution, hex_to_components, is_volume_viewer, \
-                          iterable_has_nan, iterator_count, layer_color, mask_for_bounds, ndarray_has_nan, \
-                          offset_triangles, rgb_to_hex, slope_intercept_between, unique_id, xyz_bounds
+from glue_ar.utils import (
+    alpha_composite,
+    binned_opacity,
+    clamp,
+    clamp_with_resolution,
+    clamped_opacity,
+    clip_linear_transformations,
+    clip_sides,
+    color_component_to_hex,
+    data_count,
+    data_for_layer,
+    export_label_for_layer,
+    get_resolution,
+    hex_to_components,
+    is_volume_viewer,
+    iterable_has_nan,
+    iterator_count,
+    layer_color,
+    mask_for_bounds,
+    ndarray_has_nan,
+    offset_triangles,
+    rgb_to_hex,
+    slope_intercept_between,
+    unique_id,
+    xyz_bounds,
+)
 
-from .helpers import GLUE_QT_INSTALLED, GLUE_JUPYTER_INSTALLED
-
+from .helpers import GLUE_JUPYTER_INSTALLED, GLUE_QT_INSTALLED
 
 try:
     from glue_qt.app import GlueApplication
@@ -25,7 +45,9 @@ except ImportError:
 try:
     from glue_jupyter.app import JupyterApplication
     from glue_jupyter.ipyvolume import IpyvolumeScatterView, IpyvolumeVolumeView
-    from glue_vispy_viewers.scatter.jupyter.scatter_viewer import JupyterVispyScatterViewer
+    from glue_vispy_viewers.scatter.jupyter.scatter_viewer import (
+        JupyterVispyScatterViewer,
+    )
     from glue_vispy_viewers.volume.jupyter.volume_viewer import JupyterVispyVolumeViewer
 except ImportError:
     pass

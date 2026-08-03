@@ -1,13 +1,34 @@
 from __future__ import annotations
-from collections import defaultdict
 
-from gltflib import Accessor, AccessorType, AlphaMode, Animation, AnimationSampler, Asset, Attributes, Buffer, \
-                    BufferTarget, BufferView, Channel, ComponentType, GLTFModel, \
-                    Material, Mesh, Node, PBRMetallicRoughness, Primitive, PrimitiveMode, Scene, \
-                    Target
+from collections import defaultdict
+from collections.abc import Iterable
+from typing import Literal
+
+from gltflib import (
+    Accessor,
+    AccessorType,
+    AlphaMode,
+    Animation,
+    AnimationSampler,
+    Asset,
+    Attributes,
+    Buffer,
+    BufferTarget,
+    BufferView,
+    Channel,
+    ComponentType,
+    GLTFModel,
+    Material,
+    Mesh,
+    Node,
+    PBRMetallicRoughness,
+    Primitive,
+    PrimitiveMode,
+    Scene,
+    Target,
+)
 from gltflib.gltf import GLTF
 from gltflib.gltf_resource import FileResource
-from typing import Dict, Iterable, List, Literal, Optional, Union
 
 from glue_ar.registries import builder
 
@@ -16,15 +37,15 @@ from glue_ar.registries import builder
 class GLTFBuilder:
 
     def __init__(self):
-        self.materials: List[Material] = []
-        self.meshes: List[Mesh] = []
-        self.meshes_by_layer: Dict[str, List[int]] = defaultdict(list)
-        self.buffers: List[Buffer] = []
-        self.buffer_views: List[BufferView] = []
-        self.accessors: List[Accessor] = []
-        self.file_resources: List[FileResource] = []
-        self.animations: List[Animation] = []
-        self.extensions: Dict[str, Dict[str, bool]] = {}
+        self.materials: list[Material] = []
+        self.meshes: list[Mesh] = []
+        self.meshes_by_layer: dict[str, list[int]] = defaultdict(list)
+        self.buffers: list[Buffer] = []
+        self.buffer_views: list[BufferView] = []
+        self.accessors: list[Accessor] = []
+        self.file_resources: list[FileResource] = []
+        self.animations: list[Animation] = []
+        self.extensions: dict[str, dict[str, bool]] = {}
 
     def add_material(self,
                      color: Iterable[float],
@@ -47,12 +68,12 @@ class GLTFBuilder:
         return self
 
     def add_mesh(self,
-                 layer_id: Union[str, Iterable[str]],
+                 layer_id: str | Iterable[str],
                  position_accessor: int,
-                 indices_accessor: Optional[int] = None,
-                 material: Optional[int] = None,
+                 indices_accessor: int | None = None,
+                 material: int | None = None,
                  mode: PrimitiveMode = PrimitiveMode.TRIANGLES,
-                 extensions: Optional[dict] = None) -> GLTFBuilder:
+                 extensions: dict | None = None) -> GLTFBuilder:
 
         primitive_kwargs = {
                 "attributes": Attributes(POSITION=position_accessor),
@@ -94,8 +115,8 @@ class GLTFBuilder:
                         buffer: int,
                         byte_length: int,
                         byte_offset: int,
-                        byte_stride: Optional[int] = None,
-                        target: Optional[BufferTarget] = None) -> GLTFBuilder:
+                        byte_stride: int | None = None,
+                        target: BufferTarget | None = None) -> GLTFBuilder:
         self.buffer_views.append(
             BufferView(
                 buffer=buffer,
@@ -112,8 +133,8 @@ class GLTFBuilder:
                      component_type: ComponentType,
                      count: int,
                      type: AccessorType,
-                     mins: List[Union[int, float]],
-                     maxes: List[Union[int, float]]) -> GLTFBuilder:
+                     mins: list[int | float],
+                     maxes: list[int | float]) -> GLTFBuilder:
         self.accessors.append(
             Accessor(
                 bufferView=buffer_view,
@@ -164,8 +185,8 @@ class GLTFBuilder:
 
     def add_animation(self,
                       name: str,
-                      channels: Optional[List[Channel]] = None,
-                      samplers: Optional[List[AnimationSampler]] = None) -> GLTFBuilder:
+                      channels: list[Channel] | None = None,
+                      samplers: list[AnimationSampler] | None = None) -> GLTFBuilder:
 
         animation = Animation(name=name, channels=channels, samplers=samplers)
         self.animations.append(animation)

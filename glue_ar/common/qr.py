@@ -1,9 +1,9 @@
 import os
-from io import BytesIO
-from PIL import Image
 import socket
-import segno
+from io import BytesIO
 
+import segno
+from PIL import Image
 
 GLUE_LOGO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logo.png"))
 GLUE_RED = "#eb1c24"

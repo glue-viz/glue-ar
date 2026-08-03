@@ -1,11 +1,10 @@
+import DracoPy
 import numpy as np
+from gltflib import AccessorType, AlphaMode, ComponentType, GLTFModel
+from gltflib.gltf_resource import GLTFResource
 
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.registries import compressor
-
-from gltflib import AccessorType, AlphaMode, ComponentType, GLTFModel
-from gltflib.gltf_resource import GLTFResource
-import DracoPy
 
 DRACO_EXTENSION = "KHR_draco_mesh_compression"
 

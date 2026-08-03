@@ -1,16 +1,15 @@
 from collections import defaultdict
+from collections.abc import Iterable
 from os import extsep, remove
 from os.path import exists, splitext
 
 from pxr import Usd, UsdGeom, UsdLux, UsdShade, UsdUtils
-from typing import Dict, Iterable, Optional, Tuple
 
 from glue_ar.registries import builder
 from glue_ar.usd_utils import material_for_color, material_for_mesh, sanitize_path
 from glue_ar.utils import unique_id
 
-
-MaterialInfo = Tuple[int, int, int, float, float, float]
+MaterialInfo = tuple[int, int, int, float, float, float]
 
 
 @builder(("usda", "usdc", "usdz"))
@@ -18,7 +17,7 @@ class USDBuilder:
 
     def __init__(self):
         self._create_stage()
-        self._material_map: Dict[MaterialInfo, UsdShade.Shader] = {}
+        self._material_map: dict[MaterialInfo, UsdShade.Shader] = {}
 
     def _create_stage(self):
         self.stage = Usd.Stage.CreateInMemory()
@@ -30,13 +29,13 @@ class USDBuilder:
         self.default_prim = UsdGeom.Xform.Define(self.stage, self.default_prim_key).GetPrim()
         self.stage.SetDefaultPrim(self.default_prim)
 
-        self._mesh_counts: Dict[str, int] = defaultdict(int)
+        self._mesh_counts: dict[str, int] = defaultdict(int)
 
         light = UsdLux.RectLight.Define(self.stage, "/light")
         light.CreateHeightAttr(-1)
 
     def _material_for_color(self,
-                            color: Tuple[int, int, int],
+                            color: tuple[int, int, int],
                             opacity: float,
                             metallic: float,
                             roughness: float) -> UsdShade.Shader:
@@ -57,11 +56,11 @@ class USDBuilder:
     def add_mesh(self,
                  points: Iterable[Iterable[float]],
                  triangles: Iterable[Iterable[int]],
-                 color: Tuple[int, int, int],
+                 color: tuple[int, int, int],
                  opacity: float,
                  metallic: float = 0.0,
                  roughness: float = 1.0,
-                 identifier: Optional[str] = None) -> UsdGeom.Mesh:
+                 identifier: str | None = None) -> UsdGeom.Mesh:
         """
         This returns the generated mesh rather than the builder instance.
         This breaks the builder pattern but we'll potentially want this reference to it
@@ -87,9 +86,9 @@ class USDBuilder:
 
     def add_translated_reference(self,
                                  mesh: UsdGeom.Mesh,
-                                 translation: Tuple[float, float, float],
-                                 material: Optional[UsdShade.Material] = None,
-                                 identifier: Optional[str] = None) -> UsdGeom.Mesh:
+                                 translation: tuple[float, float, float],
+                                 material: UsdShade.Material | None = None,
+                                 identifier: str | None = None) -> UsdGeom.Mesh:
         prim = mesh.GetPrim()
         identifier = sanitize_path(identifier or unique_id())
         count = self._mesh_counts[identifier]

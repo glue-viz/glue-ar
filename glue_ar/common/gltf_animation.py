@@ -1,5 +1,6 @@
-from gltflib import AccessorType, ComponentType
 from struct import calcsize
+
+from gltflib import AccessorType, ComponentType
 
 from ..gltf_utils import add_points_to_bytearray, add_values_to_bytearray
 from .gltf_builder import GLTFBuilder

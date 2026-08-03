@@ -2,27 +2,34 @@ from collections import defaultdict
 from math import floor
 from os.path import extsep, join, split, splitext
 from string import Template
-from typing import Dict, Optional, TypeVar
-from glue.core.state_objects import State
+from typing import TypeVar
+
 from glue.config import settings
+from glue.core.state_objects import State
 from glue.viewers.common.state import LayerState
 from glue.viewers.common3d.viewer_state import ViewerState3D
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.registries import Builder, builder as builder_registry, compressor as compressor_registry
-from glue_ar.utils import RESOURCES_DIR, Bounds, BoundsWithResolution, export_label_for_layer, rgb_to_hex
-
-from typing import List, Tuple, Union
+from glue_ar.registries import Builder
+from glue_ar.registries import builder as builder_registry
+from glue_ar.registries import compressor as compressor_registry
+from glue_ar.utils import (
+    RESOURCES_DIR,
+    Bounds,
+    BoundsWithResolution,
+    export_label_for_layer,
+    rgb_to_hex,
+)
 
 
 def export_viewer(viewer_state: ViewerState3D,
-                  layer_states: List[LayerState],
-                  bounds: Union[Bounds, BoundsWithResolution],
-                  state_dictionary: Dict[str, Tuple[str, State]],
+                  layer_states: list[LayerState],
+                  bounds: Bounds | BoundsWithResolution,
+                  state_dictionary: dict[str, tuple[str, State]],
                   filepath: str,
-                  allow_multiple: Optional[bool] = True,
-                  compression: Optional[str] = "None",
+                  allow_multiple: bool | None = True,
+                  compression: str | None = "None",
                   model_viewer: bool = False,
                   layer_controls: bool = True):
 

@@ -1,11 +1,12 @@
-from pytest import importorskip
-from unittest.mock import MagicMock
 from typing import cast
+from unittest.mock import MagicMock
 
+from pytest import importorskip
 
 importorskip("glue_jupyter")
 
 from glue_jupyter import JupyterApplication
+
 # We can't use the Jupyter vispy widget for these tests until
 # https://github.com/glue-viz/glue-vispy-viewers/pull/388 is released
 from glue_jupyter.ipyvolume.volume import IpyvolumeVolumeView

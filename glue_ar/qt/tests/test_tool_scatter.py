@@ -1,8 +1,9 @@
 from itertools import product
-import pytest
 from random import randint, random, seed
 from typing import cast
 from unittest.mock import patch
+
+import pytest
 
 pytest.importorskip("glue_qt")
 

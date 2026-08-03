@@ -1,16 +1,15 @@
 from os.path import join
-from typing import List, Tuple
 
+import ipyvuetify as v
 from echo import CallbackProperty, HasCallbackProperties
 from glue_jupyter.common.toolbar_vuetify import read_icon
 from glue_jupyter.link import link
-import ipyvuetify as v
 from ipywidgets import DOMWidget
 
 from glue_ar.utils import RESOURCES_DIR
 
 
-def info_tooltip(cb_property: CallbackProperty) -> List[str]:
+def info_tooltip(cb_property: CallbackProperty) -> list[str]:
     if cb_property.__doc__:
         return cb_property.__doc__.replace(". ", ".\n").split("\n")
     else:
@@ -40,7 +39,7 @@ def info_icon(cb_property: CallbackProperty) -> v.Tooltip:
 def boolean_callback_widgets(instance: HasCallbackProperties,
                              property: str,
                              display_name: str,
-                             **kwargs) -> Tuple[DOMWidget]:
+                             **kwargs) -> tuple[DOMWidget]:
 
     instance_type = type(instance)
     cb_property = getattr(instance_type, property)
@@ -59,7 +58,7 @@ def number_callback_widgets(instance: HasCallbackProperties,
                             property: str,
                             display_name: str,
                             label_for_value=True,
-                            **kwargs) -> Tuple[DOMWidget]:
+                            **kwargs) -> tuple[DOMWidget]:
 
     value = getattr(instance, property)
     instance_type = type(instance)
@@ -95,7 +94,7 @@ def widgets_for_callback_property(
         property: str,
         display_name: str,
         **kwargs,
-) -> Tuple[DOMWidget]:
+) -> tuple[DOMWidget]:
 
     t = type(getattr(instance, property))
     if t is bool:

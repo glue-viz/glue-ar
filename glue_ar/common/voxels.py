@@ -1,36 +1,55 @@
 from collections import defaultdict
+from collections.abc import Iterable
 from math import ceil
 
-from numpy import isfinite, argwhere, transpose
-from typing import Iterable, List, Optional, Union
-
-from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
+from gltflib import AccessorType, BufferTarget, ComponentType
 from glue.viewers.volume3d.layer_state import VolumeLayerState3D
+from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
+from numpy import argwhere, isfinite, transpose
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
+from glue_ar.common.shapes import (
+    rectangular_prism_points,
+    rectangular_prism_triangulation,
+)
 from glue_ar.common.stl_builder import STLBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARVoxelExportOptions
+from glue_ar.gltf_utils import (
+    add_points_to_bytearray,
+    add_triangles_to_bytearray,
+    index_export_option,
+    index_maxes,
+    index_mins,
+)
 from glue_ar.usd_utils import material_for_color, sanitize_path
-from glue_ar.utils import BoundsWithResolution, alpha_composite, binned_opacity, clamp, clamp_with_resolution, \
-                          clip_sides, export_label_for_layer, frb_for_layer, hex_to_components, isomin_for_layer, \
-                          isomax_for_layer, layer_color, offset_triangles, unique_id, xyz_bounds
-
-from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_export_option, \
-                               index_mins, index_maxes
-from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation
-
-from gltflib import AccessorType, BufferTarget, ComponentType
+from glue_ar.utils import (
+    BoundsWithResolution,
+    alpha_composite,
+    binned_opacity,
+    clamp,
+    clamp_with_resolution,
+    clip_sides,
+    export_label_for_layer,
+    frb_for_layer,
+    hex_to_components,
+    isomax_for_layer,
+    isomin_for_layer,
+    layer_color,
+    offset_triangles,
+    unique_id,
+    xyz_bounds,
+)
 
 
 @ar_layer_export(VolumeLayerState3D, "Voxel", ARVoxelExportOptions, ("gltf", "glb"), multiple=True)
 def add_voxel_layers_gltf(builder: GLTFBuilder,
                           viewer_state: VolumeViewerState3D,
-                          layer_states: Union[List[VolumeLayerState3D], VolumeLayerState3D],
-                          options: Union[Iterable[ARVoxelExportOptions], ARVoxelExportOptions],
-                          bounds: Optional[BoundsWithResolution] = None,
-                          voxels_per_mesh: Optional[int] = None):
+                          layer_states: list[VolumeLayerState3D] | VolumeLayerState3D,
+                          options: Iterable[ARVoxelExportOptions] | ARVoxelExportOptions,
+                          bounds: BoundsWithResolution | None = None,
+                          voxels_per_mesh: int | None = None):
 
     if isinstance(layer_states, VolumeLayerState3D):
         layer_states = [layer_states]
@@ -261,7 +280,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
                          viewer_state: VolumeViewerState3D,
                          layer_states: Iterable[VolumeLayerState3D],
                          options: Iterable[ARVoxelExportOptions],
-                         bounds: Optional[BoundsWithResolution] = None):
+                         bounds: BoundsWithResolution | None = None):
 
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
     sides = clip_sides(viewer_state, clip_size=1)
@@ -376,7 +395,7 @@ def add_voxel_layers_stl(builder: STLBuilder,
                          viewer_state: VolumeViewerState3D,
                          layer_states: Iterable[VolumeLayerState3D],
                          options: Iterable[ARVoxelExportOptions],
-                         bounds: Optional[BoundsWithResolution] = None):
+                         bounds: BoundsWithResolution | None = None):
 
     bounds = bounds or xyz_bounds(viewer_state, with_resolution=True)
     sides = clip_sides(viewer_state, clip_size=1)

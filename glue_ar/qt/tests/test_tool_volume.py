@@ -1,8 +1,9 @@
 from itertools import product
-import pytest
 from random import random, seed
 from typing import cast
 from unittest.mock import patch
+
+import pytest
 
 pytest.importorskip("glue_qt")
 
@@ -18,7 +19,6 @@ from glue_ar.common.volume_export_options import ARIsosurfaceExportOptions
 from glue_ar.qt.export_dialog import QtARExportDialog
 from glue_ar.qt.export_tool import QtARExportTool
 from glue_ar.qt.tests.utils import dialog_auto_accept_with_options
-
 from glue_ar.tests.helpers import DRACOPY_INSTALLED
 
 compression_options = ("None", "Draco") if DRACOPY_INSTALLED else ("None",)

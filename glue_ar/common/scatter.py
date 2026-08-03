@@ -1,25 +1,37 @@
+from collections.abc import Callable
 from functools import partial
-from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
-from typing import Callable, Dict, List, Literal, Optional, Tuple
+from typing import Literal
 
 from glue.utils import ensure_numerical
 from glue.viewers.common3d.viewer_state import ViewerState3D
 from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
+from numpy import array, clip, isfinite, isnan, ndarray, ones, sqrt
 
-from glue_ar.common.shapes import rectangular_prism_points, rectangular_prism_triangulation, \
-                                  sphere_points, sphere_triangles
-
-from glue_ar.utils import Bounds, NoneType, get_stretches, instance_attribute, mask_for_bounds
+from glue_ar.common.shapes import (
+    rectangular_prism_points,
+    rectangular_prism_triangulation,
+    sphere_points,
+    sphere_triangles,
+)
+from glue_ar.utils import (
+    Bounds,
+    NoneType,
+    get_stretches,
+    instance_attribute,
+    mask_for_bounds,
+)
 
 try:
-    from glue_jupyter.ipyvolume.scatter import Scatter3DLayerState as IpyvolumeScatterLayerState
+    from glue_jupyter.ipyvolume.scatter import (
+        Scatter3DLayerState as IpyvolumeScatterLayerState,
+    )
 except ImportError:
     IpyvolumeScatterLayerState = NoneType
 
     
-Point = Tuple[float, float, float]
-FullPointsGetter = Callable[[ScatterLayerState3D, Bounds, ndarray, Point, float], List[Point]]
-PointsGetter = Callable[[Point, float], List[Point]]
+Point = tuple[float, float, float]
+FullPointsGetter = Callable[[ScatterLayerState3D, Bounds, ndarray, Point, float], list[Point]]
+PointsGetter = Callable[[Point, float], list[Point]]
 
 
 VECTOR_OFFSETS = {
@@ -72,8 +84,8 @@ def radius_for_scatter_layer(layer_state: ScatterLayerState3D) -> float:
 
 def sizes_for_scatter_layer(layer_state: ScatterLayerState3D,
                             bounds: Bounds,
-                            mask: ndarray) -> Optional[ndarray]:
-    factor = max((abs(b[1] - b[0]) for b in bounds))
+                            mask: ndarray) -> ndarray | None:
+    factor = max(abs(b[1] - b[0]) for b in bounds)
     ipyvolume_layer_state = isinstance(layer_state, IpyvolumeScatterLayerState)
     if ipyvolume_layer_state:
         factor *= 2
@@ -90,8 +102,8 @@ def sizes_for_scatter_layer(layer_state: ScatterLayerState3D,
         if layer_state.size_vmax == layer_state.size_vmin:
             sizes = sqrt(ones(size_data.shape) * 10)
         else:
-            sizes = sqrt(((size_data - layer_state.size_vmin) /
-                         (layer_state.size_vmax - layer_state.size_vmin)))
+            sizes = sqrt((size_data - layer_state.size_vmin) /
+                         (layer_state.size_vmax - layer_state.size_vmin))
         sizes *= (layer_state.size_scaling / (2 * factor))
         sizes[isnan(sizes)] = 0.
 
@@ -101,7 +113,7 @@ def sizes_for_scatter_layer(layer_state: ScatterLayerState3D,
 def clip_vector_data(viewer_state: ViewerState3D,
                      layer_state: ScatterLayerState3D,
                      bounds: Bounds,
-                     mask: Optional[ndarray] = None) -> ndarray:
+                     mask: ndarray | None = None) -> ndarray:
     atts = [getattr(layer_state, f"v{c}_attribute", getattr(layer_state, f"v{c}_att")) for c in ("x", "y", "z")]
     vector_data = [ensure_numerical(layer_state.layer[att].ravel()[mask]) for att in atts]
 
@@ -121,7 +133,7 @@ def clip_error_data(viewer_state: ViewerState3D,
                     layer_state: ScatterLayerState3D,
                     bounds: Bounds,
                     axis: Literal["x", "y", "z"],
-                    mask: Optional[ndarray] = None) -> ndarray:
+                    mask: ndarray | None = None) -> ndarray:
     err_att = instance_attribute(layer_state, f"{axis}err_attribute", f"{axis}err_att")
     error_data = ensure_numerical(layer_state.layer[err_att].ravel()[mask]).astype(float)
     error_data[~isfinite(error_data)] = 0.0
@@ -146,18 +158,18 @@ def sphere_points_getter(theta_resolution: int,
     return partial(sphere_points, theta_resolution=theta_resolution, phi_resolution=phi_resolution)
 
 
-def box_points_getter(center: Point, size: float) -> List[Point]:
+def box_points_getter(center: Point, size: float) -> list[Point]:
     return rectangular_prism_points(center=center, sides=[size, size, size])
 
 
-IPYVOLUME_TRIANGLE_GETTERS: Dict[str, Callable] = {
+IPYVOLUME_TRIANGLE_GETTERS: dict[str, Callable] = {
     "box": rectangular_prism_triangulation,
     "sphere": partial(sphere_triangles, theta_resolution=13, phi_resolution=13),
     "diamond": partial(sphere_triangles, theta_resolution=3, phi_resolution=3),
     "circle_2d": partial(sphere_triangles, theta_resolution=13, phi_resolution=13),
 }
 
-IPYVOLUME_POINTS_GETTERS: Dict[str, PointsGetter] = {
+IPYVOLUME_POINTS_GETTERS: dict[str, PointsGetter] = {
     "box": box_points_getter,
     "sphere": sphere_points_getter(theta_resolution=13, phi_resolution=13),
     "diamond": sphere_points_getter(theta_resolution=3, phi_resolution=3),

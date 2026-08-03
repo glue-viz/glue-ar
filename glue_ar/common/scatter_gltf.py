@@ -1,31 +1,67 @@
+import struct
 from collections import defaultdict
+from typing import Literal
+
 from gltflib import AccessorType, BufferTarget, ComponentType, PrimitiveMode
 from glue.utils.array import ensure_numerical
 from glue.viewers.common3d.viewer_state import ViewerState3D
 from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 from numpy import ndarray
 from numpy.linalg import norm
-import struct
-
-from typing import List, Literal, Optional, Tuple
 
 from glue_ar.common.export_options import ar_layer_export
-from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
-from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
-                                  normalize, rectangular_prism_triangulation, sphere_triangles
-from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_export_option, \
-                               index_mins, index_maxes
-from glue_ar.utils import export_label_for_layer, instance_attribute, iterable_has_nan, hex_to_components, \
-                          layer_color, offset_triangles, unique_id, xyz_bounds, xyz_for_layer, Bounds, NoneType
 from glue_ar.common.gltf_builder import GLTFBuilder
-from glue_ar.common.scatter import PointsGetter, box_points_getter, IPYVOLUME_POINTS_GETTERS, \
-                                   IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, clip_error_data, clip_vector_data, \
-                                   radius_for_scatter_layer, scatter_layer_mask, sizes_for_scatter_layer, \
-                                   sphere_points_getter
-
+from glue_ar.common.scatter import (
+    IPYVOLUME_POINTS_GETTERS,
+    IPYVOLUME_TRIANGLE_GETTERS,
+    VECTOR_OFFSETS,
+    PointsGetter,
+    box_points_getter,
+    clip_error_data,
+    clip_vector_data,
+    radius_for_scatter_layer,
+    scatter_layer_mask,
+    sizes_for_scatter_layer,
+    sphere_points_getter,
+)
+from glue_ar.common.scatter_export_options import (
+    ARIpyvolumeScatterExportOptions,
+    ARVispyScatterExportOptions,
+)
+from glue_ar.common.shapes import (
+    cone_points,
+    cone_triangles,
+    cylinder_points,
+    cylinder_triangles,
+    normalize,
+    rectangular_prism_triangulation,
+    sphere_triangles,
+)
+from glue_ar.gltf_utils import (
+    add_points_to_bytearray,
+    add_triangles_to_bytearray,
+    index_export_option,
+    index_maxes,
+    index_mins,
+)
+from glue_ar.utils import (
+    Bounds,
+    NoneType,
+    export_label_for_layer,
+    hex_to_components,
+    instance_attribute,
+    iterable_has_nan,
+    layer_color,
+    offset_triangles,
+    unique_id,
+    xyz_bounds,
+    xyz_for_layer,
+)
 
 try:
-    from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState as IpyvolumeScatterLayerState
+    from glue_jupyter.ipyvolume.scatter.layer_state import (
+        Scatter3DLayerState as IpyvolumeScatterLayerState,
+    )
 except ImportError:
     IpyvolumeScatterLayerState = NoneType
 
@@ -41,8 +77,8 @@ def add_vectors_gltf(builder: GLTFBuilder,
                      tip_radius: float,
                      tip_resolution: int = 6,
                      shaft_resolution: int = 6,
-                     materials: Optional[dict[int, int]] = None,
-                     mask: Optional[ndarray] = None):
+                     materials: dict[int, int] | None = None,
+                     mask: ndarray | None = None):
 
     vector_data = clip_vector_data(viewer_state, layer_state, bounds, mask)
     offset = VECTOR_OFFSETS[layer_state.vector_origin]
@@ -168,8 +204,8 @@ def add_error_bars_gltf(builder: GLTFBuilder,
                         axis: Literal["x", "y", "z"],
                         data: ndarray,
                         bounds: Bounds,
-                        materials: Optional[dict[int, int]] = None,
-                        mask: Optional[ndarray] = None):
+                        materials: dict[int, int] | None = None,
+                        mask: ndarray | None = None):
     err_values = clip_error_data(viewer_state, layer_state, bounds, axis, mask)
 
     color_mode_attr = instance_attribute(layer_state, "color_mode", "cmap_mode")
@@ -236,10 +272,10 @@ def add_scatter_layer_gltf(builder: GLTFBuilder,
                            viewer_state: ViewerState3D,
                            layer_state: ScatterLayerState3D,
                            points_getter: PointsGetter,
-                           triangles: List[Tuple[int, int, int]],
+                           triangles: list[tuple[int, int, int]],
                            bounds: Bounds,
                            clip_to_bounds: bool = True,
-                           points_per_mesh: Optional[int] = None):
+                           points_per_mesh: int | None = None):
     if layer_state is None:
         return
 
