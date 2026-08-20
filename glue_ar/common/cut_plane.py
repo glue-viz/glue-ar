@@ -70,12 +70,20 @@ def adjust_isosurface_for_cut_plane(
             mapped_index += 1
 
     # Next, handle the triangles
-    # There are three cases:
+    # There are four cases:
     # * All points are retained
     #    - In this case, all we need to do is remap the triangle indices
     # * No points are retained
     #    - In this case we can just drop the triangle altogether
-    # * The triangle has at least one point retained, and at least one not retained
+    # * The triangle has exactly one point retained
+    #    - In this case the unclipped portion of the original triangle will be a new triangle
+    #      whose vertices are the unclipped vertex and the points where the edges out from the
+    #      unclipped vertex intersect the cutting plane. So we replace the original triangle
+    #      with the new triangle formed by these three points and respecting the original orientation
+    # * The triangle has exactly one point clipped
+    #    - In this case we find the intersection points with the cutting plane as above, but now the
+    #      unclipped region is a quadrilateral. So we replace the original triangle with two triangles
+    #      that form the quadrilateral and respect the original triangle's orientation
 
     new_triangles = []
     cut_coeffs = cut_plane_coeffs[:3] + [cut_plane[3]]
