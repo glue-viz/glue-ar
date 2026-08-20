@@ -53,6 +53,13 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
     occupied_voxels = {}
 
+    using_cut_plane = getattr(viewer_state, "cut_enabled", False)
+    if using_cut_plane:
+        from glue_ar.common.cut_plane import create_cut_plane_check
+        cut_plane_check = create_cut_plane_check(viewer_state, bounds)
+    else:
+        cut_plane_check = lambda _p: True
+
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
         cmap_resolution = clamp(option.cmap_resolution, 0, 1)
@@ -71,12 +78,6 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         isorange = isomax - isomin
         nonempty_indices = argwhere(data > isomin)
-        using_cut_plane = getattr(viewer_state, "cut_enabled", False)
-        if using_cut_plane:
-            from glue_ar.common.cut_plane import create_cut_plane_check
-            cut_plane_check = create_cut_plane_check(viewer_state, bounds)
-        else:
-            cut_plane_check = lambda _p: True
 
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
@@ -274,6 +275,13 @@ def add_voxel_layers_usd(builder: USDBuilder,
     occupied_voxels = {}
     colors_map = defaultdict(set)
 
+    using_cut_plane = getattr(viewer_state, "cut_enabled", False)
+    if using_cut_plane:
+        from glue_ar.common.cut_plane import create_cut_plane_check
+        cut_plane_check = create_cut_plane_check(viewer_state, bounds)
+    else:
+        cut_plane_check = lambda _p: True
+
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
         cmap_resolution = clamp(option.cmap_resolution, 0, 1)
@@ -291,12 +299,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
         isorange = isomax - isomin
         nonempty_indices = argwhere(data - isomin > 0)
-        using_cut_plane = getattr(viewer_state, "cut_enabled", False)
-        if using_cut_plane:
-            from glue_ar.common.cut_plane import create_cut_plane_check
-            cut_plane_check = create_cut_plane_check(viewer_state, bounds)
-        else:
-            cut_plane_check = lambda _p: True
+
 
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
