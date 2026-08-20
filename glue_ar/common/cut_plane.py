@@ -71,6 +71,7 @@ def adjust_isosurface_for_cut_plane(
     for triangle in triangles:
         retained = [index in point_mappings for index in triangle]
         retained_count = sum(retained)
+        print(retained_count)
 
         match retained_count:
             case 3:
@@ -111,11 +112,11 @@ def adjust_isosurface_for_cut_plane(
                 new_triangles.append([shifted_triangle[1], n, n-1])
 
 
-        new_points = []
-        for index, point in enumerate(points):
-            mapped = point_mappings.get(index, None)
-            if mapped is not None:
-                new_points.append(points[mapped])
+    new_points = []
+    for index, point in enumerate(points):
+        mapped = point_mappings.get(index, None)
+        if mapped is not None:
+            new_points.append(points[mapped])
 
-        return new_points, new_triangles
+    return new_points, new_triangles
 
