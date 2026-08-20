@@ -4,7 +4,7 @@ from numpy import roll, ndarray
 from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
 from glue_vispy_viewers.volume.viewer_state import cutting_plane_from_state
 
-from glue_ar.utils import BoundsWithResolution, set_bit_on
+from glue_ar.utils import BoundsWithResolution
 
 
 def create_cut_plane_check(
@@ -65,7 +65,7 @@ def adjust_isosurface_for_cut_plane(
     point_mappings = {}
     mapped_index = 0
     for index, point in enumerate(points):
-        if cut_plane_check(point): 
+        if not cut_plane_check(point):
             point_mappings[index] = mapped_index
             mapped_index += 1
 
@@ -128,4 +128,3 @@ def adjust_isosurface_for_cut_plane(
             new_points.append(point)
 
     return new_points, new_triangles
-

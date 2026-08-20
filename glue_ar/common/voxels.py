@@ -58,7 +58,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
         from glue_ar.common.cut_plane import create_cut_plane_check
         cut_plane_check = create_cut_plane_check(viewer_state, bounds)
     else:
-        cut_plane_check = lambda _p: True
+        cut_plane_check = None
 
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
@@ -88,7 +88,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         for indices in nonempty_indices:
             index_tuple = tuple(indices)
-            if using_cut_plane and cut_plane_check(index_tuple):
+            if using_cut_plane and cut_plane_check and cut_plane_check(index_tuple):
                 continue
             value = data[index_tuple]
             t_voxel = (value - isomin) / isorange
@@ -280,7 +280,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
         from glue_ar.common.cut_plane import create_cut_plane_check
         cut_plane_check = create_cut_plane_check(viewer_state, bounds)
     else:
-        cut_plane_check = lambda _p: True
+        cut_plane_check = None
 
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
@@ -310,7 +310,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
         for indices in nonempty_indices:
             index_tuple = tuple(indices)
-            if using_cut_plane and cut_plane_check(index_tuple):
+            if using_cut_plane and cut_plane_check and cut_plane_check(index_tuple):
                 continue
             value = data[index_tuple]
             t_voxel = (value - isomin) / isorange

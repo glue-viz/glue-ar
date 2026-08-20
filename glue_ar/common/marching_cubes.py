@@ -61,6 +61,8 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
 
         if using_cut_plane:
             points, triangles = adjust_isosurface_for_cut_plane(viewer_state, bounds, points, triangles)
+            if len(points) == 0:
+                continue
 
         opacity = layer_state.alpha * level
         if layer_state.color_mode == "Fixed":
@@ -159,11 +161,18 @@ def add_isosurface_layer_usd(
     sides = clip_sides(viewer_state, clip_size=1)
     sides = tuple(sides[i] for i in (2, 1, 0))
 
+    using_cut_plane = getattr(viewer_state, "cut_enabled", False)
+
     for level in levels[1:-1]:
         alpha = layer_state.alpha * level
         points, triangles = marching_cubes(data, level)
         if len(points) == 0:
             continue
+
+        if using_cut_plane:
+            points, triangles = adjust_isosurface_for_cut_plane(viewer_state, bounds, points, triangles)
+            if len(points) == 0:
+                continue
 
         if layer_state.color_mode == "Fixed":
             surface_color_components = color_components
