@@ -6,6 +6,7 @@ from gltflib import AccessorType, BufferTarget, ComponentType
 from glue.viewers.volume3d.layer_state import VolumeLayerState3D
 from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
 
+from glue_ar.common.cut_plane import adjust_isosurface_for_cut_plane
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.stl_builder import STLBuilder
@@ -48,6 +49,8 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
     sides = clip_sides(viewer_state, clip_size=1)
     sides = tuple(sides[i] for i in (2, 1, 0))
 
+    using_cut_plane = getattr(viewer_state, "cut_enabled", False)
+
     for level in levels[1:-1]:
         barr = bytearray()
         level_bin = f"layer_{layer_state.layer.uuid}_level_{level}.bin"
@@ -55,6 +58,9 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
         points, triangles = marching_cubes(data, level)
         if len(points) == 0:
             continue
+
+        if using_cut_plane:
+            points, triangles = adjust_isosurface_for_cut_plane(viewer_state, bounds, points, triangles)
 
         opacity = layer_state.alpha * level
         if layer_state.color_mode == "Fixed":
