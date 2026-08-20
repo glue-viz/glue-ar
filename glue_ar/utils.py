@@ -367,5 +367,15 @@ def binned_opacity(raw_opacity: float, resolution: float) -> float:
 def offset_triangles(triangle_indices, offset):
     return [tuple(idx + offset for idx in triangle) for triangle in triangle_indices]
 
+
 def instance_attribute(instance, attribute, fallback):
     return attribute if hasattr(instance, attribute) else fallback
+
+
+def is_bit_set(value: int, bit: int):
+    return value & (2**bit) > 0
+
+
+def set_bit_on(value: int, bit: int):
+    return value | (2**bit)
+        
