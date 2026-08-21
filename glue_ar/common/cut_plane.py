@@ -7,14 +7,17 @@ from glue_vispy_viewers.volume.viewer_state import cutting_plane_from_state
 from glue_ar.utils import BoundsWithResolution
 
 
+__all__ = ["create_cut_plane_check", "apply_cut_plane_to_isosurface"]
+
+
 def create_cut_plane_check(
     viewer_state: VolumeViewerState3D,
     bounds: BoundsWithResolution,
     index_permutation=None,
-) -> Callable[[List[int]], bool]:
+) -> Callable[[List[int | float]], bool]:
     cut_plane = cutting_plane_from_state(viewer_state)
     if cut_plane is None:
-        def check(_indices: List[int]):
+        def check(indices: List[int | float]) -> bool:
             return True
         return check
 
@@ -23,7 +26,12 @@ def create_cut_plane_check(
 
     cids = index_permutation or [1, 2, 0]
 
-    def cut_plane_check(indices: List[int]):
+    def cut_plane_check(indices: List[int | float]) -> bool:
+        print([cut_plane_coeffs[c] for c in cids])
+        print(indices)
+        print(cut_plane[3])
+        print(cut_plane_coeffs[cids[0]] * indices[0] + cut_plane_coeffs[cids[1]] * indices[1] + cut_plane_coeffs[cids[2]] * indices[2] + cut_plane[3])
+        print(cut_plane_coeffs[cids[0]] * indices[0] + cut_plane_coeffs[cids[1]] * indices[1] + cut_plane_coeffs[cids[2]] * indices[2] + cut_plane[3] > 0)
         return cut_plane_coeffs[cids[0]] * indices[0] + cut_plane_coeffs[cids[1]] * indices[1] + cut_plane_coeffs[cids[2]] * indices[2] + cut_plane[3] > 0
 
     return cut_plane_check
@@ -41,8 +49,7 @@ def _intersection_point(retained, discarded, cut_plane):
     return [r * (1 - t) + d * t for r, d in zip(retained, discarded)]
 
 
-# TODO These types probably need adjustment
-def adjust_isosurface_for_cut_plane(
+def apply_cut_plane_to_isosurface(
     viewer_state: VolumeViewerState3D,
     bounds: BoundsWithResolution,
     points: List[List[float]] | ndarray,

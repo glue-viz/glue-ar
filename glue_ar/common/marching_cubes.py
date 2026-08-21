@@ -6,7 +6,7 @@ from gltflib import AccessorType, BufferTarget, ComponentType
 from glue.viewers.volume3d.layer_state import VolumeLayerState3D
 from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
 
-from glue_ar.common.cut_plane import adjust_isosurface_for_cut_plane
+from glue_ar.common.cut_plane import apply_cut_plane_to_isosurface
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.stl_builder import STLBuilder
@@ -60,7 +60,7 @@ def add_isosurface_layer_gltf(builder: GLTFBuilder,
             continue
 
         if using_cut_plane:
-            points, triangles = adjust_isosurface_for_cut_plane(viewer_state, bounds, points, triangles)
+            points, triangles = apply_cut_plane_to_isosurface(viewer_state, bounds, points, triangles)
             if len(points) == 0:
                 continue
 
@@ -170,7 +170,7 @@ def add_isosurface_layer_usd(
             continue
 
         if using_cut_plane:
-            points, triangles = adjust_isosurface_for_cut_plane(viewer_state, bounds, points, triangles)
+            points, triangles = apply_cut_plane_to_isosurface(viewer_state, bounds, points, triangles)
             if len(points) == 0:
                 continue
 
