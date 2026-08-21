@@ -27,11 +27,6 @@ def create_cut_plane_check(
     cids = index_permutation or [1, 2, 0]
 
     def cut_plane_check(indices: List[int | float]) -> bool:
-        print([cut_plane_coeffs[c] for c in cids])
-        print(indices)
-        print(cut_plane[3])
-        print(cut_plane_coeffs[cids[0]] * indices[0] + cut_plane_coeffs[cids[1]] * indices[1] + cut_plane_coeffs[cids[2]] * indices[2] + cut_plane[3])
-        print(cut_plane_coeffs[cids[0]] * indices[0] + cut_plane_coeffs[cids[1]] * indices[1] + cut_plane_coeffs[cids[2]] * indices[2] + cut_plane[3] > 0)
         return cut_plane_coeffs[cids[0]] * indices[0] + cut_plane_coeffs[cids[1]] * indices[1] + cut_plane_coeffs[cids[2]] * indices[2] + cut_plane[3] > 0
 
     return cut_plane_check

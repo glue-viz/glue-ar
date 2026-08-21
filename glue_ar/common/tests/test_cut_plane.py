@@ -1,7 +1,7 @@
 import inspect
 from itertools import product
-from math import ceil
 import pytest
+from typing import List
 
 try:
     from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState, cutting_plane_from_state
@@ -43,19 +43,19 @@ def test_cut_plane_check_simple(index_permutation, cut_depth, cut_axis):
     zeros = [0.0, 0.0, 0.0]
     nonzero_index = ["X", "Y", "Z"].index(cut_axis)
     first_clipped = list(zeros)
-    first_clipped[nonzero_index] = -ceil((cp[3] - 1) / cp[nonzero_index])
+    first_clipped[nonzero_index] = -(cp[3] - 1) / cp[nonzero_index]
     first_clipped = _permute_list(first_clipped, index_permutation)
     assert check(first_clipped)
 
     first_retained = list(zeros)
-    first_retained[nonzero_index] = -ceil(2 * cp[3] / cp[nonzero_index])
+    first_retained[nonzero_index] = -2 * cp[3] / cp[nonzero_index]
     if cp[3] < 0:
         first_retained[nonzero_index] *= -1
     first_retained = _permute_list(first_retained, index_permutation)
     assert not check(first_retained)
 
     second_clipped = list(zeros)
-    second_clipped[nonzero_index] = ceil(cp[3] / cp[nonzero_index])
+    second_clipped[nonzero_index] = cp[3] / cp[nonzero_index]
     if cp[3] < 0:
         second_clipped[nonzero_index] = -(second_clipped[nonzero_index] - 1)
     second_clipped = _permute_list(second_clipped, index_permutation)
@@ -65,7 +65,7 @@ def test_cut_plane_check_simple(index_permutation, cut_depth, cut_axis):
     zero_indices = [idx for idx in range(3) if idx != nonzero_index]
     second_retained[zero_indices[0]] = 3
     second_retained[zero_indices[1]] = 2
-    second_retained[nonzero_index] = -ceil((cp[3] - 3 * cp[zero_indices[0]] - 2 * cp[zero_indices[1]]) / cp[nonzero_index])
+    second_retained[nonzero_index] = -(cp[3] - 3 * cp[zero_indices[0]] - 2 * cp[zero_indices[1]]) / cp[nonzero_index]
     second_retained = _permute_list(second_retained, index_permutation)
     assert not check(second_retained)
 
@@ -91,23 +91,24 @@ def test_cut_plane_check_advanced(index_permutation, cut_depth, cut_tilt, cut_ro
     cp = cutting_plane_from_state(viewer_state)
     assert cp is not None
 
-    check = create_cut_plane_check(viewer_state, bounds)
-    first_clipped = _permute_list([0.0, 0.0, -ceil((cp[3] - 1) / cp[2])], index_permutation)
+    check = create_cut_plane_check(viewer_state, bounds, index_permutation=index_permutation)
+    first_clipped = [0.0, 0.0, (1 - cp[3]) / cp[2]]
+    first_clipped = _permute_list(first_clipped, index_permutation)
     assert check(first_clipped)
 
-    first_retained = [0.0, -ceil(2 * cp[3] / cp[1]), 0.0]
+    first_retained = [0.0, -2 * cp[3] / cp[1], 0.0]
     if cp[3] < 0:
         first_retained[1] *= -1
     first_retained = _permute_list(first_retained, index_permutation)
     assert not check(first_retained)
 
-    second_clipped = [0.0, 0.0, ceil(cp[3] / cp[2])]
+    second_clipped = [0.0, 0.0, cp[3] / cp[2]]
     if cp[3] < 0:
         second_clipped[2] = -(second_clipped[2] - 1)
     second_clipped = _permute_list(second_clipped, index_permutation)
     assert check(second_clipped)
 
-    second_retained = [-ceil((1 + cp[3] - 3 * cp[1] - 2 * cp[2]) / cp[0]), 3.0, 2.0]
+    second_retained = [-(1 + cp[3] - 3 * cp[1] - 2 * cp[2] / cp[0]), 3.0, 2.0]
     if cp[0] > 0:
         second_retained[0] *= -1
     second_retained = _permute_list(second_retained, index_permutation)
@@ -128,7 +129,7 @@ def test_cut_plane_check_type(index_permutation, cut_enabled):
     signature = inspect.signature(check)
     assert signature.return_annotation is bool
     assert "indices" in signature.parameters
-    assert signature.parameters["indices"] is int
+    assert signature.parameters["indices"].annotation is List[int | float]
 
 
 @pytest.mark.parametrize("index_permutation",
@@ -185,9 +186,9 @@ def test_apply_cut_plane_to_isosurface():
     new_points, new_triangles = apply_cut_plane_to_isosurface(viewer_state, bounds, points, triangles)
 
     # (4 retained points)
-    # + (2 new points from triangles 3 & 4)
+    # + (2 new points each from triangles 3 & 4)
     # + (2 new points each from triangles 4 & 5)
-    assert len(new_points) == 4 + 2 + 2 * 2
+    assert len(new_points) == 4 + (2 * 2) + (2 * 2)
 
     # 7 retained triangles
     # + 1 new triangle each from triangles 5 & 6
