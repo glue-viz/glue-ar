@@ -65,14 +65,16 @@ class TestVolumeExportTool:
         tool = toolbar.tools["save"]
         assert len([subtool for subtool in tool.subtools if isinstance(subtool, QtARExportTool)]) == 1
 
-    @pytest.mark.parametrize("extension,compression",
+    @pytest.mark.parametrize("extension,compression,cut_enabled",
                              product(("glB", "glTF", "USDA", "USDC", "USDZ", "STL"),
-                                     compression_options))
-    def test_tool_export_call(self, extension, compression):
+                                     compression_options, [True, False]))
+    def test_tool_export_call(self, extension, compression, cut_enabled):
         auto_accept = dialog_auto_accept_with_options(filetype=extension, compression=compression)
         with patch("qtpy.compat.getsavefilename") as fd, \
              patch.object(QtARExportDialog, "exec_", auto_accept), \
              patch.object(QtARExportTool, "_start_worker") as start_worker:
+
+            self.viewer.state.cut_enabled = cut_enabled
 
             ext = extension.lower()
             filepath = f"test.{ext}"
