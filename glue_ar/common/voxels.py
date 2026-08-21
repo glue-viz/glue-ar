@@ -53,6 +53,13 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
     occupied_voxels = {}
 
+    using_cut_plane = getattr(viewer_state, "cut_enabled", False)
+    if using_cut_plane:
+        from glue_ar.common.cut_plane import create_cut_plane_check
+        cut_plane_check = create_cut_plane_check(viewer_state, bounds)
+    else:
+        cut_plane_check = None
+
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
         cmap_resolution = clamp(option.cmap_resolution, 0, 1)
@@ -71,16 +78,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         isorange = isomax - isomin
         nonempty_indices = argwhere(data > isomin)
-        cut_plane = None
-        if getattr(viewer_state, "cut_enabled", False):
-            from glue_vispy_viewers.volume.viewer_state import cutting_plane_from_state
-            cut_plane = cutting_plane_from_state(viewer_state)
-            if cut_plane is not None:
-                resolution_factors = [viewer_state.resolution / bound[2] for bound in bounds]
-                cut_plane_coeffs = [factor * coeff for factor, coeff in zip(resolution_factors, cut_plane[:3])]
-                def cut_plane_index_check(indices):
-                    return cut_plane_coeffs[1] * indices[0] + cut_plane_coeffs[2] * indices[1] + cut_plane_coeffs[0] * indices[2] + cut_plane[3] > 0
-            
+
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
 
@@ -90,7 +88,7 @@ def add_voxel_layers_gltf(builder: GLTFBuilder,
 
         for indices in nonempty_indices:
             index_tuple = tuple(indices)
-            if cut_plane is not None and cut_plane_index_check(index_tuple):
+            if using_cut_plane and cut_plane_check and cut_plane_check(index_tuple):
                 continue
             value = data[index_tuple]
             t_voxel = (value - isomin) / isorange
@@ -277,6 +275,13 @@ def add_voxel_layers_usd(builder: USDBuilder,
     occupied_voxels = {}
     colors_map = defaultdict(set)
 
+    using_cut_plane = getattr(viewer_state, "cut_enabled", False)
+    if using_cut_plane:
+        from glue_ar.common.cut_plane import create_cut_plane_check
+        cut_plane_check = create_cut_plane_check(viewer_state, bounds)
+    else:
+        cut_plane_check = None
+
     for layer_state, option in zip(layer_states, options):
         opacity_cutoff = clamp(option.opacity_cutoff, 0, 1)
         cmap_resolution = clamp(option.cmap_resolution, 0, 1)
@@ -294,15 +299,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
         isorange = isomax - isomin
         nonempty_indices = argwhere(data - isomin > 0)
-        cut_plane = None
-        if getattr(viewer_state, "cut_enabled", False):
-            from glue_vispy_viewers.volume.viewer_state import cutting_plane_from_state
-            cut_plane = cutting_plane_from_state(viewer_state)
-            if cut_plane is not None:
-                resolution_factors = [viewer_state.resolution / bound[2] for bound in bounds]
-                cut_plane_coeffs = [factor * coeff for factor, coeff in zip(resolution_factors, cut_plane[:3])]
-                def cut_plane_index_check(indices):
-                    return cut_plane_coeffs[1] * indices[0] + cut_plane_coeffs[2] * indices[1] + cut_plane_coeffs[0] * indices[2] + cut_plane[3] > 0
+
 
         color = layer_color(layer_state)
         color_components = hex_to_components(color)
@@ -313,7 +310,7 @@ def add_voxel_layers_usd(builder: USDBuilder,
 
         for indices in nonempty_indices:
             index_tuple = tuple(indices)
-            if cut_plane is not None and cut_plane_index_check(index_tuple):
+            if using_cut_plane and cut_plane_check and cut_plane_check(index_tuple):
                 continue
             value = data[index_tuple]
             t_voxel = (value - isomin) / isorange
