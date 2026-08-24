@@ -1,20 +1,31 @@
-from mcubes import marching_cubes
-from numpy import isfinite, linspace
-
 from gltflib import AccessorType, BufferTarget, ComponentType
-
 from glue.viewers.volume3d.layer_state import VolumeLayerState3D
 from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
+from mcubes import marching_cubes
+from numpy import isfinite, linspace
 
 from glue_ar.common.export_options import ar_layer_export
 from glue_ar.common.gltf_builder import GLTFBuilder
 from glue_ar.common.stl_builder import STLBuilder
 from glue_ar.common.usd_builder import USDBuilder
 from glue_ar.common.volume_export_options import ARIsosurfaceExportOptions
-from glue_ar.gltf_utils import add_points_to_bytearray, add_triangles_to_bytearray, index_export_option, \
-                               index_mins, index_maxes
-from glue_ar.utils import BoundsWithResolution, clip_sides, export_label_for_layer, frb_for_layer, hex_to_components, \
-                          isomin_for_layer, isomax_for_layer, layer_color
+from glue_ar.gltf_utils import (
+    add_points_to_bytearray,
+    add_triangles_to_bytearray,
+    index_export_option,
+    index_maxes,
+    index_mins,
+)
+from glue_ar.utils import (
+    BoundsWithResolution,
+    clip_sides,
+    export_label_for_layer,
+    frb_for_layer,
+    hex_to_components,
+    isomax_for_layer,
+    isomin_for_layer,
+    layer_color,
+)
 
 
 @ar_layer_export(VolumeLayerState3D, "Isosurface", ARIsosurfaceExportOptions, ("gltf", "glb"))

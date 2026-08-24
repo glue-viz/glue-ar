@@ -1,27 +1,55 @@
 from collections import defaultdict
-from typing import List, Optional, Tuple
-
-from numpy import ndarray
-from numpy.linalg import norm
 
 from glue.utils.array import ensure_numerical
 from glue.viewers.common3d.viewer_state import ViewerState3D
 from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
+from numpy import ndarray
+from numpy.linalg import norm
 
 from glue_ar.common.export_options import ar_layer_export
-from glue_ar.common.scatter import IPYVOLUME_POINTS_GETTERS, IPYVOLUME_TRIANGLE_GETTERS, VECTOR_OFFSETS, PointsGetter, \
-                                   box_points_getter, clip_vector_data, radius_for_scatter_layer, scatter_layer_mask, \
-                                   sizes_for_scatter_layer, sphere_points_getter
-from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
+from glue_ar.common.scatter import (
+    IPYVOLUME_POINTS_GETTERS,
+    IPYVOLUME_TRIANGLE_GETTERS,
+    VECTOR_OFFSETS,
+    PointsGetter,
+    box_points_getter,
+    clip_vector_data,
+    radius_for_scatter_layer,
+    scatter_layer_mask,
+    sizes_for_scatter_layer,
+    sphere_points_getter,
+)
+from glue_ar.common.scatter_export_options import (
+    ARIpyvolumeScatterExportOptions,
+    ARVispyScatterExportOptions,
+)
+from glue_ar.common.shapes import (
+    cone_points,
+    cone_triangles,
+    cylinder_points,
+    cylinder_triangles,
+    normalize,
+    rectangular_prism_triangulation,
+    sphere_triangles,
+)
 from glue_ar.common.usd_builder import USDBuilder
-from glue_ar.common.shapes import cone_triangles, cone_points, cylinder_points, cylinder_triangles, \
-                                  normalize, rectangular_prism_triangulation, sphere_triangles
 from glue_ar.usd_utils import sanitize_path
-from glue_ar.utils import export_label_for_layer, instance_attribute, iterable_has_nan, hex_to_components, \
-                          layer_color, offset_triangles, xyz_for_layer, Bounds, NoneType
+from glue_ar.utils import (
+    Bounds,
+    NoneType,
+    export_label_for_layer,
+    hex_to_components,
+    instance_attribute,
+    iterable_has_nan,
+    layer_color,
+    offset_triangles,
+    xyz_for_layer,
+)
 
 try:
-    from glue_jupyter.ipyvolume.scatter.layer_state import Scatter3DLayerState as IpyvolumeScatterLayerState
+    from glue_jupyter.ipyvolume.scatter.layer_state import (
+        Scatter3DLayerState as IpyvolumeScatterLayerState,
+    )
 except ImportError:
     IpyvolumeScatterLayerState = NoneType
 
@@ -36,8 +64,8 @@ def add_vectors_usd(builder: USDBuilder,
                     tip_radius: float,
                     tip_resolution: int = 6,
                     shaft_resolution: int = 6,
-                    colors: Optional[List[Tuple[int, int, int]]] = None,
-                    mask: Optional[ndarray] = None):
+                    colors: list[tuple[int, int, int]] | None = None,
+                    mask: ndarray | None = None):
 
     vector_data = clip_vector_data(viewer_state, layer_state, bounds, mask)
     offset = VECTOR_OFFSETS[layer_state.vector_origin]
@@ -85,7 +113,7 @@ def add_scatter_layer_usd(
     viewer_state: ViewerState3D,
     layer_state: ScatterLayerState3D,
     points_getter: PointsGetter,
-    triangles: List[Tuple[int, int, int]],
+    triangles: list[tuple[int, int, int]],
     bounds: Bounds,
     clip_to_bounds: bool = True,
 ):

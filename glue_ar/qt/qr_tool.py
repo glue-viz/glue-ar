@@ -1,10 +1,9 @@
-import ngrok
 import os
 from os.path import split
 from tempfile import NamedTemporaryFile
 from threading import Thread
-from typing import Tuple
 
+import ngrok
 from glue.config import viewer_tool
 from glue.core.state_objects import State
 from glue.viewers.common.state import LayerState
@@ -12,14 +11,13 @@ from glue.viewers.common.tool import Tool
 from glue.viewers.scatter3d.layer_state import ScatterLayerState3D
 from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
 
-from glue_ar.utils import AR_ICON, export_label_for_layer, xyz_bounds
 from glue_ar.common.export import export_modelviewer, export_viewer
+from glue_ar.common.qr import get_local_ip
 from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
 from glue_ar.common.volume_export_options import ARIsosurfaceExportOptions
-from glue_ar.common.qr import get_local_ip
 from glue_ar.qt.qr_dialog import QRDialog
 from glue_ar.qt.server import run_ar_server
-
+from glue_ar.utils import AR_ICON, export_label_for_layer, xyz_bounds
 
 __all__ = ["ARLocalQRTool"]
 
@@ -31,7 +29,7 @@ class ARLocalQRTool(Tool):
     action_text = "3D view via QR"
     tool_tip = "Get a QR code for the current view in 3D"
 
-    def _export_items_for_layer(self, layer: LayerState) -> Tuple[str, State]:
+    def _export_items_for_layer(self, layer: LayerState) -> tuple[str, State]:
         if isinstance(layer, ScatterLayerState3D):
             return ("Scatter", ARVispyScatterExportOptions())
         else:

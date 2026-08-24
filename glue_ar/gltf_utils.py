@@ -1,7 +1,11 @@
-from enum import Enum
 import operator
 import struct
-from typing import Callable, Iterable, List, Literal, Optional, Tuple, Type, TypeVar, Union
+from collections.abc import Callable, Iterable
+from enum import Enum
+from typing import (
+    Literal,
+    TypeVar,
+)
 
 from gltflib import AccessorType, ComponentType, Material, PBRMetallicRoughness
 from gltflib.gltf import GLTF
@@ -9,12 +13,12 @@ from gltflib.gltf_resource import FileResource
 
 __all__ = [
     "GLTFIndexExportOption",
-    "index_export_option",
-    "create_material_for_color",
     "add_points_to_bytearray",
     "add_triangles_to_bytearray",
-    "index_mins",
+    "create_material_for_color",
+    "index_export_option",
     "index_maxes",
+    "index_mins",
 ]
 
 
@@ -33,7 +37,7 @@ class GLTFIndexExportOption(Enum):
         return (2 ** (8 * self.byte_size)) - 1
 
 
-def byte_size_format(component_type: ComponentType | int) -> Tuple[int, str]:
+def byte_size_format(component_type: ComponentType | int) -> tuple[int, str]:
     match component_type:
         case ComponentType.UNSIGNED_BYTE:
             return 1, "B"
@@ -55,7 +59,7 @@ def index_export_option(max_index: int) -> GLTFIndexExportOption:
 
 
 def create_material_for_color(
-    color: List[int],
+    color: list[int],
     opacity: float
 ) -> Material:
     rgb = [t / 256 for t in color[:3]]
@@ -70,7 +74,7 @@ def create_material_for_color(
 
 
 def add_points_to_bytearray(arr: bytearray,
-                            points: Iterable[Iterable[Union[int, float]]],
+                            points: Iterable[Iterable[int | float]],
                             format: Literal["e", "f"] = "f"):
     for point in points:
         for coordinate in point:
@@ -86,19 +90,19 @@ def add_triangles_to_bytearray(arr: bytearray,
 
 
 def add_values_to_bytearray(arr: bytearray,
-                            values: Iterable[Union[int, float]],
+                            values: Iterable[int | float],
                             format: Literal["e", "f"] = "f"):
     for value in values:
         arr.extend(struct.pack(format, value))
 
 
-T = TypeVar("T", bound=Union[int, float])
+T = TypeVar("T", bound=int | float)
 
 
-def index_extrema(items: List[List[T]],
+def index_extrema(items: list[list[T]],
                   extremum: Callable[[T, T], T],
-                  previous: Optional[List[List[T]]] = None,
-                  type: Type[T] = float) -> List[List[T]]:
+                  previous: list[list[T]] | None = None,
+                  type: type[T] = float) -> list[list[T]]:
     size = len(items[0])
     extrema = [type(extremum([operator.itemgetter(i)(item) for item in items])) for i in range(size)]
     if previous is not None:
@@ -106,11 +110,11 @@ def index_extrema(items: List[List[T]],
     return extrema
 
 
-def index_mins(items, previous=None, type: Type[T] = float) -> List[List[T]]:
+def index_mins(items, previous=None, type: type[T] = float) -> list[list[T]]:
     return index_extrema(items, extremum=min, type=type, previous=previous)
 
 
-def index_maxes(items, previous=None, type: Type[T] = float) -> List[List[T]]:
+def index_maxes(items, previous=None, type: type[T] = float) -> list[list[T]]:
     return index_extrema(items, extremum=max, type=type, previous=previous)
 
 

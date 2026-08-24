@@ -1,32 +1,32 @@
-from itertools import product
 import math
-from typing import Iterable, List, Tuple, Union
+from collections.abc import Iterable
+from itertools import product
 
 from numpy import cross, pi
 
 from glue_ar.utils import offset_triangles
 
 __all__ = [
+    "cone_points",
+    "cone_triangles",
+    "cylinder_points",
+    "cylinder_triangles",
     "rectangular_prism_points",
     "rectangular_prism_triangulation",
     "sphere_mesh_index",
     "sphere_points",
     "sphere_triangles",
-    "cylinder_points",
-    "cylinder_triangles",
-    "cone_points",
-    "cone_triangles",
 ]
 
 
-def rectangular_prism_points(center: Iterable[float], sides: Iterable[float]) -> List[Tuple[float, float, float]]:
+def rectangular_prism_points(center: Iterable[float], sides: Iterable[float]) -> list[tuple[float, float, float]]:
     side_diffs = [(-s / 2, s / 2) for s in sides]
     diffs = product(*side_diffs)
     points = [tuple(c - d for c, d in zip(center, diff)) for diff in diffs]
     return points
 
 
-def rectangular_prism_triangulation(start_index: int = 0) -> List[Tuple[int, int, int]]:
+def rectangular_prism_triangulation(start_index: int = 0) -> list[tuple[int, int, int]]:
     triangles = [
         # x = low
         (start_index + 5, start_index + 1, start_index + 7),
@@ -66,10 +66,10 @@ def sphere_mesh_index(row: int, column: int, theta_resolution: int, phi_resoluti
         return phi_resolution * (row - 1) + column + 1
 
 
-def sphere_points(center: Union[List[float], Tuple[float, float, float]],
+def sphere_points(center: list[float] | tuple[float, float, float],
                   radius: float,
                   theta_resolution: int = 5,
-                  phi_resolution: int = 5) -> List[Tuple[float, float, float]]:
+                  phi_resolution: int = 5) -> list[tuple[float, float, float]]:
 
     # Number of points: phi_resolution * (theta_resolution - 2) + 2
     nonpole_thetas = [i * math.pi / (theta_resolution - 1) for i in range(1, theta_resolution-1)]
@@ -88,8 +88,8 @@ def sphere_points_count(theta_resolution: int, phi_resolution: int) -> int:
     return 2 + (theta_resolution - 2) * phi_resolution
 
 
-def sphere_triangles(theta_resolution: int = 5, phi_resolution: int = 5) -> List[Tuple[int, int, int]]:
-    triangles = [(int(0), i, i + 1) for i in range(1, phi_resolution)]
+def sphere_triangles(theta_resolution: int = 5, phi_resolution: int = 5) -> list[tuple[int, int, int]]:
+    triangles = [(0, i, i + 1) for i in range(1, phi_resolution)]
     tr, pr = theta_resolution, phi_resolution
     triangles.append((1, 0, phi_resolution))
     for row in range(1, theta_resolution - 2):
@@ -110,12 +110,12 @@ def sphere_triangles_count(theta_resolution: int, phi_resolution: int) -> int:
     return 2 * phi_resolution * (theta_resolution - 2)
 
 
-def normalize(vector: Iterable[float]) -> List[float]:
+def normalize(vector: Iterable[float]) -> list[float]:
     magnitude = math.sqrt(sum(c * c for c in vector))
     return [c / magnitude for c in vector]
 
 
-def orthogonal_basis(vector: List[float]) -> List[List[float]]:
+def orthogonal_basis(vector: list[float]) -> list[list[float]]:
     first = [-vector[1], vector[0] + vector[2], -vector[1]]
     return [
         first,
@@ -127,7 +127,7 @@ def cylinder_points(center: Iterable[float],
                     radius: float,
                     length: float,
                     central_axis: Iterable[float],
-                    theta_resolution: int = 5) -> List[Tuple[float, float, float]]:
+                    theta_resolution: int = 5) -> list[tuple[float, float, float]]:
 
     central_axis = normalize(central_axis)
     half_length = length / 2
@@ -153,7 +153,7 @@ def cylinder_points_count(theta_resolution: int) -> int:
     return 2 * theta_resolution
 
 
-def cylinder_triangles(theta_resolution: int = 5, start_index: int = 0) -> List[Tuple[int, int, int]]:
+def cylinder_triangles(theta_resolution: int = 5, start_index: int = 0) -> list[tuple[int, int, int]]:
     bottom = [
         (0, i + 1, i) for i in range(1, theta_resolution-1)
     ]
@@ -184,7 +184,7 @@ def cone_points(base_center: Iterable[float],
                 radius: float,
                 height: float,
                 central_axis: Iterable[float],
-                theta_resolution: int = 5) -> List[Tuple[float]]:
+                theta_resolution: int = 5) -> list[tuple[float]]:
 
     central_axis = normalize(central_axis)
     orthog_1, orthog_2 = orthogonal_basis(central_axis)
@@ -204,7 +204,7 @@ def cone_points_count(theta_resolution: int) -> int:
     return theta_resolution + 1
 
 
-def cone_triangles(theta_resolution: int = 5, start_index: int = 0) -> List[Tuple[int, int, int]]:
+def cone_triangles(theta_resolution: int = 5, start_index: int = 0) -> list[tuple[int, int, int]]:
     sides = [(start_index, start_index + i, start_index + 1 + (i % theta_resolution))
              for i in range(1, theta_resolution + 1)]
     bottom = [

@@ -1,23 +1,22 @@
-from typing import Callable, List
-from numpy import roll, ndarray
+from collections.abc import Callable
 
 from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
 from glue_vispy_viewers.volume.viewer_state import cutting_plane_from_state
+from numpy import ndarray, roll
 
 from glue_ar.utils import BoundsWithResolution
 
-
-__all__ = ["create_cut_plane_check", "apply_cut_plane_to_isosurface"]
+__all__ = ["apply_cut_plane_to_isosurface", "create_cut_plane_check"]
 
 
 def create_cut_plane_check(
     viewer_state: VolumeViewerState3D,
     bounds: BoundsWithResolution,
     index_permutation=None,
-) -> Callable[[List[int | float]], bool]:
+) -> Callable[[list[int | float]], bool]:
     cut_plane = cutting_plane_from_state(viewer_state)
     if cut_plane is None:
-        def check(indices: List[int | float]) -> bool:
+        def check(indices: list[int | float]) -> bool:
             return True
         return check
 
@@ -26,7 +25,7 @@ def create_cut_plane_check(
 
     cids = index_permutation or [1, 2, 0]
 
-    def cut_plane_check(indices: List[int | float]) -> bool:
+    def cut_plane_check(indices: list[int | float]) -> bool:
         return cut_plane_coeffs[cids[0]] * indices[0] + cut_plane_coeffs[cids[1]] * indices[1] + cut_plane_coeffs[cids[2]] * indices[2] + cut_plane[3] > 0
 
     return cut_plane_check
@@ -47,9 +46,9 @@ def _intersection_point(retained, discarded, cut_plane):
 def apply_cut_plane_to_isosurface(
     viewer_state: VolumeViewerState3D,
     bounds: BoundsWithResolution,
-    points: List[List[float]] | ndarray,
-    triangles: List[List[int]] | ndarray,
-) -> [List[List[float]], List[List[int]]]:
+    points: list[list[float]] | ndarray,
+    triangles: list[list[int]] | ndarray,
+) -> [list[list[float]], list[list[int]]]:
 
     cut_plane_check = create_cut_plane_check(viewer_state, bounds)
 

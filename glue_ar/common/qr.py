@@ -1,9 +1,9 @@
 import os
-from io import BytesIO
-from PIL import Image
 import socket
-import segno
+from io import BytesIO
 
+import segno
+from PIL import Image
 
 GLUE_LOGO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logo.png"))
 GLUE_RED = "#eb1c24"
@@ -16,7 +16,7 @@ def get_local_ip():
         # doesn't even have to be reachable
         s.connect(('10.254.254.254', 1))
         IP = s.getsockname()[0]
-    except Exception:
+    except OSError:
         IP = '127.0.0.1'
     finally:
         s.close()

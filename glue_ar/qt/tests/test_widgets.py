@@ -4,11 +4,16 @@ importorskip("glue_qt")
 
 from echo import CallbackProperty
 from echo.qt import connect_checkable_button, connect_value
-from qtpy.QtWidgets import QPushButton, QSpacerItem, QCheckBox, QLabel, QSlider
+from qtpy.QtWidgets import QCheckBox, QLabel, QPushButton, QSlider, QSpacerItem
 
 from glue_ar.common.tests.test_base_dialog import DummyState
-from glue_ar.qt.widgets import boolean_callback_widgets, horizontal_spacer, \
-                               info_button, info_tooltip, widgets_for_callback_property
+from glue_ar.qt.widgets import (
+    boolean_callback_widgets,
+    horizontal_spacer,
+    info_button,
+    info_tooltip,
+    widgets_for_callback_property,
+)
 
 
 def test_info_tooltip(qtbot):

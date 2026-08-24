@@ -1,8 +1,9 @@
+from collections.abc import Iterable, Iterator
 from contextlib import suppress
 from numbers import Number
 from os.path import abspath, dirname, join
+from typing import Literal, overload
 from uuid import uuid4
-from typing import Iterator, Literal, overload, Iterable, List, Optional, Tuple, Union
 
 from glue.core import BaseData
 from glue.core.subset_group import GroupedSubset
@@ -12,26 +13,46 @@ from glue.viewers.common3d.layer_state import LayerState3D
 from glue.viewers.common3d.viewer_state import ViewerState3D
 from glue.viewers.volume3d.layer_state import VolumeLayerState3D
 from glue.viewers.volume3d.viewer_state import VolumeViewerState3D
-
 from numpy import array, inf, isnan, ndarray
 
 # Backwards compatibility for Python < 3.10
 try:
-    from types import NoneType  # noqa
+    from types import NoneType
 except ImportError:
     NoneType = type(None)
 
 
 __all__ = [
-    "NoneType", "PACKAGE_DIR", "AR_ICON", "RESOURCES_DIR", "data_count",
-    "export_label_for_layer", "layers_to_export", "isomin_for_layer",
-    "isomax_for_layer", "xyz_bounds", "bounds_3d_from_layers",
-    "slope_intercept_between", "layer_color", "bring_into_clip",
-    "mask_for_bounds", "xyz_for_layer", "hex_to_components",
-    "unique_id", "alpha_composite", "data_for_layer", "frb_for_layer",
-    "ndarray_has_nan", "iterable_has_nan", "iterator_count",
-    "is_volume_viewer", "get_resolution", "clamp", "clamped_opacity",
-    "binned_opacity", "offset_triangles",
+    "AR_ICON",
+    "PACKAGE_DIR",
+    "RESOURCES_DIR",
+    "NoneType",
+    "alpha_composite",
+    "binned_opacity",
+    "bounds_3d_from_layers",
+    "bring_into_clip",
+    "clamp",
+    "clamped_opacity",
+    "data_count",
+    "data_for_layer",
+    "export_label_for_layer",
+    "frb_for_layer",
+    "get_resolution",
+    "hex_to_components",
+    "is_volume_viewer",
+    "isomax_for_layer",
+    "isomin_for_layer",
+    "iterable_has_nan",
+    "iterator_count",
+    "layer_color",
+    "layers_to_export",
+    "mask_for_bounds",
+    "ndarray_has_nan",
+    "offset_triangles",
+    "slope_intercept_between",
+    "unique_id",
+    "xyz_bounds",
+    "xyz_for_layer",
 ]
 
 
@@ -39,20 +60,20 @@ PACKAGE_DIR = dirname(abspath(__file__))
 AR_ICON = abspath(join(dirname(__file__), "ar.png"))
 RESOURCES_DIR = join(PACKAGE_DIR, "resources")
 
-Bounds = List[Tuple[float, float]]
-BoundsWithResolution = List[Tuple[float, float, int]]
+Bounds = list[tuple[float, float]]
+BoundsWithResolution = list[tuple[float, float, int]]
 
 
-def data_count(layers: Iterable[Union[LayerArtist, LayerState3D]]) -> int:
+def data_count(layers: Iterable[LayerArtist | LayerState3D]) -> int:
     """
     Count the number of unique Data objects (either directly or as parents of subsets)
     used in the set of layers
     """
-    data = set(layer.layer if isinstance(layer.layer, BaseData) else layer.layer.data for layer in layers)
+    data = {layer.layer if isinstance(layer.layer, BaseData) else layer.layer.data for layer in layers}
     return len(data)
 
 
-def export_label_for_layer(layer: Union[LayerArtist, LayerState3D],
+def export_label_for_layer(layer: LayerArtist | LayerState3D,
                            add_data_label: bool = True) -> str:
     if (not add_data_label) or isinstance(layer.layer, BaseData):
         return layer.layer.label
@@ -61,7 +82,7 @@ def export_label_for_layer(layer: Union[LayerArtist, LayerState3D],
         return f"{layer.layer.label} ({data.label})"
 
 
-def layers_to_export(viewer: Viewer) -> List[LayerArtist]:
+def layers_to_export(viewer: Viewer) -> list[LayerArtist]:
     return list(filter(lambda artist: artist.enabled and artist.visible, viewer.layers))
 
 
@@ -91,7 +112,7 @@ def xyz_bounds(viewer_state: ViewerState3D, with_resolution: Literal[False]) -> 
 def xyz_bounds(viewer_state: ViewerState3D, with_resolution: Literal[True]) -> BoundsWithResolution: ...
 
 
-def xyz_bounds(viewer_state: ViewerState3D, with_resolution: bool) -> Union[Bounds, BoundsWithResolution]:
+def xyz_bounds(viewer_state: ViewerState3D, with_resolution: bool) -> Bounds | BoundsWithResolution:
     bounds: Bounds = [(viewer_state.x_min, viewer_state.x_max),
                       (viewer_state.y_min, viewer_state.y_max),
                       (viewer_state.z_min, viewer_state.z_max)]
@@ -116,7 +137,7 @@ def bounds_3d_from_layers(viewer_state: ViewerState3D,
 
 def bounds_3d_from_layers(viewer_state: ViewerState3D,
                           layer_states: Iterable[LayerState3D],
-                          with_resolution: bool) -> Union[Bounds, BoundsWithResolution]:
+                          with_resolution: bool) -> Bounds | BoundsWithResolution:
     mins = [inf, inf, inf]
     maxes = [-inf, -inf, -inf]
     atts = viewer_state.x_att, viewer_state.y_att, viewer_state.z_att
@@ -132,16 +153,16 @@ def bounds_3d_from_layers(viewer_state: ViewerState3D,
     return bounds
 
 
-def slope_intercept_between(a: Union[List[float], Tuple[float, float]],
-                            b: Union[List[float], Tuple[float, float]]) -> Tuple[float, float]:
+def slope_intercept_between(a: list[float] | tuple[float, float],
+                            b: list[float] | tuple[float, float]) -> tuple[float, float]:
     slope = (b[1] - a[1]) / (b[0] - a[0])
     intercept = b[1] - slope * b[0]
     return slope, intercept
 
 
-def clip_linear_transformations(bounds: Union[Bounds, BoundsWithResolution],
+def clip_linear_transformations(bounds: Bounds | BoundsWithResolution,
                                 clip_size: float = 1.0,
-                                stretches: Tuple[float, float, float] = (1.0, 1.0, 1.0)):
+                                stretches: tuple[float, float, float] = (1.0, 1.0, 1.0)):
     ranges = [abs(bds[1] - bds[0]) for bds in bounds]
     max_side = max(rg * stretch for rg, stretch in zip(ranges, stretches))
     line_data = []
@@ -163,7 +184,7 @@ def layer_color(layer_state: LayerState3D) -> str:
 
 
 def clip_sides(viewer_state: ViewerState3D,
-               clip_size: float = 1.0) -> Tuple[float, float, float]:
+               clip_size: float = 1.0) -> tuple[float, float, float]:
 
     stretches = get_stretches(viewer_state)
     bounds = xyz_bounds(viewer_state, with_resolution=False)
@@ -186,10 +207,10 @@ def clip_sides(viewer_state: ViewerState3D,
 
 
 def bring_into_clip(data,
-                    bounds: Union[Bounds, BoundsWithResolution],
+                    bounds: Bounds | BoundsWithResolution,
                     clip_size: float = 1.0,
                     preserve_aspect: bool = True,
-                    stretches: Tuple[float, float, float] = (1.0, 1.0, 1.0)):
+                    stretches: tuple[float, float, float] = (1.0, 1.0, 1.0)):
     if preserve_aspect:
         line_data = clip_linear_transformations(bounds=bounds, clip_size=clip_size, stretches=stretches)
     else:
@@ -203,7 +224,7 @@ def bring_into_clip(data,
 
 def mask_for_bounds(viewer_state: ViewerState3D,
                     layer_state: LayerState3D,
-                    bounds: Union[Bounds, BoundsWithResolution]):
+                    bounds: Bounds | BoundsWithResolution):
     data = layer_state.layer
     bounds = [(min(b), max(b)) for b in bounds]
     return (data[viewer_state.x_att] >= bounds[0][0]) & \
@@ -214,7 +235,7 @@ def mask_for_bounds(viewer_state: ViewerState3D,
            (data[viewer_state.z_att] <= bounds[2][1])
 
 
-def get_stretches(viewer_state: ViewerState3D) -> Tuple[float, float, float]:
+def get_stretches(viewer_state: ViewerState3D) -> tuple[float, float, float]:
     return tuple(
             getattr(viewer_state, f"{axis}_stretch", 1.0)
             for axis in ("x", "y", "z")
@@ -227,7 +248,7 @@ def xyz_for_layer(viewer_state: ViewerState3D,
                   layer_state: LayerState3D,
                   scaled: bool = False,
                   preserve_aspect: bool = True,
-                  mask: Optional[ndarray] = None) -> ndarray:
+                  mask: ndarray | None = None) -> ndarray:
     xs = layer_state.layer[viewer_state.x_att][mask]
     ys = layer_state.layer[viewer_state.y_att][mask]
     zs = layer_state.layer[viewer_state.z_att][mask]
@@ -241,7 +262,7 @@ def xyz_for_layer(viewer_state: ViewerState3D,
     return array(list(zip(*vals)))
 
 
-def hex_to_components(color: str) -> List[int]:
+def hex_to_components(color: str) -> list[int]:
     return [int(color[idx:idx+2], 16) for idx in range(1, len(color), 2)]
 
 
@@ -257,7 +278,7 @@ def unique_id() -> str:
     return uuid4().hex
 
 
-def alpha_composite(over: List[float], under: List[float]) -> List[float]:
+def alpha_composite(over: list[float], under: list[float]) -> list[float]:
     alpha_o = over[3] if len(over) == 4 else 1
     alpha_u = under[3] if len(under) == 4 else 1
     rgb_o = over[:3]
@@ -271,7 +292,7 @@ def alpha_composite(over: List[float], under: List[float]) -> List[float]:
     return rgba_new
 
 
-def data_for_layer(layer_or_state: Union[LayerArtist, LayerState3D]) -> BaseData:
+def data_for_layer(layer_or_state: LayerArtist | LayerState3D) -> BaseData:
     if isinstance(layer_or_state.layer, BaseData):
         return layer_or_state.layer
     else:
@@ -279,7 +300,7 @@ def data_for_layer(layer_or_state: Union[LayerArtist, LayerState3D]) -> BaseData
 
 
 def frb_for_layer(viewer_state: ViewerState,
-                  layer_or_state: Union[LayerArtist, LayerState3D],
+                  layer_or_state: LayerArtist | LayerState3D,
                   bounds: BoundsWithResolution) -> ndarray:
 
     bounds = list(reversed(bounds))

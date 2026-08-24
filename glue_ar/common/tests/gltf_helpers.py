@@ -1,22 +1,21 @@
+from numbers import Number
+from struct import iter_unpack
+from typing import Literal, cast
+
 from gltflib import Buffer, BufferView
 from gltflib.gltf import GLTF
 from gltflib.gltf_resource import FileResource
 
-from numbers import Number
-from struct import iter_unpack
-from typing import List, Literal, Optional, Tuple, cast
 from glue_ar.gltf_utils import GLTFIndexExportOption
-
 from glue_ar.utils import iterator_count
-
 
 BufferFormat = Literal["f", "B", "H", "I"]
 
 
-def get_data(gltf: GLTF, buffer: Buffer, buffer_view: Optional[BufferView] = None) -> bytes:
+def get_data(gltf: GLTF, buffer: Buffer, buffer_view: BufferView | None = None) -> bytes:
 
     if buffer.uri is None:
-        return bytes()
+        return b""
 
     # TODO: Find a better way to deal with this
     resource = cast(FileResource, gltf.get_resource(buffer.uri))
@@ -49,7 +48,7 @@ def count_indices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView, export_op
 def unpack_points(gltf: GLTF,
                   buffer: Buffer,
                   buffer_view: BufferView,
-                  format: BufferFormat) -> List[Tuple[Number, Number, Number]]:
+                  format: BufferFormat) -> list[tuple[Number, Number, Number]]:
     data = get_data(gltf, buffer, buffer_view)
 
     # TODO: Is there a more efficient way to unpack into length-3 points?
@@ -67,7 +66,7 @@ def unpack_points(gltf: GLTF,
     return unpacked
 
 
-def unpack_vertices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView) -> List[Tuple[Number, Number, Number]]:
+def unpack_vertices(gltf: GLTF, buffer: Buffer, buffer_view: BufferView) -> list[tuple[Number, Number, Number]]:
     return unpack_points(gltf, buffer, buffer_view, 'f')
 
 
@@ -75,5 +74,5 @@ def unpack_indices(gltf: GLTF,
                    buffer: Buffer,
                    buffer_view: BufferView,
                    export_option: GLTFIndexExportOption = GLTFIndexExportOption.Int
-                   ) -> List[Tuple[Number, Number, Number]]:
+                   ) -> list[tuple[Number, Number, Number]]:
     return unpack_points(gltf, buffer, buffer_view, export_option.format)

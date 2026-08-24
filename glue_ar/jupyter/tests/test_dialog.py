@@ -1,11 +1,12 @@
-from pytest import importorskip
-from unittest.mock import MagicMock
 from typing import cast
+from unittest.mock import MagicMock
 
+from pytest import importorskip
 
 importorskip("glue_jupyter")
 
 from glue_jupyter import JupyterApplication
+
 # We can't use the Jupyter vispy widget for these tests until
 # https://github.com/glue-viz/glue-vispy-viewers/pull/388 is released
 from glue_jupyter.ipyvolume.volume import IpyvolumeVolumeView
@@ -58,7 +59,7 @@ class TestJupyterExportDialog(BaseExportDialogTest):
             {"text": "STL", "value": 5},
         ]
         assert self.dialog.filetype_selected == 0
-        assert set([item["text"] for item in self.dialog.method_items]) == {"Isosurface", "Voxel"}
+        assert {item["text"] for item in self.dialog.method_items} == {"Isosurface", "Voxel"}
         assert self.dialog.method_selected == 0
         assert self.dialog.has_layer_options
 
@@ -104,7 +105,7 @@ class TestJupyterExportDialog(BaseExportDialogTest):
 
         state.layer = "Volume Data"
         assert self.dialog.method_items[self.dialog.method_selected]["text"] == state.method
-        assert set([item["text"] for item in self.dialog.method_items]) == {"Isosurface", "Voxel"}
+        assert {item["text"] for item in self.dialog.method_items} == {"Isosurface", "Voxel"}
         assert self.dialog.has_layer_options
 
         state.layer = "Scatter Data"

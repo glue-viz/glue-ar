@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from numpy import array, concatenate, zeros
 from stl import Mesh
-from typing import Iterable, List
 
 from glue_ar.registries import builder
 
@@ -11,11 +12,11 @@ from glue_ar.registries import builder
 class STLBuilder:
 
     def __init__(self):
-        self.meshes: List[Mesh] = []
+        self.meshes: list[Mesh] = []
 
     def add_mesh(self,
-                 vertices: List[Iterable[float]],
-                 triangles: List[Iterable[int]]) -> STLBuilder:
+                 vertices: list[Iterable[float]],
+                 triangles: list[Iterable[int]]) -> STLBuilder:
 
         # Adapted from example at https://pypi.org/project/numpy-stl/
         verts_array = array(vertices)

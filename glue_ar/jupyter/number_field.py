@@ -1,5 +1,5 @@
-import traitlets
 import ipyvuetify as v
+import traitlets
 
 
 # Based on https://github.com/widgetti/ipyvuetify/issues/241

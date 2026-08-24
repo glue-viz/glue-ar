@@ -7,11 +7,11 @@ importorskip("glue_qt")
 from glue_qt.app import GlueApplication
 from glue_vispy_viewers.volume.qt.volume_viewer import VispyVolumeViewer
 
-from glue_ar.tests.helpers import DRACOPY_INSTALLED
-from glue_ar.common.tests.test_base_dialog import BaseExportDialogTest, DummyState
 from glue_ar.common.scatter_export_options import ARVispyScatterExportOptions
+from glue_ar.common.tests.test_base_dialog import BaseExportDialogTest, DummyState
 from glue_ar.qt.export_dialog import QtARExportDialog
 from glue_ar.qt.tests.utils import combobox_options
+from glue_ar.tests.helpers import DRACOPY_INSTALLED
 
 
 class TestQtExportDialog(BaseExportDialogTest):

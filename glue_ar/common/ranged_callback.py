@@ -1,8 +1,7 @@
+
 from echo.core import CallbackProperty
-from typing import Optional
 
 from glue_ar.utils import clamp, clamp_with_resolution
-
 
 __all__ = ["RangedCallbackProperty"]
 
@@ -10,10 +9,10 @@ __all__ = ["RangedCallbackProperty"]
 class RangedCallbackProperty(CallbackProperty):
 
     def __init__(self,
-                 default: Optional[float] = None,
+                 default: float | None = None,
                  min_value: float = 0,
                  max_value: float = 1,
-                 resolution: Optional[float] = None,
+                 resolution: float | None = None,
                  **kwargs):
         super().__init__(default=default, **kwargs)
         self.min_value = min_value

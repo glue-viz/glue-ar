@@ -1,11 +1,24 @@
 from itertools import product
 from math import sqrt
+
 import pytest
-from glue_ar.common.shapes import cone_points, cone_points_count, cone_triangles, cone_triangles_count, \
-                                  cylinder_points, cylinder_points_count, cylinder_triangles, \
-                                  cylinder_triangles_count, rectangular_prism_points, \
-                                  rectangular_prism_triangulation, sphere_points, sphere_points_count, \
-                                  sphere_triangles, sphere_triangles_count
+
+from glue_ar.common.shapes import (
+    cone_points,
+    cone_points_count,
+    cone_triangles,
+    cone_triangles_count,
+    cylinder_points,
+    cylinder_points_count,
+    cylinder_triangles,
+    cylinder_triangles_count,
+    rectangular_prism_points,
+    rectangular_prism_triangulation,
+    sphere_points,
+    sphere_points_count,
+    sphere_triangles,
+    sphere_triangles_count,
+)
 
 
 class TestShapes:

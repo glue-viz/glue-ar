@@ -1,19 +1,18 @@
 from re import sub
-from typing import Optional, Tuple
 
 from pxr import Sdf, Usd, UsdGeom, UsdShade
 
 
-def color_identifier(color: Tuple[int, int, int], opacity: float = 1.0) -> str:
+def color_identifier(color: tuple[int, int, int], opacity: float = 1.0) -> str:
     return f"{'_'.join(str(c) for c in color)}_{opacity}".replace(".", "_")
 
 
 def material_for_color(stage: Usd.Stage,
-                       color: Tuple[int, int, int],
+                       color: tuple[int, int, int],
                        opacity: float,
                        metallic: float = 0.0,
                        roughness: float = 1.0,
-                       identifier: Optional[str] = None) -> UsdShade.Material:
+                       identifier: str | None = None) -> UsdShade.Material:
 
     identifier = identifier or color_identifier(color, opacity)
     material_key = f"/material_{identifier}"

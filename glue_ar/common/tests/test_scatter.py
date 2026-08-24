@@ -1,15 +1,16 @@
 from inspect import getfullargspec
 from itertools import product
 from math import sqrt
-from numpy import array, array_equal, nan, ones
 from os import remove
-import pytest
-from random import random, randint, seed
-from typing import cast, Dict, Tuple, Type, Union
+from random import randint, random, seed
+from typing import cast
 
+import pytest
 from glue.core import Data
 from glue.core.state_objects import State
 from glue.viewers.common.viewer import Viewer
+from numpy import array, array_equal, nan, ones
+
 from glue_ar.common.tests.helpers import APP_VIEWER_OPTIONS
 from glue_ar.utils import NoneType
 
@@ -29,12 +30,14 @@ except ImportError:
     VispyScatterViewer = NoneType
 
 from glue_ar.common.scatter import scatter_layer_mask
-from glue_ar.common.scatter_export_options import ARIpyvolumeScatterExportOptions, ARVispyScatterExportOptions
+from glue_ar.common.scatter_export_options import (
+    ARIpyvolumeScatterExportOptions,
+    ARVispyScatterExportOptions,
+)
 from glue_ar.utils import export_label_for_layer
 
-
-Application = Union[GlueApplication, JupyterApplication]
-ScatterViewer = Union[Type[VispyScatterViewer], Type[JupyterVispyScatterViewer], Type[IpyvolumeScatterView]]
+Application = GlueApplication | JupyterApplication
+ScatterViewer = type[VispyScatterViewer] | type[JupyterVispyScatterViewer] | type[IpyvolumeScatterView]
 
 
 @pytest.fixture
@@ -187,12 +190,11 @@ class BaseScatterTest:
                 except NotImplementedError:
                     pass
             self.viewer = None
-        if hasattr(self, 'app'):
-            if hasattr(self.app, 'close'):
-                self.app.close()
+        if hasattr(self, 'app') and hasattr(self.app, 'close'):
+            self.app.close()
         self.app = None
 
-    def _basic_state_dictionary(self, viewer_type: str) -> Dict[str, Tuple[str, State]]:
+    def _basic_state_dictionary(self, viewer_type: str) -> dict[str, tuple[str, State]]:
         if viewer_type == "vispy":
             def state_maker():
                 return ARVispyScatterExportOptions(resolution=15,

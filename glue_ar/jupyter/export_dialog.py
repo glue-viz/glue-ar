@@ -2,7 +2,7 @@ import ipyvuetify as v  # noqa
 from ipyvuetify.VuetifyTemplate import VuetifyTemplate
 from ipywidgets import widget_serialization
 import traitlets
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from glue.core.state_objects import State
 from glue.viewers.common.viewer import Viewer
@@ -41,9 +41,9 @@ class JupyterARExportDialog(ARExportDialogBase, VuetifyTemplate):
 
     def __init__(self,
                  viewer: Viewer,
-                 display: Optional[bool] = False,
-                 on_cancel: Optional[Callable] = None,
-                 on_export: Optional[Callable] = None):
+                 display: bool | None = False,
+                 on_cancel: Callable | None = None,
+                 on_export: Callable | None = None):
 
         ARExportDialogBase.__init__(self, viewer=viewer)
         self.layer_layout = v.Col()

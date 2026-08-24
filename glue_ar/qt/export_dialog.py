@@ -3,12 +3,18 @@ import os
 from echo.qt import autoconnect_callbacks_to_qt
 from glue.core.state_objects import State
 from glue_qt.utils import load_ui
+from qtpy.QtWidgets import (
+    QDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLayout,
+    QLayoutItem,
+    QVBoxLayout,
+    QWidget,
+)
+
 from glue_ar.common.export_dialog_base import ARExportDialogBase
-
-from qtpy.QtWidgets import QDialog, QFormLayout, QHBoxLayout, QLayoutItem, QVBoxLayout, QLayout, QWidget
-
 from glue_ar.qt.widgets import widgets_for_callback_property
-
 
 __all__ = ['QtARExportDialog']
 

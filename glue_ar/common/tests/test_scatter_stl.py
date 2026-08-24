@@ -9,7 +9,13 @@ from glue_ar.common.export import export_viewer
 from glue_ar.common.shapes import sphere_points_count, sphere_triangles_count
 from glue_ar.common.tests.helpers import APP_VIEWER_OPTIONS
 from glue_ar.common.tests.test_scatter import BaseScatterTest
-from glue_ar.utils import export_label_for_layer, layers_to_export, mask_for_bounds, xyz_bounds, xyz_for_layer
+from glue_ar.utils import (
+    export_label_for_layer,
+    layers_to_export,
+    mask_for_bounds,
+    xyz_bounds,
+    xyz_for_layer,
+)
 
 
 class TestScatterSTL(BaseScatterTest):
@@ -20,17 +26,17 @@ class TestScatterSTL(BaseScatterTest):
             return
         self.basic_setup(app_type, viewer_type)
         bounds = xyz_bounds(self.viewer.state, with_resolution=False)
-        self.tmpfile = NamedTemporaryFile(suffix=".stl", delete=False)
-        self.tmpfile.close()
-        layer_states = [layer.state for layer in layers_to_export(self.viewer)]
-        export_viewer(self.viewer.state,
-                      layer_states=layer_states,
-                      bounds=bounds,
-                      state_dictionary=self.state_dictionary,
-                      filepath=self.tmpfile.name,
-                      compression=None)
+        with NamedTemporaryFile(suffix=".stl", delete=False) as tmpfile:
+            tmpfile.close()
+            layer_states = [layer.state for layer in layers_to_export(self.viewer)]
+            export_viewer(self.viewer.state,
+                          layer_states=layer_states,
+                          bounds=bounds,
+                          state_dictionary=self.state_dictionary,
+                          filepath=tmpfile.name,
+                          compression=None)
 
-        stl = Mesh.from_file(self.tmpfile.name)
+            stl = Mesh.from_file(tmpfile.name)
 
         layer = self.viewer.layers[0]
         mask = mask_for_bounds(self.viewer.state, layer.state, bounds)

@@ -1,15 +1,14 @@
-from collections.abc import Callable
-from typing import Iterable, Protocol, Type, TypeVar, Union
+from collections.abc import Callable, Iterable
+from typing import Protocol, TypeVar
 
 from glue.config import DictRegistry
-
 
 __all__ = ["Builder", "builder", "compressor"]
 
 
-T = TypeVar("T", covariant=True)
-class Builder(Protocol[T]):
-    def build(self) -> T:
+T_co = TypeVar("T_co", covariant=True)
+class Builder(Protocol[T_co]):
+    def build(self) -> T_co:
         ...
 
     def build_and_export(self, filepath: str):
@@ -19,15 +18,15 @@ class Builder(Protocol[T]):
 
 class BuilderRegistry(DictRegistry):
 
-    def add(self, extensions: Union[str, Iterable[str]], builder: Type):
+    def add(self, extensions: str | Iterable[str], builder: type):
         if isinstance(extensions, str):
             self._members[extensions] = builder
         else:
             for ext in extensions:
                 self._members[ext] = builder
 
-    def __call__(self, extensions: Union[str, Iterable[str]]):
-        def adder(builder: Type):
+    def __call__(self, extensions: str | Iterable[str]):
+        def adder(builder: type):
             self.add(extensions, builder)
             return builder
         return adder

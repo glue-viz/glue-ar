@@ -1,10 +1,13 @@
 import inspect
 from itertools import product
+
 import pytest
-from typing import List
 
 try:
-    from glue_vispy_viewers.volume.viewer_state import Vispy3DVolumeViewerState, cutting_plane_from_state
+    from glue_vispy_viewers.volume.viewer_state import (
+        Vispy3DVolumeViewerState,
+        cutting_plane_from_state,
+    )
     CUTTING_PLANE_AVAILABLE = True
 except ImportError:
     CUTTING_PLANE_AVAILABLE = False
@@ -12,7 +15,10 @@ except ImportError:
 if not CUTTING_PLANE_AVAILABLE:
     pytest.skip("Cutting plane functionality is not available", allow_module_level=True)
 
-from glue_ar.common.cut_plane import create_cut_plane_check, apply_cut_plane_to_isosurface
+from glue_ar.common.cut_plane import (
+    apply_cut_plane_to_isosurface,
+    create_cut_plane_check,
+)
 from glue_ar.utils import xyz_bounds
 
 
@@ -129,7 +135,7 @@ def test_cut_plane_check_type(index_permutation, cut_enabled):
     signature = inspect.signature(check)
     assert signature.return_annotation is bool
     assert "indices" in signature.parameters
-    assert signature.parameters["indices"].annotation is List[int | float]
+    assert signature.parameters["indices"].annotation is list[int | float]
 
 
 @pytest.mark.parametrize("index_permutation",

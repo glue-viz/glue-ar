@@ -1,9 +1,9 @@
 from os.path import dirname
 
-from PIL.ImageQt import ImageQt
 from glue_qt.utils import load_ui
-from qtpy.QtWidgets import QDialog
+from PIL.ImageQt import ImageQt
 from qtpy.QtGui import QPixmap
+from qtpy.QtWidgets import QDialog
 
 from glue_ar.common.qr import create_qr
 
@@ -12,7 +12,7 @@ class QRDialog(QDialog):
 
     def __init__(self, parent, url=None, img=None):
 
-        super(QRDialog, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         img = create_qr(url)
         self.img = ImageQt(img)
         self.pix = QPixmap.fromImage(self.img)

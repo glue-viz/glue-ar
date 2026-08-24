@@ -1,22 +1,27 @@
 from sys import platform
 from tempfile import NamedTemporaryFile
 
-from pxr import Usd
 import pytest
+from pxr import Usd
 
 from glue_ar.common.export import export_viewer
 from glue_ar.common.shapes import sphere_points_count, sphere_triangles_count
 from glue_ar.common.tests.helpers import APP_VIEWER_OPTIONS
 from glue_ar.common.tests.test_scatter import BaseScatterTest
 from glue_ar.usd_utils import material_for_mesh
-from glue_ar.utils import export_label_for_layer, hex_to_components, iterator_count, layers_to_export, xyz_bounds
-
+from glue_ar.utils import (
+    export_label_for_layer,
+    hex_to_components,
+    iterator_count,
+    layers_to_export,
+    xyz_bounds,
+)
 
 EXTENSION_OPTIONS = ("usda", "usdc", "usdz")
 
-TEST_OPTIONS = list((app_type, viewer_type, extension)
+TEST_OPTIONS = [(app_type, viewer_type, extension)
                for (app_type, viewer_type), extension
-               in zip(APP_VIEWER_OPTIONS, EXTENSION_OPTIONS))
+               in zip(APP_VIEWER_OPTIONS, EXTENSION_OPTIONS)]
 
 
 class TestVispyScatterUSD(BaseScatterTest):
@@ -27,17 +32,17 @@ class TestVispyScatterUSD(BaseScatterTest):
             return
         self.basic_setup(app_type, viewer_type)
         bounds = xyz_bounds(self.viewer.state, with_resolution=False)
-        self.tmpfile = NamedTemporaryFile(suffix=f".{extension}", delete=False)
-        self.tmpfile.close()
-        layer_states = [layer.state for layer in layers_to_export(self.viewer)]
-        export_viewer(self.viewer.state,
-                      layer_states=layer_states,
-                      bounds=bounds,
-                      state_dictionary=self.state_dictionary,
-                      filepath=self.tmpfile.name,
-                      compression=None)
+        with NamedTemporaryFile(suffix=f".{extension}", delete=False) as tmpfile:
+            tmpfile.close()
+            layer_states = [layer.state for layer in layers_to_export(self.viewer)]
+            export_viewer(self.viewer.state,
+                          layer_states=layer_states,
+                          bounds=bounds,
+                          state_dictionary=self.state_dictionary,
+                          filepath=tmpfile.name,
+                          compression=None)
 
-        stage = Usd.Stage.Open(self.tmpfile.name)
+            stage = Usd.Stage.Open(tmpfile.name)
         world = stage.GetDefaultPrim()
         assert str(world.GetPath()) == "/world"
 
