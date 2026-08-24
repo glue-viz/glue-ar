@@ -6,9 +6,9 @@ from glue.config import DictRegistry
 __all__ = ["Builder", "builder", "compressor"]
 
 
-T = TypeVar("T", covariant=True)
-class Builder(Protocol[T]):
-    def build(self) -> T:
+T_co = TypeVar("T_co", covariant=True)
+class Builder(Protocol[T_co]):
+    def build(self) -> T_co:
         ...
 
     def build_and_export(self, filepath: str):

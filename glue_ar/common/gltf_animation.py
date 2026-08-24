@@ -82,10 +82,10 @@ def set_up_flipbook_animation(
     builder.add_animation(name=animation_name)
     animation_index = builder.animation_count - 1
 
-    data = dict(
-        animation_index=animation_index,
-        time_accessor_index=time_accessor_index,
-    )
+    data = {
+        "animation_index": animation_index,
+        "time_accessor_index": time_accessor_index,
+    }
     if with_scales:
         data["scale_accessor_indices"] = scale_accessor_indices
 

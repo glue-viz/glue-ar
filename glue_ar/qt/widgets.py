@@ -1,4 +1,4 @@
-from math import floor, log
+from math import floor, log10
 from os.path import join
 
 from echo import CallbackProperty, HasCallbackProperties, add_callback, remove_callback
@@ -101,7 +101,7 @@ def number_callback_widgets(instance: HasCallbackProperties,
     step = getattr(cb_property, 'resolution', None)
     if step is None:
         step = 1 if t is int else 0.01
-    places = -floor(log(step, 10))
+    places = -floor(log10(step))
 
     if label_for_value:
         value_label = QLabel()

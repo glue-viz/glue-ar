@@ -19,9 +19,9 @@ from glue_ar.utils import (
 
 EXTENSION_OPTIONS = ("usda", "usdc", "usdz")
 
-TEST_OPTIONS = list((app_type, viewer_type, extension)
+TEST_OPTIONS = [(app_type, viewer_type, extension)
                for (app_type, viewer_type), extension
-               in zip(APP_VIEWER_OPTIONS, EXTENSION_OPTIONS))
+               in zip(APP_VIEWER_OPTIONS, EXTENSION_OPTIONS)]
 
 
 class TestVispyScatterUSD(BaseScatterTest):
@@ -32,17 +32,17 @@ class TestVispyScatterUSD(BaseScatterTest):
             return
         self.basic_setup(app_type, viewer_type)
         bounds = xyz_bounds(self.viewer.state, with_resolution=False)
-        self.tmpfile = NamedTemporaryFile(suffix=f".{extension}", delete=False)
-        self.tmpfile.close()
-        layer_states = [layer.state for layer in layers_to_export(self.viewer)]
-        export_viewer(self.viewer.state,
-                      layer_states=layer_states,
-                      bounds=bounds,
-                      state_dictionary=self.state_dictionary,
-                      filepath=self.tmpfile.name,
-                      compression=None)
+        with NamedTemporaryFile(suffix=f".{extension}", delete=False) as tmpfile:
+            tmpfile.close()
+            layer_states = [layer.state for layer in layers_to_export(self.viewer)]
+            export_viewer(self.viewer.state,
+                          layer_states=layer_states,
+                          bounds=bounds,
+                          state_dictionary=self.state_dictionary,
+                          filepath=tmpfile.name,
+                          compression=None)
 
-        stage = Usd.Stage.Open(self.tmpfile.name)
+            stage = Usd.Stage.Open(tmpfile.name)
         world = stage.GetDefaultPrim()
         assert str(world.GetPath()) == "/world"
 

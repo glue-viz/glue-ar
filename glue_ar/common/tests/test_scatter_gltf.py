@@ -38,17 +38,18 @@ class TestScatterGLTF(BaseScatterTest):
             return
         self.basic_setup(app_type, viewer_type)
         bounds = xyz_bounds(self.viewer.state, with_resolution=False)
-        self.tmpfile = NamedTemporaryFile(suffix=".gltf", delete=False)
-        self.tmpfile.close()
-        layer_states = [layer.state for layer in layers_to_export(self.viewer)]
-        export_viewer(self.viewer.state,
-                      layer_states=layer_states,
-                      bounds=bounds,
-                      state_dictionary=self.state_dictionary,
-                      filepath=self.tmpfile.name,
-                      compression=None)
+        with NamedTemporaryFile(suffix=".gltf", delete=False) as tmpfile:
+            tmpfile.close()
+            layer_states = [layer.state for layer in layers_to_export(self.viewer)]
+            export_viewer(self.viewer.state,
+                          layer_states=layer_states,
+                          bounds=bounds,
+                          state_dictionary=self.state_dictionary,
+                          filepath=tmpfile.name,
+                          compression=None)
 
-        gltf: GLTF = GLTF.load(self.tmpfile.name)
+            gltf: GLTF = GLTF.load(tmpfile.name)
+
         model = gltf.model
         assert isinstance(model, GLTFModel)
 

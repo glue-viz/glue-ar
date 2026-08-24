@@ -26,17 +26,17 @@ class TestScatterSTL(BaseScatterTest):
             return
         self.basic_setup(app_type, viewer_type)
         bounds = xyz_bounds(self.viewer.state, with_resolution=False)
-        self.tmpfile = NamedTemporaryFile(suffix=".stl", delete=False)
-        self.tmpfile.close()
-        layer_states = [layer.state for layer in layers_to_export(self.viewer)]
-        export_viewer(self.viewer.state,
-                      layer_states=layer_states,
-                      bounds=bounds,
-                      state_dictionary=self.state_dictionary,
-                      filepath=self.tmpfile.name,
-                      compression=None)
+        with NamedTemporaryFile(suffix=".stl", delete=False) as tmpfile:
+            tmpfile.close()
+            layer_states = [layer.state for layer in layers_to_export(self.viewer)]
+            export_viewer(self.viewer.state,
+                          layer_states=layer_states,
+                          bounds=bounds,
+                          state_dictionary=self.state_dictionary,
+                          filepath=tmpfile.name,
+                          compression=None)
 
-        stl = Mesh.from_file(self.tmpfile.name)
+            stl = Mesh.from_file(tmpfile.name)
 
         layer = self.viewer.layers[0]
         mask = mask_for_bounds(self.viewer.state, layer.state, bounds)

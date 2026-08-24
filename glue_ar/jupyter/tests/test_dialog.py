@@ -59,7 +59,7 @@ class TestJupyterExportDialog(BaseExportDialogTest):
             {"text": "STL", "value": 5},
         ]
         assert self.dialog.filetype_selected == 0
-        assert set([item["text"] for item in self.dialog.method_items]) == {"Isosurface", "Voxel"}
+        assert {[item["text"] for item in self.dialog.method_items]} == {"Isosurface", "Voxel"}
         assert self.dialog.method_selected == 0
         assert self.dialog.has_layer_options
 
@@ -105,7 +105,7 @@ class TestJupyterExportDialog(BaseExportDialogTest):
 
         state.layer = "Volume Data"
         assert self.dialog.method_items[self.dialog.method_selected]["text"] == state.method
-        assert set([item["text"] for item in self.dialog.method_items]) == {"Isosurface", "Voxel"}
+        assert {[item["text"] for item in self.dialog.method_items]} == {"Isosurface", "Voxel"}
         assert self.dialog.has_layer_options
 
         state.layer = "Scatter Data"

@@ -32,7 +32,7 @@ class ARExportLayerOptionsRegistry(DictRegistry):
             multiple: bool,
             export_method: Callable):
         if not issubclass(layer_options_state, State):
-            raise ValueError("Layer options must be a glue State type")
+            raise TypeError("Layer options must be a glue State type")
 
         self.method_state_types[(layer_state_cls, name)] = layer_options_state
 
@@ -56,17 +56,17 @@ class ARExportLayerOptionsRegistry(DictRegistry):
             return self._members[(state_cls, name, extension)]
         except KeyError:
             possibilities = tuple(
-                    k for k in self._members.keys() if
+                    k for k in self._members if
                     k[1] == name and k[2] == extension
                     and issubclass(state_cls, k[0])
             )
             if len(possibilities) == 0:
                 raise ValueError("No specification found!")
-            return sorted(possibilities, key=lambda k: len(k[0].mro()), reverse=True)[0]
+            return max(possibilities, key=lambda k: len(k[0].mro()))
 
     def method_names(self, layer_state_cls, extension) -> list[str]:
         extension = extension.lower()
-        return [name for (state_cls, name, ext) in self._members.keys()
+        return [name for (state_cls, name, ext) in self._members
                 if state_cls == layer_state_cls and ext == extension]
 
     def __call__(self,

@@ -3,7 +3,7 @@ from itertools import product
 from math import sqrt
 from os import remove
 from random import randint, random, seed
-from typing import Union, cast
+from typing import cast
 
 import pytest
 from glue.core import Data
@@ -36,8 +36,8 @@ from glue_ar.common.scatter_export_options import (
 )
 from glue_ar.utils import export_label_for_layer
 
-Application = Union[GlueApplication, JupyterApplication]
-ScatterViewer = Union[type[VispyScatterViewer], type[JupyterVispyScatterViewer], type[IpyvolumeScatterView]]
+Application = GlueApplication | JupyterApplication
+ScatterViewer = type[VispyScatterViewer] | type[JupyterVispyScatterViewer] | type[IpyvolumeScatterView]
 
 
 @pytest.fixture
@@ -190,9 +190,8 @@ class BaseScatterTest:
                 except NotImplementedError:
                     pass
             self.viewer = None
-        if hasattr(self, 'app'):
-            if hasattr(self.app, 'close'):
-                self.app.close()
+        if hasattr(self, 'app') and hasattr(self.app, 'close'):
+            self.app.close()
         self.app = None
 
     def _basic_state_dictionary(self, viewer_type: str) -> dict[str, tuple[str, State]]:

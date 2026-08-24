@@ -69,7 +69,7 @@ def data_count(layers: Iterable[LayerArtist | LayerState3D]) -> int:
     Count the number of unique Data objects (either directly or as parents of subsets)
     used in the set of layers
     """
-    data = set(layer.layer if isinstance(layer.layer, BaseData) else layer.layer.data for layer in layers)
+    data = {layer.layer if isinstance(layer.layer, BaseData) else layer.layer.data for layer in layers}
     return len(data)
 
 
